@@ -1,3 +1,18 @@
 {
-  "extends": "astro/tsconfigs/strictest"
+  "extends": "astro/tsconfigs/strictest",
+  "compilerOptions": {
+    "plugins": [
+      {
+        "name": "@astrojs/ts-plugin"
+      }
+    ],
+    "baseUrl": "/Users/samuel/Coding/hulla-dev",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    },
+    "jsx": "preserve",
+    "jsxImportSource": "solid-js"
+  }
 }
