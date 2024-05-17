@@ -1,0 +1,15 @@
+---
+import { cn } from '@/utils/cn'
+export interface Props {
+  class?: string
+}
+const { class: className } = Astro.props
+---
+
+<div
+  class:list={cn(
+    'flex h-full w-full animate-pulse items-center justify-center rounded-lg bg-stone-600',
+    className
+  )}>
+  <slot />
+</div>
