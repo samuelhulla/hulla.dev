@@ -1,0 +1,24 @@
+---
+import { cn } from '@/utils/cn'
+
+export interface Props {
+  class?: string
+}
+const { class: className } = Astro.props
+---
+
+<section class="embla h-full overflow-hidden py-1">
+  <div class:list={cn('flex h-full gap-4', className)}>
+    <slot />
+  </div>
+</section>
+
+<script>
+  import EmblaCarousel from 'embla-carousel'
+  import autoplay from 'embla-carousel-autoplay'
+  const emblaNode = document.querySelector('.embla')
+  const autoplayApi = autoplay({ delay: 2500 })
+  const emblaApi = EmblaCarousel(emblaNode as HTMLElement, { loop: true }, [
+    autoplayApi,
+  ])
+</script>
