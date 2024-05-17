@@ -1,5 +1,5 @@
 import { defaultLanguage, ui } from './ui'
-import { keys } from '@/utils/objects'
+import { keys } from '../utils/objects'
 
 export function getLanguage(url: URL) {
   const [, lang] = url.pathname.split('/')
