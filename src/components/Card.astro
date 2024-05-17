@@ -1,0 +1,20 @@
+---
+import { cn } from '@/utils/cn'
+
+export interface Props {
+  title: string
+  description: string
+  class?: string
+}
+const { title, description, class: className } = Astro.props
+---
+
+<div
+  class:list={cn(
+    'flex h-full flex-col justify-between rounded-xl border border-shadow/20 p-4',
+    className
+  )}>
+  <h4 class="font-mono">{title}</h4>
+  <p class="text-xs text-description">{description}</p>
+  <slot />
+</div>
