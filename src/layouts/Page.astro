@@ -1,0 +1,205 @@
+---
+import { getLanguage } from '../i18n/utils'
+import { seo } from '../i18n/seo'
+
+export interface Props {
+  title: string
+  class?: string
+  style?: string
+  keywords?: string
+  preload?: string
+  description?: string
+  root?: boolean
+}
+
+const lang = getLanguage(Astro.url)
+const {
+  title,
+  keywords = seo.keywords[lang],
+  description = seo.description[lang],
+  preload,
+  class: className,
+  style,
+  root = false,
+} = Astro.props
+---
+
+<style is:global>
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
+
+  @font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-display: auto;
+    src: url('/fonts/Inter-Regular.woff2') format('woff2');
+  }
+
+  @font-face {
+    font-family: 'Inter', sans-serif;
+    font-style: normal;
+    font-weight: 600;
+    font-display: auto;
+    src: url('/fonts/Inter-SemiBold.woff2') format('woff2');
+  }
+
+  @font-face {
+    font-family: 'Inter', sans-serif;
+    font-style: normal;
+    font-weight: 300;
+    font-display: auto;
+    src: url('/fonts/Inter-Thin.woff2') format('woff2');
+  }
+
+  @font-face {
+    font-family: 'Inter', sans-serif;
+    font-style: normal;
+    font-weight: 700;
+    font-display: auto;
+    src: url('/fonts/Inter-Bold.woff2') format('woff2');
+  }
+
+  @font-face {
+    font-family: 'Inter', sans-serif;
+    font-style: italic;
+    font-weight: 400;
+    font-display: auto;
+    src: url('/fonts/Inter-Italic.woff2') format('woff2');
+  }
+
+  @font-face {
+    font-family: 'JetBrains Mono', monospace;
+    font-style: normal;
+    font-weight: 400;
+    font-display: auto;
+    src: url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+  }
+
+  @font-face {
+    font-family: 'JetBrains Mono', monospace;
+    font-style: normal;
+    font-weight: 700;
+    font-display: auto;
+    src: url('/fonts/JetBrainsMono-Bold.woff2') format('woff2');
+  }
+
+  @font-face {
+    font-family: 'JetBrains Mono', monospace;
+    font-style: italic;
+    font-weight: 400;
+    font-display: auto;
+    src: url('/fonts/JetBrainsMono-Italic.woff2') format('woff2');
+  }
+
+  @font-face {
+    font-family: 'JetBrains Mono', monospace;
+    font-style: normal;
+    font-weight: 600;
+    font-display: auto;
+    src: url('/fonts/JetBrainsMono-SemiBold.woff2') format('woff2');
+  }
+
+  @font-face {
+    font-family: 'JetBrains Mono', monospace;
+    font-style: normal;
+    font-weight: 300;
+    font-display: auto;
+    src: url('/fonts/JetBrainsMono-Thin.woff2') format('woff2');
+  }
+
+  /* For Webkit browsers */
+  ::-webkit-scrollbar {
+    width: 0.3rem;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gradient-to-b from-shadow to-transparent transition ease-in-out  hover:from-secondary hover:to-transparent;
+  }
+
+  /* #cursor {
+    @apply z-50 h-20 w-20 rounded-full border-2 border-text bg-transparent fixed;
+    pointer-events: none;
+  } */
+
+  body {
+    @apply min-w-0 bg-white text-lg text-bg dark:bg-bg dark:text-text;
+  }
+
+  .bg-grid {
+    @apply bg-bg bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px];
+  }
+
+  .bg-mask {
+    @apply [mask-image:radial-gradient(ellipse_at_center,transparent_65%,black)] 2xl:[mask-image:radial-gradient(ellipse_at_center,transparent_80%,black)];
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r bg-clip-text text-transparent;
+  }
+
+  h1 {
+    @apply text-8xl font-bold leading-snug;
+  }
+
+  h2 {
+    @apply text-5xl font-bold leading-snug;
+  }
+
+  h3 {
+    @apply text-3xl font-bold leading-snug;
+  }
+</style>
+
+<html lang={lang}>
+  <head>
+    <title>{title}</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="author" content="Samuel Hulla" />
+    <meta name="keywords" content={keywords} />
+    <meta name="description" content={description} />
+    {root && <meta http-equiv="refresh" content="0;url=/en/" />}
+    {preload && <link rel="preload" href={preload} as="fetch" />}
+  </head>
+  <body style={style} class:list={className || ''}>
+    <slot />
+  </body>
+</html>
+
+<script is:inline>
+  const theme = (() => {
+    if (typeof localStorage !== 'undefined' && localStorage.getItem('theme')) {
+      return localStorage.getItem('theme')
+    }
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      return 'dark'
+    }
+    return 'light'
+  })()
+
+  if (theme === 'light') {
+    document.documentElement.classList.remove('dark')
+  } else {
+    document.documentElement.classList.add('dark')
+  }
+
+  window.localStorage.setItem('theme', theme)
+
+  const handleToggleClick = () => {
+    const element = document.documentElement
+    element.classList.toggle('dark')
+
+    const isDark = element.classList.contains('dark')
+    localStorage.setItem('theme', isDark ? 'dark' : 'light')
+  }
+
+  document
+    .getElementById('themeToggle')
+    .addEventListener('click', handleToggleClick)
+</script>
