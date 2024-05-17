@@ -12,7 +12,7 @@ const pkg = slug?.split('/')[0] as keyof typeof NAVIGATION
 const chapters = NAVIGATION[pkg]
 ---
 
-<menu class="sticky inset-0 h-screen min-w-[18%] bg-gray-900/80 p-8">
+<menu class="sticky inset-0 h-screen min-w-[18%] space-y-4 bg-gray-900/80 p-8">
   <Select
     class="mb-4"
     name="Package"
