@@ -1,0 +1,248 @@
+---
+title: Resolvers
+---
+
+Here are some common use-cases for Resolvers:
+
+1. Transforming the result of defined [procedure](/docs/api/core-concepts/procedures) function `fn`
+2. Accessing [context](context)
+3. Triggering side-effects / running middleware _(that only runs on specific routes / depend on return value of procedure function - if you need to run middleware on every single route, you might want to use [interceptor](interceptors) instead.)_
+4. Input/Output validation
+
+## Declaration
+
+Resolvers are defined as part of [procedure](/docs/api/core-concepts/procedures) - in particular, the third argument.
+
+```ts
+a.procedure('example', () => 'foo', (res, ctx) => ...)
+// =>                               ^ this is the resolver
+```
+
+Eech resolver is a function that consiss of two arguments:
+
+1. Result of the procedure `fn` _(in example above `res === 'foo'` )_
+2. Custom context merged with base context _(in example above `ctx ===` [`Context`](context))_
+
+The return type of resolver overrides the procedure return
+
+```ts
+const numFn = (num: number) => num
+// and our routes were defined as
+[
+  a.procedure('fn', numFn),
+  a.procedure('resolver', numFn, (res) => res.toString())
+]
+
+// later:
+a.call('fn', 1)  // 1 === number
+a.call('resolver', 1) // '1' === string (resolver overrode fn return type)
+```
+
+## Usage
+
+### Mutating result
+
+Here's a very basic _(and not very practical)_ example, that should help you understand the usage of resolvers better.
+
+```ts
+import { api } from '@hulla/api'
+
+const a = api()
+const router = a.router({
+  name: 'example',
+  routes: [
+    a.procedure('foo', (a: number) => a, (res) => res.toString())
+  ]
+})
+const example = a.create(router)
+
+// then later:
+example.call('foo', 1) // '1'
+```
+
+But you should get the gist of it, obviously this pattern is a lot more powerful, when you have some complex calls and chained interactions.
+
+### Accessing context (& mutating result)
+
+As an example, we have a site where user can select theme, while even being logged out of the site. We want to update the user
+with their selected theme after they logged in and log the last action executed on their profile.
+
+```ts
+import { api } from '@hulla/api'
+import { $theme } from '~/stores'
+import { getCurrentUser, updateUser } from './queries/users'
+
+const context = { theme: $theme.get() }
+
+const a = api({ context })
+const router = a.router({
+  name: 'users',
+  routes: [
+    a.procedure('update-theme', getCurrentUser, async (res, ctx) => {
+      const user = await res // we await the Promise from the getCurrentUser
+      const payload = { ...user, theme: ctx.theme, lastAction: ctx.route }
+      return updateUser(payload) // update user with current theme
+    })
+  ]
+})
+const usersAPI = a.create(router)
+
+// then later:
+const afterLogin = async () => {
+  await usersAPI.updateTheme()
+  // ....
+}
+```
+
+### Input/Output Validator
+
+```ts
+validatedAPI.call('copyUser', 'John', 'john@email.com') // ✅ ok
+validatedAPI.call('copyUser', 'John', 'incorrectEMAIL123') // 🚧 ok by TS (email is string, even though in incorrect format)
+// --> we need a validator!
+```
+
+```ts
+import { api } from '@hulla/api'
+import { createUser } from './queries/users'
+import { z } from 'zod' // note we don't have to use zod, can write our own validator for all intents and purposes
+
+const schema = z.object({
+  name: z.string()
+  email: z.string().email()
+})
+
+const toUserObject = (name: string, email: string) => ({ name, email })
+
+const a = api()
+const router = a.router({
+  name: 'validated',
+  routes: [
+    a.procedure('copyUser', toUserObject, async (user) => {
+      const payload = schema.parse(user) // throws error if incorrect
+      const newUser = await createUser(payload) // ✅ ok - could just return createUser(payload) instead
+
+      // not very practical / redundant in this particular example
+      // but just to showcase you can also validate output as well -- 
+      // in practice you'd more likely validate if you had multiple calls
+      // (i.e. get user posts and validate them and return them alongside the validated user)
+      return schema.parse(newUser)
+    })
+  ]
+})
+export const validatedAPI = a.create(router)
+```
+
+This is useful for adding extra safety that typescript cannot catch
+
+
+
+### Reusable resolvers
+
+It might be useful to re-use some resolvers. But first, ask yourself the question -- _Do I need the resolver to run for every single route?_
+
+> If you need a resolver to execute on every single route, then it might be more practical to use an [interceptor](interceptors) instead.
+
+If you chose not to use an interceptor and write re-usable resolver instead _(which has it's benefits with extra type-safety, but as a trade-off is pretty rigorous about types and it's definition)_, then here's
+good blueprint.
+
+__Simple version__ - result only
+
+```ts
+import { api } from '@hulla/api'
+
+// I've got the following two functions defined:
+const fromString = (str: string) => str
+const fromNumber = (num: number) => str.toString()
+
+// as long as the ReturnType matches the type of function (in this case both 'string', we're good)
+// if they were different, you'd need to account for it (i.e. res: string | number | boolean)
+const resolver = (res: string) => res + 'bit'
+
+const a = api()
+const router = a.router({
+  name: 'example',
+  routes: [
+    a.procedure('fromString', fromString, resolver)
+    a.procedure('fromNumber', fromNumber, resolver)
+  ]
+})
+```
+
+That was fairly straightforward.
+
+Issue begins when you need proper type safety of your [`context`](context).
+
+First, here's a semi-hackish version where we don't have correct type of context, but for our intents and purposes it's good enough type narrow
+
+```ts
+// This works as well (picking parts of context we only need)
+const resolver = (res: string, ctx: { foo: 'foo' }) => res + ctx.foo  // ✅ this works as well!
+```
+
+That was easy as well!
+
+> However what if we wanted full type safety of the exact Base Context we have in our resolvers, when we are typing resolvers inside our `a.procedure`?
+
+As you'll see it starts being a lot less
+straightforward real quick, as essentially you'll need to type out all the stuff manually, that the package infers under the hood for you 🦸.
+
+```ts
+// we'll import the api sdk and the Context type (Base Context)
+import { api, type Context } from '@hulla/api'
+
+// I've got the following two functions defined:
+const fromString = (str: string) => str
+const fromNumber = (num: number) => str.toString()
+
+// And the context
+type CTX = { foo: 'foo' }
+const context: CTX = { foo: 'foo' }
+
+// Now we want to define a re-usable resolver, we'll need the following types
+
+// in practice you'd probably use generics or define it inside the function straight away
+// but i'm writing everything out this way so it's clear and punctual
+
+// 1. Return type of the functions (in our case `string`)
+type Res = string
+// 2. Combination of possible args (in our case `readonly [str: string] | readonly [num: number]`)
+type Args = readonly [str: string] | readonly [num: number]
+// 3. Route name (in our case 'fromString' | 'fromNumber')
+type Routes = 'fromString' | 'fromNumber'
+// 4. The method (in case of procedures - 'call')
+type Method = 'call'
+// 5. Router name
+type RN = 'example'
+// 6. Type of Custom Context (defined above)
+
+// our re-usable resolver definition
+const resolver = (res: Res, ctx: CTX & Context<Routes, Method, Args, RN>) => {
+  // note the intersection           ^ `&` merging custom context `CTX` with base context `Context`
+  return ctx.foo + res + 'bit'
+}
+
+// Time to put it all together:
+const a = api({ context })
+const router = a.router({
+  name: 'example',
+  routes: [
+    a.procedure('fromString', fromString, resolver)
+    a.procedure('fromNumber', fromNumber, resolver)
+  ]
+})
+```
+
+Well that was bit of a hassle, but it ensures our resolver are re-usable and fully type-safe!
+If you don't care about type-safety as much, you can kind of hackishly work-around with [interceptors](interceptors). Even though generally I would recommend taking the extra time and typing out interceptors instead as it ensures
+your types are always correct and does not necessitate type assertions.
+
+Honestly it's not that difficult to write once you write a couple of re-usable resolvers of your own. Just takes some time getting used to all the types you need to pass 💪
+
+But generally it's always preferrable to write your  resolvers inside of procedure definitions _(when possible/reasonable)_
+
+```ts
+const a = api({ context: { foo: 'foo' }})
+a.procedure('example', () => null, (res, ctx) => ctx.foo) // 'foo'
+// =>                                             ^ full type-safety out of the box, both custom and base context 
+```
