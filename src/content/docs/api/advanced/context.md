@@ -1,0 +1,102 @@
+---
+title: Context
+---
+
+There are two kinds of context that you need to be aware of:
+
+1. **Base context** Which is the context included in every [resolver](resolvers), [adapter](adapters), [custom method](custom) and [interceptor](interceptors) by default.
+2. **Custom context** That you manually specify.
+
+## Base context
+
+The base context is handled by the package itself. It consists of the following properties.
+
+```ts
+type BaseContext = {
+  route: string // exact - i.e. 'getUserById'. Matches the route names of procedures/requests/custom
+  routerName: string // exact i.e. 'users', matches the `name` of router
+  args: readonly unknown[] // exactly typed arguments you passed, i.e. ['foo', 2]
+  method: string // exact method used, i.e. 'call' for procedures, 'get', 'post', etc. for request
+  type: string // exact type, enum of 'procedure' | 'request' | 'custom'
+}
+// 💡 If used in a 'fn' or 'resolver' interceptor, also includes { result: ReturnType }
+// check out Interceptors guide for more info.
+```
+
+This context will always be available and cannot be overiden!
+
+## Custom context
+
+While the provided base context is nice, it's likely you will need to pass some custom properties as well. This is not an issue and the package encourages this with full type-safety!
+
+All you need to do is add a context your `api` sdk initialization.
+
+```ts
+import { api } from '@hulla/api'
+
+const context = { foo: 'foo' }
+const a = api({ context })
+```
+
+Now our base context is enriched with the passed custom context
+
+```ts
+const router = a.router({
+  name: 'withContext',
+  routes: [
+    // using a resolver (check Resolvers docs for more info)
+    a.procedure('baz', () => 'bar', (res, ctx) => ...),
+    // =>         fn result === 'bar' ^    ^ base context & custom context
+  ],
+})
+
+const contextAPI = a.create(router)
+```
+
+And that's all you need, in the next section we'll show a practical example of using context.
+
+## Usage
+
+In order to use a context in our [procedures](/docs/api/core-concepts/procedures) we'll need to take advantage of the [resolvers](resolvers).
+
+You can follow the link to study more in-depth about resolvers, but essentially the most important part to understand is:
+
+> Resolvers are callbacks, which take the following arguments:
+>
+> 1. Result of the main function
+> 2. Merged [custom context](#custom-context) with [base context](#base-context)
+>
+> and modify the result of the procedure / request / custom call.
+
+For example:
+
+```ts
+import { api } from '@hulla/api'
+
+const a = api({ context: { baseURL: 'localhost:8000' } })
+
+const router = a.router({
+  name 'GET',
+  routes: [
+    // Note there's a Request integration which does this more elegantly (check it out!), 
+    // but to keep this example simple, here's how it would look using a procedure.
+    a.procedure(
+      'userById',
+      (id: string) => `/users/${id}`
+      (path, context) => fetch(`${context.baseURL}${path}`, { method: context.routerName })
+      // =>                   `localhost:8000/users/${id}`, { method: 'GET' }
+      // =>                    ^ custom context,  ^ result   ^ base context
+      // note you could create a re-usable fetch resolver like this 💡
+    )
+  ]
+})
+```
+
+And as easy as that, we made use of our context inside the actual calls.
+
+## Where to find context
+
+- [Resolvers](resolvers) _(example above)_
+- [Adapters](adapters)
+- [Interceptors](interceptors)
+- [Custom Methods](custom)
