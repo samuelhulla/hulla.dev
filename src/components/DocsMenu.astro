@@ -1,44 +1,34 @@
 ---
-import { getCollection } from 'astro:content'
 import Select from './Select.astro'
-import { entries } from '@/utils/objects'
+import { entries, keys } from '@/utils/objects'
+import { NAVIGATION } from '@/content/navigation'
 
-const cols = await getCollection('docs')
 const { slug } = Astro.params
-const pkg = slug?.split('/')[0]
-const packages = Array.from(
-  new Set(cols.map((col) => col.slug.split('/')[0]))
-).filter((name) => name !== 'index')
-const options = packages.map((pkg) => ({ value: pkg, label: pkg, name: pkg }))
+const pkg = slug?.split('/')[0] as keyof typeof NAVIGATION
 
-const chapters = cols
-  .filter((col) => col.slug.startsWith(pkg ?? ''))
-  .map((col) => ({ ...col, label: col.slug.replace(slug ?? '', '') }))
-
-const byCategory = chapters.reduce(
-  (acc, col) => ({
-    ...acc,
-    [col.data.category ?? col.data.title]: [
-      ...(acc[col.data.category ?? col.data.title] ?? []),
-      col,
-    ],
-  }),
-  {}
-)
+// we could do getCollections and map them programatically, but since we need to do sorting
+// anyways if we want other order than alphabetical, we might as well hard-code it
+// as it's more performant to write a static json-like structure than do sorting and mutation in JS
+const chapters = NAVIGATION[pkg]
 ---
 
 <menu class="sticky inset-0 h-screen min-w-[18%] bg-gray-900/80 p-8">
-  <Select class="mb-4" name="Package" options={options} />
+  <Select
+    class="mb-4"
+    name="Package"
+    options={keys(NAVIGATION).map((pkgName) => ({
+      label: `@hulla/${pkgName}`,
+      value: pkgName,
+    }))}
+  />
   {
-    entries(byCategory).map(([category, chapters]) => (
+    entries(chapters).map(([category, chapters]) => (
       <details open>
         <summary class="text-lg font-semibold">{category}</summary>
         <ul class="space-y-1 px-6 py-1">
-          {chapters.map((col) => (
+          {chapters.map((chapter) => (
             <li class="font-thin">
-              <a href={`/docs/${col.slug}`}>
-                {col.data.name ?? col.data.title}
-              </a>
+              <a href={`/docs/${pkg}/${chapter.url}`}>{chapter.label}</a>
             </li>
           ))}
         </ul>
