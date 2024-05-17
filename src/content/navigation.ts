@@ -8,7 +8,7 @@ const CATEGORIES = [
   'Reference',
 ] as const
 
-export const api: {
+const api: {
   [K in (typeof CATEGORIES)[number]]: {
     label: string
     url: string
@@ -39,6 +39,19 @@ export const api: {
   Reference: [],
 }
 
+const ui = {}
+const create = {}
+const forms = {}
+const ts = {}
+const docs = {}
+const env = {}
+
 export const NAVIGATION = {
   api,
+  ui,
+  env,
+  create,
+  forms,
+  docs,
+  ts,
 }
