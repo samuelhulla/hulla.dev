@@ -1,0 +1,25 @@
+---
+import { cva, type VariantProps } from '@/utils/cn'
+
+const variants = cva(
+  'rounded-lg border bx-2 py-1 text-center font-mono text-xs',
+  {
+    variants: {
+      variant: {
+        primary: 'border-primary bg-primary/20 text-primary/90',
+        accent: 'border-accent bg-accent/20 text-accent/90',
+        error: 'border-error bg-error/20 text-error/90',
+        warning: 'border-warning bg-warning/20 text-warning/90',
+      },
+    },
+  }
+)
+export interface Props extends VariantProps<typeof variants> {
+  class?: string
+}
+const { class: className, variant } = Astro.props
+---
+
+<div class:list={variants({ variant, className })}>
+  <slot />
+</div>
