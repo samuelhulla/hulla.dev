@@ -1,0 +1,17 @@
+---
+import DocsMenu from '@/components/DocsMenu.astro'
+import ThemeToggle from '@/components/ThemeToggle.astro'
+import Page from './Page.astro'
+
+// 1. The frontmatter prop gives access to frontmatter and other data
+const { frontmatter, collection } = Astro.props
+---
+
+<Page class="flex" title={frontmatter.title}>
+  <!-- <ThemeToggle /> -->
+  <DocsMenu />
+  <main class="prose max-w-[80%] p-8 dark:prose-invert">
+    <h1 class="pb-4">{frontmatter.title}</h1>
+    <slot />
+  </main>
+</Page>
