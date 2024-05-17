@@ -1,0 +1,28 @@
+---
+import { cn } from '@/utils/cn'
+export interface Props {
+  class?: string
+}
+
+const { class: className } = Astro.props
+---
+
+<div class:list={cn('relative', className)}>
+  <hr class="border-none" />
+  <span
+    aria-hidden="true"
+    class="absolute inset-x-20 top-0 h-[2px] w-4/5 bg-gradient-to-r from-transparent via-indigo-500 to-transparent blur-sm">
+  </span>
+  <span
+    aria-hidden="true"
+    class="absolute inset-x-20 top-0 h-px w-3/4 bg-gradient-to-r from-transparent via-indigo-500 to-transparent">
+  </span>
+  <span
+    aria-hidden="true"
+    class="absolute inset-x-60 top-0 h-[5px] w-1/4 bg-gradient-to-r from-transparent via-sky-500 to-transparent blur-sm">
+  </span>
+  <span
+    aria-hidden="true"
+    class="absolute inset-x-60 top-0 h-px w-1/4 bg-gradient-to-r from-transparent via-sky-500 to-transparent">
+  </span>
+</div>
