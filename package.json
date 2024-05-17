@@ -76,7 +76,7 @@
         "@hulla/docs",
         "@hulla/forms",
         "@hulla/env",
-        "@hulla/new",
+        "@hulla/create",
         "@hulla/ts"
       ],
       "types": [
