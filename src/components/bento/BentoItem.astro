@@ -1,0 +1,30 @@
+---
+import { cn } from '@/utils/cn'
+
+export interface Props {
+  class?: string
+  title: string
+  description: string
+}
+
+export type Slots = 'icon'
+
+const { class: className, title, description } = Astro.props
+---
+
+<div
+  class:list={cn(
+    'flex cursor-pointer flex-col justify-between space-y-4 rounded-xl border border-shadow p-4 transition duration-200 hover:shadow-xl',
+    className
+  )}>
+  <slot />
+  <div class="transition duration-200 hover:translate-x-2">
+    <slot name="icon" />
+    <h3 class="mb-2 mt-2 font-sans text-[1.5rem] font-bold text-text">
+      {title}
+    </h3>
+    <p class="text-sm text-description">
+      {description}
+    </p>
+  </div>
+</div>
