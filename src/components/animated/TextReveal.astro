@@ -1,0 +1,41 @@
+---
+import { cn } from '@/utils/cn'
+import type { HTMLTag } from 'astro/types'
+
+export interface Props {
+  text: string
+  class?: string
+  element?: HTMLTag
+  split?: string
+  stagger?: number
+}
+
+const {
+  text,
+  stagger = 0.2,
+  class: className,
+  split = '',
+  element: Element = 'p',
+} = Astro.props
+---
+
+<Element
+  data-stagger={stagger}
+  class:list={cn('text-text', className)}
+  id="text-reveal">
+  {
+    text
+      .split(split)
+      .map((segment) => <span class="text-reveal opacity-0">{segment}</span>)
+  }
+</Element>
+
+<script>
+  import { animate, stagger } from 'motion'
+  const staggerValue = document.getElementById('text-reveal')?.dataset.stagger
+  animate(
+    '.text-reveal',
+    { opacity: 1 },
+    { duration: 2, delay: stagger(+(staggerValue || 0.2)) }
+  )
+</script>
