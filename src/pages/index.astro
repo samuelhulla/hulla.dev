@@ -1,0 +1,127 @@
+---
+import Bubble from '@/components/Bubble.astro'
+import Page from '@/layouts/Page.astro'
+import Linebreak from '@/components/Linebreak.astro'
+import Bento from '@/components/bento/Bento.astro'
+import BentoItem from '@/components/bento/BentoItem.astro'
+import Content from '@/layouts/Content.astro'
+import TextReveal from '@/components/animated/TextReveal.astro'
+import Slide from '@/components/client/Slide'
+import Card from '@/components/Card.astro'
+import Chip from '@/components/Chip.astro'
+import Carousel from '@/components/Carousel.astro'
+---
+
+<Page title="hulla.dev">
+  <Linebreak class="sticky inset-0" />
+  <!-- hero sectioon -->
+  <Content element="header" class="">
+    <div
+      class="fixed -right-20 top-20 rotate-[60deg] rounded-sm bg-yellow-400 px-12 py-2 font-bold text-black shadow-lg">
+      <p>under construction</p>
+    </div>
+    <TextReveal class="mb-4 mt-8" text="hulla.dev" element="h1" stagger={0.1} />
+    <Slide
+      client:load
+      transition={{ duration: 1.5, delay: 0.2 }}
+      initial={{ x: -100, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}>
+      <p class="text-sm text-description">
+        <span aria-hidden="true" class="text-primary">{'> '}</span>In a hurry?
+        Go to a section you need straight away
+      </p>
+    </Slide>
+    <Bento class="mx-auto mt-6 min-h-[60vh] grid-rows-2">
+      <BentoItem
+        title="> about me"
+        description="My backstory, my goals and my dreams, my motivation.">
+        <div
+          class="bg-grid group flex h-full w-full items-center justify-between gap-2 px-4 shadow-inner">
+          <Bubble
+            title="Hello there! 👋"
+            description="I'm Samuel and I've created this website"
+          />
+        </div>
+      </BentoItem>
+      <BentoItem
+        class="md:col-span-2"
+        title="> open-source"
+        description="Web and mobile is awesome, but some parts are a hassle. Focus on building awesome projects, without sacrificing DX!">
+        <Carousel class="flex h-full flex-1 items-center">
+          <Card
+            class="min-w-52"
+            title="@hulla/api"
+            description="RPC Manager of the futue">
+            <Chip class="w-16" variant="accent">stable</Chip>
+          </Card>
+          <Card
+            class="min-w-52"
+            title="@hulla/ui"
+            description="Multi-platform packageless UI">
+            <Chip class="w-16" variant="error">wip</Chip>
+          </Card>
+          <Card
+            class="min-w-52"
+            title="@hulla/docs"
+            description="Automatic docs generator">
+            <Chip class="w-16" variant="warning">alpha</Chip>
+          </Card>
+          <Card
+            class="min-w-52"
+            title="@hulla/forms"
+            description="Form handling made easy">
+            <Chip class="w-16" variant="primary">beta</Chip>
+          </Card>
+          <Card
+            class="min-w-52"
+            title="@hulla/env"
+            description="Hassle-free .env files">
+            <Chip class="w-16" variant="error">wip</Chip>
+          </Card>
+          <Card
+            class="min-w-52"
+            title="@hulla/ts"
+            description="Minimal & fastest">
+            <Chip variant="error" class="w-16">wip</Chip>
+          </Card>
+          <Card
+            class="mr-4 min-w-52"
+            title="@hulla/create"
+            description="Opionated project starters">
+            <Chip variant="error" class="w-16">wip</Chip>
+          </Card>
+        </Carousel>
+      </BentoItem>
+      <BentoItem
+        class="md:row-span"
+        title="> blog & videos"
+        description="Internet is full of fluff. View stuff that respects your time!">
+        I'm
+      </BentoItem>
+      <BentoItem
+        title="> contact & socials"
+        description="Wanna stay in touch or got a pressing matter to discuss?">
+        here
+      </BentoItem>
+      <BentoItem
+        title="> courses"
+        description=`${new Date().getFullYear() - 2011} years of successes, failures and lessons - packaged`>
+        p
+      </BentoItem>
+    </Bento>
+    <Slide
+      client:load
+      transition={{ duration: 1.2, delay: 1.7 }}
+      initial={{ y: 200, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}>
+      <section class="my-8 text-center">
+        <h3>Got time to spare?</h3>
+        <p class="text-sm text-description">
+          Scroll down to see the entire presentation
+        </p>
+      </section>
+    </Slide>
+  </Content>
+  <div class="h-screen"></div>
+  <div class="h-screen"></div>
+</Page>
