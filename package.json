@@ -99,16 +99,16 @@
           "name": "update"
         },
         {
-          "emoji": "🗂️",
-          "code": ":card_index_dividers: assets:",
-          "description": "Static assets for the website",
-          "name": "assets"
-        },
-        {
           "emoji": "📚",
           "code": ":books: docs:",
           "description": "documentations",
           "name": "docs"
+        },
+        {
+          "emoji": "🎨",
+          "code": ":art: style:",
+          "description": "tailwind, formatting, etc.",
+          "name": "style"
         },
         {
           "emoji": "🪛",
@@ -121,6 +121,12 @@
           "code": ":robot: devops:",
           "description": "ci/cd or other form of automation",
           "name": "devops"
+        },
+        {
+          "emoji": "🗂️",
+          "code": ":card_index_dividers: assets:",
+          "description": "static assets for the website",
+          "name": "assets"
         },
         {
           "emoji": "♻️",
