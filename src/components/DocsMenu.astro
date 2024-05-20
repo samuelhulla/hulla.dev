@@ -1,7 +1,7 @@
 ---
 import Select from './Select.astro'
-import { entries, keys } from '../utils/objects'
-import { NAVIGATION } from '../content/navigation'
+import { entries, keys } from '@/utils/objects'
+import { NAVIGATION } from '@/content/navigation'
 
 const { slug } = Astro.params
 const pkg = slug?.split('/')[0] as keyof typeof NAVIGATION
