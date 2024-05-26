@@ -10,18 +10,18 @@ Installing `@hulla/api` is super simple. It has 0 dependencies and works pretty 
 | `bun`           | `bun add @hulla/api`                                                  |
 | `yarn`          | `yarn add @hulla/api`                                                 |
 | `npm`           | `npm install @hulla/api`                                              |
-| `deno`          | `import { api } from 'https://deno.land/x/hulla_api@v1.0.4/index.ts'` |
+| `deno`          | `import { api } from 'https://deno.land/x/hulla_api@v1.0.5/index.ts'` |
 
 And we're good to go! 🚀
 
 ## Where to next?
 
-If you're not sure where to start, either check the [Quick start](quickstart) or check out the Guide section.<br/>
-At the very least you'll need to understand the following:
+If you're not sure where to start, either check the [Quick start](quickstart) or check out the Core Concepts section as a recommended starting point.
 
-1. [Procedure](/docs/api/core-concepts/procedures)
+At the very least you'll need to understand the following concepts:
+
+1. [Procedures](/docs/api/core-concepts/procedures)
 2. [Router](/docs/api/core-concepts/router)
-3. [Create API](/docs/api/core-concepts/create)
 
 Or if you are familiar with api/rpc managers, feel free to check specific examples straight away.
 

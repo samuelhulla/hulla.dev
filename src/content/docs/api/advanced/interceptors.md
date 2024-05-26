@@ -2,16 +2,16 @@
 title: Interceptors
 ---
 
+> Before writing interceptors, if you need to mutate/transform specific procedure results, or run middleware only on specific routes - check out [resolvers](resolvers) first.
+>
+> __Interceptors are intended to be used when you need to execute something on every single defined route!__
+
 Interceptors provide a way to
 
 - mutate your passed `arguments`
 - mutate your result _(be it of `fn` or `resolver`)_
 - add input / output validators or transformers
 - implement middleware or logging
-
-> Before writing interceptors, if you need to mutate/transform specific procedure results, or run middleware only on specific routes - check out [resolvers](resolvers) first.
->
-> Interceptors are best used if they need to execute something on every single defined route (i.e. middleware, or transforming only specific route methods which have same return types).
 
 ## Declaration
 
@@ -29,7 +29,7 @@ Interceptors are passed as an object. The object has 3 optional properties, each
 import { api } from '@hulla/api'
 
 const a = api()
-a.router({
+export const interceptorAPI = a.router({
   name: 'example',
   routes: [],
   // define them here!
@@ -49,7 +49,8 @@ Interceptors are a very powerful tool that can be used in various ways
 ### As Middleware
 
 ```ts
-// A quick example to check if we're fetching the posts for the same user as currently authenticated
+// A quick example to check if we're fetching the posts 
+// for the same user as currently authenticated
 import { api } from '@hulla/api'
 import { db } from './db'
 import { isAuthenticated } from './queries/users'
@@ -57,19 +58,15 @@ import { isAuthenticated } from './queries/users'
 const getUserPosts = (id: string) => db.from('posts').where('author.id', '==', id).select('*')
 
 const a = api({ context })
-const router = a.router({
+export const protectedAPI = a.router({
   name: 'protected',
   routes: [a.procedure('getPosts', getUserPosts)],
   interceptors: {
     fn: (ctx) => {
-      // if we had multiple routes, we should do if (ctx.route === 'getUserPosts') first
-      // but to keep the example minimal it's ok, since we have only 1 route
-      const userId = ctx.args[0]
-      if (!isAuthenticated(userId)) {
-        throw new Error('You do not have access to these posts')
+      if (!isAuthenticated()) {
+        throw new Error('Please log in first!')
       }
-      // now every single call will check for authentication
-      return ctx.result
+      return ctx.result // now every single call will check for authentication
     }
   }
 })
@@ -91,13 +88,12 @@ const schema = z.object({
 })
 
 const a = api()
-const router = a.router({
+export const validatedAPI = a.router({
   name: 'validated',
   routes: [a.procedure('createUser', createUser)],
   interceptors: {
     args: (ctx) => {
-      // if we had multiple routes, we should do if (ctx.route === 'createUser') first
-      // but to keep the example minimal it's ok, since we have only 1 route
+      // this interceptor presume every single route has a first argument of type User
       return schema.parse(ctx.args[0])
       // 💡 note: in practice if you had to do this for specific routes,
       // it feels like you should be writing a Resolver instead (check the docs out)
@@ -112,19 +108,18 @@ const router = a.router({
 import { api } from '@hulla/api'
 
 const a = api()
-const router = a.router({
+export const exampleAPI = a.router({
   name: 'plus1',
   routes: [a.procedure('sum', (a: number, b: number) => a + b)],
   interceptors: {
     fn: (ctx) => ctx.result + 1 // 🤷
   }
 })
-const example = a.create(router)
 
-a.call('sum', 1, 1) // 3 (1 + 1 [fn] + 1 [interceptor])
+exampleAPI.call('sum', 1, 1) // 3 (2 [fn sum 1 + 1] + 1 [interceptor])
 ```
 
-## Caveat - Resolver interceptor
+## Caveat: Resolver interceptor
 
 Due to the nature of procedure definitions, `args` and `fn` with always be defined. However it's possible to define a [procedure](/docs/api/core-concepts/procedures) without a [resolver](resolvers).
 For this reason, one thing to keep in mind, a `resolver interceptor` will only run on procedures where a resolver is defined.
@@ -135,7 +130,7 @@ import { api } from '@hulla/api'
 const a = api()
 const num = (a: number) => a
 
-const router = a.router({
+export const exampleAPI = a.router({
   name: 'plus1',
   routes: [
     a.procedure('num', num)
@@ -146,48 +141,46 @@ const router = a.router({
   }
 })
 
-const f = a.create(router)
-
-f.call('num', 1) // 1 (resolver interceptor didn't fire - no resolver provided)
-f.call('numRes', 1) // '1example' (resolver interceptor fired)
-// note: if 'fn' or 'args' interceptors were defined, they would fire for both as normal
+exampleAPI.call('num', 1) // 1 (resolver interceptor didn't fire - no resolver provided)
+exampleAPI.call('numRes', 1) // '1example' (resolver interceptor fired)
+// note: if 'fn' or 'args' interceptors were defined, they would fire for both!
 ```
 
 If you need an interceptor to run on every call, use the `fn interceptor` instead.
 
-## Caveat - Type safety
+## Caveat: Type safety
 
-### TL/DR:
+### TL/DR
 
-Unlike [resolvers](resolvers), __interceptors do not override return types__
+Unlike [resolvers](resolvers), __interceptors do not override return types__ As long as you don't attempt to override them, you will not run into any issues.
 
 ```ts
 const a = api()
-const router = a.router({
+export const gotchaAPI = a.router({
   name: 'return types',
   routes: [
     a.procedure('what do i return?', () => 1, res => res.toString())
   ],
   interceptors: {
-    // @ts-expect-error Typeguard will try to prevent you from overriding resolver return type (string -> boolean)
-    resolver: ctx => !!ctx.result // ❌ package correctly tries to warn you not to override resolver return type
+    // @ts-expect-error Typeguard will try to prevent you from overriding resolver return type
+    resolver: ctx => !!ctx.result // ❌ package correctly tries to warn you (string -> boolean)
   }
 })
-const example = a.create(router)
 
-const d = example.call('what do i return?') // Well... what do I return? 🤔
+const d = gotchaAPI.call('what do i return?') // Well... what do I return? 🤔
 
 // What happens:
-// 1. Fn return 1 (number)
+// 1. Fn returns 1 (number)
 // 2. Resolver returns '1' (string)
 // 3. Interceptor takes resolver return '1' and transforms it to true (boolean)
 
-// However! Interceptors do not return type, so the correct answer is:
+// However! Interceptors do not mutate type, so the correct answer is:
 // d === true
-// typeof d === string // (this obviously does not reflect reality, but interceptors do not override types)
+// typeof d === string 
+// (this obviously does not reflect reality, but interceptors do not override types)
 ```
 
-As you can see, this is not a ideal, luckily shouldn't happen to you (keep in mind we ignored a correctly raised error with `//@ts-expect-error`) but there is a good reason for this behaviour _(keep reading further if you're interested why)_.
+As you can see, this is not a ideal, luckily shouldn't happen to you _(keep in mind we ignored a correctly raised error with `// @ts-expect-error`)_ but there is a good reason for this behaviour _(keep reading further if you're interested why)_.
 But if I were to sum it up in one sentence:
 
 > If you need to override return type or take actions only on specific routes, use a [resolver](resolvers) instead!
@@ -209,9 +202,10 @@ interceptors: {
     // which could be unrelated to type typeof ctx.result
 
     // You'd need to write type narrowers for every route i.e.
-    // const isCtxRoute<Routes, BaseContext, CustomContext, Method>(ctx: ...): ctx is ... (narrow result type)
-    // this is fairly advanced typescript with multiple generics and if you have a router with 10+ routes
-    // this gets annoying real quick as you need to narrow it PER ROUTE STRING for exact returns!
+    // isCtxRoute<Routes, BaseContext, CustomContext, Method>(ctx: ...): ctx is ... 
+    // (narrow result type) this is fairly advanced typescript with multiple generics and 
+    // if you have a router with 10+ routes this gets annoying real quick 
+    // as you would need to narrow it PER ROUTE STRING for exact returns!
   }
 }
 ```
@@ -240,7 +234,9 @@ interceptors: {
     // Note: if you need to do this in practice, it sounds like you're better off with a resolver
     // interceptors don't make that much sense when they execute only for 1 specific route
     if (ctx.route === 'bar') {
-      // return ctx.result + 1 // ❌ TypeError: Operator '+' cannot be applied to types 'string | number' and 'number'.
+      // return ctx.result + 1 // (would be TypeError ❌)
+      // TypeError: Operator '+' cannot be applied to types 'string | number' and 'number'.
+
       // need to do type assertion instead (but need to be careful to cast it correctly)
       return (ctx.result as number) + 1 // ✅ works
     }

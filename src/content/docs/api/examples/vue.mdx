@@ -1,0 +1,134 @@
+---
+title: Vue & Nuxt
+---
+
+Vue itself does provide some basic data fetching paradigms, like the `useFetch` hook and the `<script>` tag.
+
+## Setup
+
+Consider the following API router definition 
+
+```ts
+import { api } from '@hulla/api'
+
+const a = api()
+export const usersAPI = a.router({
+  name: 'users',
+  routes: [
+    a.procedure('getAllUsers', () => db.users.get()),
+    a.procedure('getUserById', (id: string) => db.users.get(id))
+    a.procedure('example', () => fetch('https://api.com/example')),
+    // etc...
+  ]
+})
+```
+
+> Note you can also use the [`request` integration](/docs/api/integrations/requests) for type-safe requests.
+
+## The `<script setup>` tag
+
+The most basic examkple is to use a fetch call in your `<script>` tag.
+
+
+```vue
+<script setup>
+import { ref } from 'vue'
+
+const data = ref(null)
+const error = ref(null)
+
+const fetchData = async () => {
+  try {
+    data.value = await usersAPI.call('getAllUsers')
+  } catch (e) {
+    error.value = e
+  }
+}
+</script>
+
+<template>
+  <div v-if="error">Oops! Error encountered: {{ error.message }}</div>
+  <div v-else-if="data">
+    Data loaded:
+    <pre>{{ data }}</pre>
+  </div>
+  <div v-else>Loading...</div>
+</template>
+```
+
+## Nuxt
+
+While the script tag is a powerful tool, for more complex applications it's common to use an advanced solution like Nuxt.
+
+### useFetch
+
+The most common solution is the `useFetch` composable wrapper.
+
+While I generally try to recommend [not to use framework specific solutions inside the procedure definitions](/docs/api//core-concepts/procedures#server-vs-client)
+here it's really up to you to decide how you want to structure your API.
+
+1. My preffed way that adheres to best practices - return `useFetch` args from the procedure
+
+```ts
+routes: [
+  a.procedure('getUserById', (id: string) => ['https://api.com/users/${id}'])
+  a.procedure('createUser', (user: User) => [
+    'https://api.com/users',
+    { method: 'POST', body: JSON.stringify(user) }
+  ])
+]
+```
+
+and then
+
+```vue
+<script setup lang="ts">
+  import { usersAPI } from '@/api/users'
+  const { data: user } = useFetch(...usersAPI.call('getUserById', '123'))
+</script>
+
+<template>
+  <div>{{ user }}</div>
+</template>
+```
+
+2. Or add it to the procedure directly _(do this if you only will fetch data through vue/nuxt)_
+
+```ts
+routes: [
+  a.procedure('getUserById', (id: string) => useFetch(`https://api.com/users/${id}`))
+]
+```
+
+and then
+
+```vue
+<script setup lang="ts">
+  import { usersAPI } from '@/api/users'
+  const { data: user } = await usersAPI.call('getUserById', '123')
+</script>
+
+<template>
+  <div>{{ user }}</div>
+</template>
+```
+
+> In an ideal scenario, there should be an adapter / integration for `vue` that would just take the procedure and transform it to `useFetch`,
+> similar how [requests](/docs/api/integrations/requests) integration works.
+
+### $fetch
+
+The `$fetch` with `useAsyncData` is pretty much identical to `useFetch`, with just missing deduplicaton. Pleae refer to example above.
+
+### useAsyncData
+
+Here the standard data fetching principles work nicely
+
+```vue
+<script setup lang="ts">
+  import { usersAPI } from '@/api/users'
+
+  const { data, error } = useAsyncData('getAllUsers', () => usersAPI.call('getAllUsers'))
+</script>
+```
+

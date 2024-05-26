@@ -1,0 +1,295 @@
+---
+title: swr integration
+---
+import Aside from '../../../../components/Aside.astro'
+
+This is an official integration for [`@tanstack/query`](https://swr.vercel.app/). 
+Here's some quick info about it
+
+- It takes care of `queryKey` encoding and decoding for you
+- It has 100% coverage/compatibility with all swr features
+
+Plus it enforces best practices and helps with plethora of complications you'd _likely_ not even think about _(read the motivation section_ 🤓 _)_
+
+## Motivation
+
+Why should you use this integration? Imagine you got an api interface with multiple requests
+
+```ts
+const router = a.router({
+  name: 'example',
+  routes: [
+    a.procedure('getAllUsers', async () => db.from('users').select('*')),
+    a.procedure('getUserById', getUserById)
+    // and 15 other procedures like this...
+  ]
+})
+```
+
+This works nicely on server and some basic client calls, but you decide to integrate `swr` to provide some caching on client
+and smoother optimistic updates.
+
+Easiest way is to do this, is to append a route version of our api calls with `useSWR`:
+
+```ts
+// ❌ DON'T DO THIS!!!
+routes: [
+  a.procedure('getUserById', getUserById),
+  a.procedure(
+    'getUserByIdSWR',
+    (id: string) => useSWR(['getUserById', id], () => getUserById(id))
+  )
+]
+```
+
+<Aside variant="warning" title="However, this pattern is bad for multiple reasons:">
+1. __Your API no longer works on both server and client!__
+2. Your `useSWR` (`swr`) dependency is going to get imported on every single api call, even in modules where you don't use the `SWR` version of the calls.
+3. You have to manage queryKeys and make sure they are unique accross your codebase.
+4. Your routes are no longer DRY, multiple definitions of the same routes
+5. You don't have a way of passing `SWROptions` unless you specify them as argument in every call _(how would that even work with `...spread` args? There's no way to access it!)_.
+</Aside>
+
+Luckily, this integration remedies all 5 of these issues! 🎉
+
+
+## Installation
+
+```bash
+# Depending on yur package manager:
+pnpm add @hulla/api-swr
+bun add @hulla/api-swr
+npm install @hulla/api-swr
+yarn add @hulla/api-swr
+```
+
+> All the chapters presume you've done the setup as described in the [Setup](#setup) section below.
+
+```ts
+import { api } from '@hulla/api'
+import { swr, mutation, queryKey } from '@hulla/api-query'
+// note the package is tree-shakeable, so you can import only what you need
+// to see which methods you need for which calls, check the table of contents to the right ->
+// i.e. if you only need to do useSWR calls, just import { swr } from '@hulla/api'
+
+const a = api()
+const usersAPI = a.router({
+  name: 'users',
+  routes: [
+    a.procedure('getUserById', getUserById),
+    a.procedure('getUsersPage', getUsersPage),
+    // ...
+  ],
+  adapters: { swr, mutation, queryKey }, // add the integration adapters here 🚀
+})
+```
+
+Now we'll go over individual integration methods and how they can be converted to `swr` calls.
+
+## swr
+
+All the `swr` method (`import { swr } from '@hulla/api-swr'`) does, is create a `SWROptions` array for you
+to re-use in your query related calls.
+
+Consider the standard call we'd use in the base version of `@hulla/api`
+
+```ts
+usersAPI.call('getUserById', '123') // how you'd standardly call it
+// => Promise<User>
+```
+
+To transform this into a query options config, we'll just add a `.swr` before the `.call` method.
+
+```ts
+usersAPI.swr.call('getUserById', '123')
+// => [
+//      readonly [`${method}/${router}/getUserById', arg: '123'],
+//      () => getUserById('123') }
+//    ]
+```
+
+### useSWR
+
+We'll start off with the most basic example - a standard [`useSWR`](https://swr.vercel.app/docs/data-fetching) call.
+
+Accessing a swr query is as simple as accessing a standard call.
+
+```ts 
+function App () {
+  const [queryKey, queryFn] = usersAPI.swr.call('getUserById', '123')
+  const { data, error } = useSWR(queryKey, queryFn)
+}
+```
+
+<Aside title="Pro tip!" variant="note">
+If you don't want to destructure/spread the array every time, export your own version of `useSWR` as so:
+
+```ts
+// src/lib/hooks/swr.ts
+import useSWRInternal from 'swr'
+
+export function useSWR<QK, QF>(data: [QK, QF], options?: SWROptions<QK, QF>) {
+  const [queryKey, queryFn] = data
+  return useSWRInternal(queryKey, queryFn)
+}
+
+// then later:
+import { useSWR } from '@/lib/hooks/swr'
+const { data, error } = useSWR(usersAPI.swr.call('getUserById', '123'))
+
+// Also note, you can do the same pattern for useSWRInfinite, useSWRSubscription, etc.
+```
+
+If you're asking, why the package doesn't export this helper for me? It's because
+it doesn't have a peer dependency to swr not to muddy the dependency tree. Hear me out why it's actually a good thing: 👇
+
+ While copy-pasting this code is a tiny hassle, it doesn't obstruct
+the dependency tree of your project. If you did `import { useSWR } from '@hulla/api-swr'` you'd have no way of knowing
+that the `useSWR` method is identical to `useSWR` of `swr`. This way you can be 100% sure, that if you have an error
+with the `useSWR` method, then it 100% is from that `swr` package itself and not something weird happening in the `@hulla/api-swr` exported wrapper.
+So yes, you'll spend 5 extra seconds copy-pasting this code-sample, but now you have clear distinction as to which package does what and it's a win for your project architecture in the long run! 🚀
+</Aside>
+
+### useSWRInfinite
+
+While you can cover most use-cases with just `useSWR` _(including pagination)_, sometimes you do need [infinite queries](https://swr.vercel.app/docs/pagination#useswrinfinite).
+
+It works the same as `useSWR`, since the `.swr` just returns a key and function.
+
+```ts
+const [queryKey, queryFn] = usersAPI.swr.call('getUsersPage', { page: 1 })
+const { data, size } = useSWRInfinite(queryKey, queryFn)
+```
+
+### useSWRSubscription
+
+For subscribing to real-time data sources, `swr` exports a handy [`useSWRSubscription` hook](https://swr.vercel.app/docs/subscription).
+
+It operates the same way, the only distinction being, that the route fn you pass to your procedure must match the `swr subscribe` type.
+
+```ts
+// this is how swr defines it
+subscribe: (key: Key, options: {
+  next: (error?: Error | null, data?: Data) => void
+}) => () => void): { data?: Data, error?: Error }
+```
+
+As long as the given fn matches this type, you can use the same syntax as above
+
+### preload (Prefetching)
+Same as a `swr` call
+
+```ts
+const [queryKey, queryFn] = usersAPI.swr.call('getUserById', '123')
+preload(queryKey, queryFn)
+```
+
+## mutation
+
+Unlike in the [@tanstack/query integration](query), the `mutate` method of `swr` has the same arguments as `swr`.
+
+Technically you could just use the `.swr` call and it will have the same effect as calling `.mutation` _(as we re-export the same function under the hood anyways)_
+
+But if you want to be explicit in your code _(like me)_, you can use the `mutation` method instead.
+
+### useSWRMutation
+
+```ts
+import useSWRMutation from 'swr/mutation'
+
+const [mutationKey, mutationFn] = usersAPI.mutation.call('addUser', { id: '123', name: 'John' })
+const { trigger } = useSWRMutation(mutationKey, mutationFn)
+```
+
+Note, the `mutate` function is going to be described in the next chapter, because it behaves slightly differently.
+
+## queryKey
+
+And last but not least, we have the `queryKey` method. This is a utility function that helps you decode your queryKeys.
+
+One thing you need to understand, the package encodes queryKey for you. While it may be a small learning curve, from typing out
+your queryKeys manually, it's a huge benefit in the long run.
+
+Especially if you have a large codebase, and when you do in `usersAPI.call('create', ...)` you don't want it to invalidate queries with other
+create initial keys (i.e. `postsAPI.call('create', ...)`). Or even worse, if you have a `GET` and `POST` method with same url. 
+
+That's why the package encodes the `queryKey` for you, to save you a lot of hassle.
+
+### mutate (Revalidation)
+
+swr apart from `useSWRMutation` also exports _(least to me, somewhat confusingly named)_ `mutate` function, which invalidates
+query cache for a given key. Unlike `useSWRMutation` which expects entire length of data, `mutate` only expects the key, and optionally, some other data.
+
+```ts
+const { mutate } = useSWRConfig()
+const [mutationKey, ...data] = usersAPI.queryKey('getUserById', '123')
+mutate(mutationKey, data)
+```
+
+If youre using a bound mutation, you don't have to pass anything, hence you don't need to use `queryKey` at all.
+
+### Caveat: queryKey vs swr.call()[0]
+
+If you're asking yourself:
+
+> Since [`swr`](#swr) integration method already returns query key as first array item, why can't i just use that instead?
+
+Well, first off, congratulate yourself as very observant and pat yourself on the back for a very good question.
+
+Second of all, there's a good reason for it -- When doing stuff like [Revalidation](#mutate-revalidation)  you may not need to 
+always pass the entire length of query key. Cosnider this example
+
+```ts
+export const tAPI = a.router({
+  name: 'tricky',
+  routes: [
+    a.procedure('getById', async (id: string) => getUserById(id)),
+  ],
+  adapters: { swr, queryKey },
+})
+```
+
+Now depending on our usecase
+
+```ts
+// in a useQuery
+useSWR({
+  ...tAPI.swr.call('getById', '123') // ✅ Here the `id` must be passed!
+//...tAPI.swr.call('getById') // ❌ (TypeError) This doesn't make sense, what `id` do I fetch?
+})
+
+// however, in mutate (revalidation)
+const [mutationKey, ...data] = tAPI.queryKey('getById', '123') // ✅ Here the `id` was be passed!
+mutate(mutationKey, data)
+
+const [mutationKey] = tAPI.queryKey('getById') // ✅ Here the `id` wasn't passed, also valid!
+mutate(mutationKey) 
+```
+
+That's an important distinction to make in terms of type-safety. Essentially `swr.call` necessitates, that you pass all the defined arguments in the query function,
+meanwhile `queryKey` just requires the name of the route _(in this case procedure.)_ 
+
+| method | type signature | example |
+| --- | --- | --- |
+| swr | All parameters must be defined | `readonly ['getById', string]` |
+| queryKey | First parameter must be defined, rest doesn't have to be be defined | `readonly ['getById', string` `\|` `undefined]` | 
+
+## All other methods
+
+If you can't find a specific method that `swr` implements, it's likely that you can just make it work
+with combination of `swr`, `mutation` and `queryKey` methods, as long as you understand what they do.
+
+> Least to my knowledge, right now `@hulla/api-swr` is 100% compatible with all `swr` features.
+
+However if you're still struggling to make something work, or a new version of swr was added which no longer works with the integration, 
+please check the links to the right, and either submit an issue or even update, contribute to the package / docs if you found the solution out and help me and others out. ❤️
+
+## Package metadata
+
+| Meta | Description |
+| --- | --- |
+| Package name |  `@hulla/api-swr` |
+| Dependencies | 0 |
+| Dev Dependencies | 1: `@hulla/api` |
+| Integration type | [Adapters](/docs/api/advanced/adapters) |
+| Package size | 430 B (0.43 KB) |

@@ -1,0 +1,61 @@
+---
+title: React Native & Expo
+---
+import Aside from '../../../../components/Aside.astro'
+
+Technically this example does not necessitate it's own page, but I wanted to list it
+here just to showcase it's possible.
+
+## Standard data fetching
+
+React Native does not introduce any specific native data fetching methods, they are equivalent to
+[react's client-side fetching patterns](react#client).
+
+## `@tanstack/query` 
+
+You can check out the official [`@hulla/api-query`](/docs/api/integrations/query) integration for more info.
+
+Here's a minimal example
+
+```ts
+import { api } from '@hulla/api'
+import { query } from '@hulla/api-query'
+
+const a = api()
+export const usersAPI = a.router({
+  name: 'users',
+  routes: [a.procedure('getAllUsers', () => db.users.get())],
+  adapters: { query }, // added the query adapter here
+})
+```
+
+and then
+
+```tsx
+import { useQuery } from '@tanstack/react-query'
+
+export function ClientComponent() {
+  const { data } = useQuery(usersAPI.query.call('getAllusers'))
+  // ...
+}
+```
+
+
+## RSC & server actions
+
+<Aside title="🧪 Experimental API">
+Expo's [`async routes`](https://docs.expo.dev/router/reference/async-routes/) are still an experimental API, that is subject
+to possible breaking changes in the future. Right with the planned release of [Expo Router v4](https://x.com/Baconbrix/status/1629909713910480898), we expect the server actions to mirror 
+the web standards.
+</Aside>
+
+```ts
+export function action() {
+  'use server'
+  return usersAPI.call('getAllUsers')
+}
+```
+
+But this may be subject to change and is not yet ready for current use.
+
+

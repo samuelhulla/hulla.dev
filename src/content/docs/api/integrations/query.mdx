@@ -1,0 +1,347 @@
+---
+title: "@tanstack/query integration"
+---
+import Aside from '../../../../components/Aside.astro'
+
+
+This is an official integration for [`@tanstack/query`](https://github.com/TanStack/query). 
+Here's some quick info about it
+
+- It is a frame-work agnostic integration that will work with all
+framework adapters of tanstack query _(React, Svelte, Vue, Angular, etc)_.
+- It takes care of `queryKey` encoding and decoding for you
+- It has 100% coverage/compatibility with all tanstack query features
+
+Plus it enforces best practices and helps with plethora of complications you'd _likely_ not even think about _(read the motivation section_ 🤓 _)_
+
+## Motivation
+
+Why should you use this integration? Imagine you got an api interface with multiple requests
+
+```ts
+export const usersAPI = a.router({
+  name: 'users',
+  routes: [
+    a.procedure('getAllUsers', async () => db.from('users').select('*')),
+    a.procedure('getUserById', getUserById)
+    // and 15 other procedures like this...
+  ]
+})
+```
+
+This works nicely on server and some basic client calls, but you decide to integrate `@tanstack/query` to provide some caching on client
+and smoother optimistic updates.
+
+Easiest way is to do this, is to append a route version of our api calls with `useQuery`:
+
+```ts
+// ❌ DON'T DO THIS!!!
+routes: [
+  a.procedure('getUserById', getUserById),
+  a.procedure(
+    'getUserByIdQuery',
+    (id: string) => useQuery({ queryKey: ['getUserById', id], queryFn: () => getUserById(id) })
+  )
+]
+```
+
+<Aside variant="warning" title="However, this pattern is bad for multiple reasons:">
+1. __Your API no longer works on both server and client!__
+2. Your `useQuery` (@tanstack/query) dependency is going to get imported on every single api call, even in modules where you don't use the `Query` version of the calls.
+3. You have to manage queryKeys and make sure they are unique accross your codebase.
+4. Your routes are no longer DRY, multiple definitions of the same routes
+5. You don't have a way of passing `queryOptions` unless you specify them as argument in every call _(how would that even work with `...spread` args? There's no way to access it!)_.
+</Aside>
+
+Luckily, this integration remedies all 5 of these issues! 🎉
+
+## Installation
+
+```bash
+# Depending on yur package manager:
+pnpm add @hulla/api-query
+bun add @hulla/api-query
+npm install @hulla/api-query
+yarn add @hulla/api-query
+```
+
+
+> All the chapters presume you've done the setup as described in the [Setup](#setup) section below.
+
+## Setup
+
+First we'll need to add the [adapter](/docs/api/advanced/adapters) to our API instance.
+
+```ts
+import { api } from '@hulla/api'
+import { query, mutation, queryKey } from '@hulla/api-query'
+// note the package is tree-shakeable, so you can import only what you need
+// to see which methods you need for which calls, check the table of contents to the right ->
+// i.e. if you only need to do useQuery calls, just import { query } from '@hulla/api'
+
+const a = api()
+const usersAPI = a.router({
+  name: 'users',
+  routes: [
+    a.procedure('getUserById', getUserById),
+    a.procedure('todos', async () => db.from('todos').select('*')),
+    // ...
+  ],
+  adapters: { query, mutation, queryKey }, // add the integration adapters here 🚀
+})
+```
+
+Now we'll go over individual integration methods and how they can be converted to `@tanstack/query` calls.
+
+## query
+
+All the `query` method (`import { query } from '@hulla/api-query'`) does, is create a `QueryOptions` object for you
+to re-use in your query related calls.
+
+Consider the standard call we'd use in the base version of `@hulla/api`
+
+```ts
+usersAPI.call('getUserById', '123') // how you'd standardly call it
+// => Promise<User>
+```
+
+To transform this into a query options config, we'll just add a `.query` before the `.call` method.
+
+```ts
+usersAPI.query.call('getUserById', '123')
+// => {
+//      queryKey: readonly [`${method}/${router}/getUserById', arg: '123'],
+//      queryFn: () => getUserById('123') }
+//    }
+```
+
+<Aside variant="info">
+In the examples below we'll use `@tanstack/react-query` as it's the most common, but this will work with any other version of framework as well.
+</Aside>
+
+> All the code examples will mirror the call variants in the official @tanstack/react-query documentation
+
+### useQuery
+
+We'll start off with the most basic example - a standard [`useQuery`](https://tanstack.com/query/latest/docs/framework/react/guides/queries) call.
+
+Accessing a query is as simple as accessing a standard call.
+
+
+Inside our client page/component we'll just import the query dependency.
+
+
+
+```ts
+import { useQuery } from '@tanstack/react-query'
+import { todoAPI } from '@/api/todo'
+
+// nice and easy!
+const { data } = useQuery(todoAPI.query.call('todos'))
+
+// or if we want to pass other query options:
+const { data: otherData } = useQuery({
+  ...usersAPI.query.call('todos'),
+  staleTime: 1000
+})
+```
+
+### useInfiniteQuery
+
+Using [infinite queries](https://tanstack.com/query/latest/docs/framework/react/guides/infinite-queries) works identical as standard queries, since they share config properties
+
+```ts
+import { useInfiniteQuery } from '@tanstack/react-query'
+
+const { data } = useInfiniteQuery({
+  ...projectsAPI.query.call('projects').
+  initialPageParam: 0,
+  getNextPageParam: (lastPage, pages) => lastPage.nextCursor,
+})
+```
+
+### useQueries
+
+[Parallel query fetching](https://tanstack.com/query/latest/docs/framework/react/guides/parallel-queries) is also supported, since the array just requires a query config
+
+```ts
+import { useQueries } from '@tanstack/react-query'
+
+const userQueries = useQueries({
+  // users is an array of user objects with id property
+  queries: users.map((user) => {
+    return usersAPI.query.call('getUserById', user.id)
+  })
+})
+```
+
+### Prefetching
+
+Last but not least, [pre-fetching queries](https://tanstack.com/query/latest/docs/framework/react/guides/prefetching) is also supported, since it's just a query config
+
+```ts
+await queryClient.prefetchQuery(usersAPI.query.call('getUserById', '123')) 
+```
+
+### Suspense queries
+
+And for completion sake, albeit it's likely obvious by now, since [suspense queries](https://tanstack.com/query/latest/docs/framework/react/guides/suspense) are done via same config
+
+```ts
+import { useSuspenseQuery } from '@tanstack/react-query'
+
+const { data, error } = useSuspenseQuery(usersAPI.query.call('getUserById', '123'))
+```
+
+
+## mutation
+
+If you're familiar with how `query` works, understand `mutation` should be a no-brainer for you.
+It does operate the exact same way, only now instead of `QueryOptions` we are dealing with `MutationOptions`.
+
+### useMutation
+
+The most common use-case for `mutation` is the [`useMutation`](https://tanstack.com/query/latest/docs/framework/react/guides/mutations) hook.
+
+```ts
+import { useMutation } from '@tanstack/react-query'
+
+const { mutate } = useMutation(todosAPI.mutation.call('addTodo'))
+```
+
+### Side-effects
+Side-effects are super simple and operate just how you'd expect them to when you'd standardly define them in your `useMutation` calls.
+
+```ts
+const { mutate } = useMutation({
+  ...todosAPI.mutation.call('addTodo'),
+  onMutate: (variables) => {
+    return { id: 1 }
+  },
+  onError: (error, variables, context) => {
+    console.log(`rolling back optimistic update with id ${context.id}`)
+  },
+})
+
+// or later in your mutate call
+mutate(todo, {
+  onMutate: (variables) => {
+    return { id: 1 }
+  },
+  onError: (error, variables, context) => {
+    console.log(`rolling back optimistic update with id ${context.id}`)
+  },
+})
+```
+
+## queryKey
+
+And last but not least, we have the `queryKey` method. This is a utility function that helps you decode your queryKeys.
+
+One thing you need to understand, the package encodes queryKey for you. While it may be a small learning curve, from typing out
+your queryKeys manually, it's a huge benefit in the long run.
+
+Especially if you have a large codebase, and when you do in `usersAPI.call('create', ...)` you don't want it to invalidate queries with other
+create initial keys (i.e. `postsAPI.call('create', ...)`). Or even worse, if you have a `GET` and `POST` method with same url. 
+
+That's why the package encodes the `queryKey` for you, to save you a lot of hassle.
+
+### invalidateQueries
+
+The most common use-case for `queryKey` is the [`invalidateQueries`](https://tanstack.com/query/latest/docs/framework/react/guides/query-invalidation) hook.
+
+```ts
+const queryClient = useQueryClient()
+
+queryClient.invalidateQueries({
+  queryKey: todosAPI.queryKey.call('todos'), // ✅ ['call/todoRouter/todos']
+})
+
+// Carefor not to do this:
+queryClient.invalidateQueries({
+  queryKey: ['todos'], // ❌ this will not work, doesn't match the encoded queryKey
+})
+```
+
+### Query Filters
+
+Similar logic to `invalidateQueries`, but for completion sake, here's how [filters](https://tanstack.com/query/latest/docs/framework/react/guides/filters) work.
+
+```ts
+queryClient.removeQueries({
+  queryKey: postsAPI.queryKey.call('posts')
+})
+
+await queryClient.refetchQueries({
+  queryKey: postsAPI.queryKey.call('posts'),
+  type: 'active'
+})
+```
+
+### Caveat: queryKey vs query.call().queryKey
+
+If you're asking yourself:
+
+> Since [`query`](#query) integration method already returns query options, why can't i just use that instead?
+
+Well, first off, congratulate yourself as very observant and pat yourself on the back for a very good question.
+
+Second of all, there's a good reason for it -- When doing stuff like [invalidating queries](#invalidatequeries)  you may not need to 
+always pass the entire length of query key. Cosnider this example
+
+```ts
+export const tAPI = a.router({
+  name: 'tricky',
+  routes: [
+    a.procedure('getById', async (id: string) => getUserById(id)),
+  ]
+  adapters: { query, queryKey }
+})
+
+```
+
+Now depending on our usecase
+
+```ts
+// in a useQuery
+useQuery({
+  ...tAPI.query.call('getById', '123') // ✅ Here the `id` must be passed!
+//...tAPI.query.call('getById') // ❌ (TypeError) This doesn't make sense, what `id` do I fetch?
+})
+
+// however, in invalidateQueries
+queryClient.invalidateQueries({
+  queryKey: tAPI.queryKey.call('getById', '123') // ✅ Here the `id` was be passed!
+})
+
+queryClient.invalidateQueries({
+  queryKey: tAPI.queryKey.call('getById') // ✅ also valid, invalidate all tAPI `getById` queries
+})
+```
+
+That's an important distinction to make in terms of type-safety. Essentially `query.call` necessitates, that you pass al the define arguments in the query function,
+meanwhile `queryKey` just requires the name of the route _(in this case procedure.)_ 
+
+| method | type signature | example |
+| --- | --- | --- |
+| query | All parameters must be defined | `readonly ['getById', string]` |
+| queryKey | First parameter must be defined, rest doesn't have to be be defined | `readonly ['getById', string` `\|` `undefined]` | 
+
+## All other methods
+
+If you can't find a specific method that `@tanstack/query` implements, it's likely that you can just make it work
+with combination of `query`, `mutation` and `queryKey` methods, as long as you understand what they do.
+
+> Least to my knowledge, right now `@hulla/api-query` is 100% compatible with all `@tanstack/query` features.
+
+However if you're still struggling to make something work, or a new version of tanstack query was added which no longer works with the integration, please check the links to the right, and either submit an issue or even update, contribute to the package / docs if you found the solution out and help me and others out. ❤️
+
+## Package metadata
+
+| Meta | Description |
+| --- | --- |
+| Package name |  `@hulla/api-query` |
+| Dependencies | 0 |
+| Dev Dependencies | 1: `@hulla/api` |
+| Integration type | [Adapters](/docs/api/advanced/adapters) |
+| Package size | 510 B (0.51 KB) |

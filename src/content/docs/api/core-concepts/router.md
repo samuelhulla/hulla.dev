@@ -11,8 +11,9 @@ The declaration of router is straight-forward. You pass a configuration objects 
 | Argument       | Type                                                                                          | Status   | Description                                       |
 | -------------- | --------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------- |
 | **name**       | `string`                                                                                      | Required | Used for request deduping, key encoding           |
-| **routes**     | `readonly [`[`Procedures`](/docs/api/core-concepts/procedures), or other [custom methods](/docs/api/advanced/custom)`]` | Required | Routes definitions, calls you'll be executing     |
-| _interceptors_ | `{ args: Interceptor, fn: Interceptor, resolver: Interceptor }`                               | Optional | Utility functions ran when given part is executed |
+| **routes**  | `readonly [`[`Procedures`](/docs/api/core-concepts/procedures), or other [custom methods](/docs/api/advanced/custom)`]` | Required | Routes definitions, calls you'll be executing     |
+| _interceptors_ | [`Interceptors`](/docs/api/advanced/interceptors)                               | Optional | Utility functions ran on every matching event |
+| _adapters_ | [`Adapters`](/docs/api/advanced/adapters) | Optional | Integrations and Transformers |
 
 Here's how it looks in practice
 
@@ -21,29 +22,73 @@ import { api } from '@hulla/api'
 
 // can pass a function reference, or just define it inside the call definition
 const getAllUsers = () => db.from('users').select('*')
-const getPokemon = (name: string) => `https://pokeapi.co/api/v2/pokemon/${name}`
+const getPokemon = (name: string) => fetch(`https://pokeapi.co/api/v2/pokemon/${name}`)
 
 const a = api()
-const router = a.router({
+export const exampleAPI = a.router({
   name: 'example', // first the router name!
   routes: [ // then the routes - can be the followng
     a.procedure('all', getAllUsers), // procedure
     a.procedure('foo', () => 'foo'),
-    a.request.get('poke', getPokemon), // request integration, can be custom methods, not only procedures
+    a.procedure('poke', getPokemon),
     // ...etc
   ]
-)
+})
 ```
 
 ## Usage
 
-> Router is not intended to be used by itself! 🚧
+You should always export your ready API definition as the result of the `.router()` call
 
-It just provides useful internal handlers for the package, that will come into play later, once you have [created your api](/docs/api/core-concepts/create).
+```ts
+// path: src/api/users.ts
+import { api } from '@hulla/api'
+
+const getAllUsers = () => db.from('users').select('*')
+const getUserById = (id: string) => db.from('users').where('id', '==', id).selectFirst('*')
+
+const a = api()
+export const usersAPI = a.router({
+  name: 'users',
+  routes: [
+    a.procedure('all', getAllUsers),
+    a.procedure('byId', getUserById),
+  ]
+})
+```
+
+and then import it in your code (server/client/wherever)
+
+```ts
+// path: any-where-you-want.ts
+import { usersAPI } from '@/src/api/users' // (points to your exported API creation)
+
+const allUsers = await usersAPI.call('all') // { id: string, name: string }[] ✅
+const john = await usersAPI.call('byId', '0') // { id: '0', name: 'John' } ✅
+
+// @ts-expect-error purposely bad call - super easy to miss (number arg vs string arg)
+const badCall = await usersAPI.call('byId', 0) // ❌ type error
+//                                     ^ expected 'string', got 'number'
+```
+
+## Return type (API)
+
+Apart from `.call` which will be your most frequent use of a created router API, you also have access also to some nice utility methods/properties.
+
+Here is the exact return type after calling your `a.router()`
+
+- `call()` - the main way to interact, the main way to `call` your [procedures](procedures) _(or other route methods)_.
+- `routerName` - defined in router definition `name: string`
+- `routeNames` - array of passed route names `Routes<RouteName extends string>[number]`
+- `context` - the [custom context](/docs/api/advanced/context#custom-context) passed to router.
+- `...AdapterMap` - any potential [`adapters`](/docs/api/advanced/adapters) / [`integrations`](/docs/api/integrations) passed.
+- `methods` - array of passed route methods _(if only procedures `['call']`)_. Useful if you have multiple inegrations like [`custom methods`](/docs/api/advanced/custom)
 
 ## Best practices
 
-Router doesn't really have any gotchas. The only good practice to keep in mind is
+Router doesn't really have any gotchas. These are more of general suggestions of tested by time best practices.
+
+### Project structure
 
 - Keep your routers minimal
 
@@ -54,14 +99,17 @@ This way when you import your API accross the application, you don't import unne
 // don't need all the API calls related to posts when fetching a user's profile.
 
 // path: src/api/users.ts
-a.router({
+export const usersAPI = a.router({
   name: 'users',
   routes: [
     /*...*/
   ],
 })
+```
+
+```ts
 // path: src/api/posts.ts
-a.router({
+export const postsAPI = a.router({
   name: 'posts',
   routes: [
     /*...*/
@@ -71,7 +119,7 @@ a.router({
 
 This also makes it easier to distinguish and navigate individual routes, rather than having 200 calls all in one api export.
 
-## Routes definitions
+### Routes definitions
 
 In the code example above, i've purposely defined `routes` inside the `a.router` definition. Like so:
 
@@ -86,11 +134,11 @@ const routes = [a.procedure('all', getAllUsers)] // => Call<...>[]
 a.router({ name: 'users', routes }) // ❌ ERROR: Breaks type inference - array not a tuple
 ```
 
-Since `@hulla/api` heavily relies on typescript ([which is why has 97.6% smaller bundle size](/docs/api#how-come-the-package-size-is-so-drastically-different)) compared to similar packages, it's a small price we pay for this luxury -- and you'll have to fix it accordingly:
+Since `@hulla/api` heavily relies on typescript ([which is why it has 97.7% smaller bundle size](/docs/api#caveat-package-size)) compared to similar packages, it's a small price we pay for this luxury -- and you'll have to fix it accordingly:
 
 If you for whatever-reason want to define your routes outside of the router, remember to use the `as const` assertion.<br/>This tells TypeScript it's a tuple and not an array - _(note this has nothing to do with the package, but with how TS treats declarations)_
 
 ```ts
-const routes = [api.procedure('all', getAllUsers)] as const // => [Call<...>] :: note the as const
-api.router({ name: 'users', routes }) // ✅ now it works
+const routes = [a.procedure('all', getAllUsers)] as const // => [Call<...>] - note the as const
+a.router({ name: 'users', routes }) // ✅ now it works
 ```
