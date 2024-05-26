@@ -1,5 +1,5 @@
 ---
-import { Select } from '../client/Select'
+import Select from '../Select.astro'
 import { entries } from '@/utils/objects'
 import type { NAVIGATION } from '@/content/navigation'
 
@@ -12,7 +12,7 @@ const { chapters, packages, pkg } = Astro.props
 ---
 
 <nav class="fixed min-h-screen w-[14dvw] space-y-4 py-4 2xl:max-w-[12dvw]">
-  <Select onChange={(e) => Astro.redirect(e.target.value)} class="mb-4">
+  <Select name="packages" class="mb-4">
     {
       packages.map(({ value, label }) => (
         <option class="text-bg" value={value} selected={value === pkg}>
