@@ -22,20 +22,28 @@ const api: {
   'Core Concepts': [
     { label: 'Procedures', url: '/core-concepts/procedures' },
     { label: 'Router', url: '/core-concepts/router' },
-    { label: 'Create API', url: '/core-concepts/create' },
   ],
   Advanced: [
     { label: 'Resolvers', url: '/advanced/resolvers' },
     { label: 'Context', url: '/advanced/context' },
     { label: 'Interceptors', url: '/advanced/interceptors' },
     { label: 'Adapters', url: '/advanced/adapters' },
+    { label: 'Custom Methods', url: '/advanced/custom' },
   ],
   Integrations: [
     { label: 'Requests', url: 'integrations/requests' },
     { label: '@tanstack/query', url: 'integrations/query' },
     { label: 'swr', url: 'integrations/swr' },
   ],
-  Examples: [],
+  Examples: [
+    { label: 'React', url: 'examples/react' },
+    { label: 'Next', url: 'examples/next' },
+    { label: 'Astro', url: 'examples/astro' },
+    { label: 'Remix (React Router)', url: 'examples/remix' },
+    { label: 'Solid & Solid Router', url: 'examples/solid' },
+    { label: 'Vue & Nuxt', url: 'examples/vue' },
+    { label: 'React Native & Expo', url: 'examples/native' },
+  ],
   Reference: [],
 }
 
