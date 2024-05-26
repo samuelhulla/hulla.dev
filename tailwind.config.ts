@@ -10,12 +10,11 @@ export default {
       typography: {
         DEFAULT: {
           css: {
-            'code::before': {
-              content: '""',
-            },
-            'code::after': {
-              content: '""',
-            },
+            div: false,
+            'code::before': false,
+            'code::after': false,
+            'blockquote p:first-of-type::before': false,
+            'blockquote p:last-of-type::after': false,
           },
         },
       },
