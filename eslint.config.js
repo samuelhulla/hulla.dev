@@ -15,6 +15,7 @@ export default tseslint.config(
     plugins: {
       astro,
     },
+    ignores: ['node_modules', 'dist', 'public', '.vercel', '.astro'],
     languageOptions: {
       globals: {
         // Enables global variables available in Astro components.

@@ -1,0 +1,559 @@
+---
+title: Requests
+---
+import Spoiler from '../../../../components/Spoiler.astro'
+import Aside from '../../../../components/Aside.astro'
+
+Requests (and `fetch` in particular) is a complicated matter with a lot of pitfalls. Luckily there's now a way
+to eliminate a lot of the frustrations in a very simple way.
+
+## About integration
+
+`@hulla/api-request` is an an offical `@hulla/api` integration that:
+
+- Helps you write `@hulla/api` compatible route _(set of custom methods)_
+- Type-checks Request and Response, built on top of `fetch` API,
+- Extends requests with type-safe `data` and `params` properties
+- Provides utilities for resolving responses and data
+
+It helps you structure and validate your requests and performs type-safe data parsing.
+
+## Motivation
+
+You can do a fetch request with just a `procedure` just fine.
+
+```ts
+a.procedure('getUsers', () => fetch('api.com/users')) // Promise<Response>
+```
+
+For small one-off calls to external APIs it's likely enough to have them like this.
+However, as soon as you have a dedicated back-end API your front-end communicates with, this approach can get unwieldly real quick.
+
+Want a demonstration? Consider just these two endpoints alone. How could this ever get complicated?
+
+- `GET api.com/posts` - Fetches all posts
+- `POST api.com/posts` - Creates a new post
+
+And I want to structure my API in a way I call the api route segments
+
+```ts
+// ❌ DON'T DO THIS
+routes: [
+  a.procedure('/posts', () => fetch('api.com/posts')), // get all posts
+  a.procedure('/posts', (data: Post) => fetch('api.com/posts', {
+    body: data
+  })) // create a post
+]
+```
+
+<Spoiler title="There's multiple things wrong with this. Did you spot them?">
+1. First off, `@hulla/api` core package, will throw an error, because you defined route with same method and keys
+
+  ```ts
+  example.call('/posts', ...) // 🤔 Which arguments should I require? 
+  // None for 'get' or Post data for 'post'
+  ```
+2. I intentionally left out the `method` property in the `POST` method version of the `fetch` call, so it defaults to `GET`. Bit insideous from me? Sure. 
+   But you can see how easy this is to miss and you just made the wrong call that will not even get an error, since `body` gets ignored in `GET` calls, so the bad call silently passes! 😱
+3. In the second call, the `body` property was not serialized properly. Your `fetch` will not work as it does not accept a js object.
+
+</Spoiler>
+
+Well that was a doozy! 😮‍💨 Wouldn't it be nice if a package could catch all these mistakes before they make it to production?
+
+
+## Installation
+
+Installation is very simple:
+
+
+```bash
+# Depending on yur package manager:
+pnpm add @hulla/api-request
+bun add @hulla/api-request
+npm install @hulla/api-request
+yarn add @hulla/api-request
+```
+
+## Usage 
+
+> All the chapters presume you've done the setup as described in the [Setup](#setup) section below.
+
+### Setup
+
+First,  we'll need to add the [custom method](/docs/api/advanced/custom) inside your api file:
+
+```ts
+import { api } from '@hulla/api'
+import { request } from '@hulla/api-request'
+
+const a = api({
+  methods: ctx => ({
+    request: request(ctx)
+  })
+})
+```
+
+### Defining your requests
+
+Now we're ready to define our requests. We'll use the `request` method we've defined in the previous step.
+
+A request must be defined in a `request.method` format, where it takes the following arguments:
+
+1. Route name (same as [procedure](/docs/api/core-concepts/procedures))
+2. Fetch body
+<ul class="list-none relative bottom-2">
+  <li>2.1 Defined as `string`</li>
+  <li>2.2 Defined as `URL`</li>
+  <li>2.3 Defined as `Request`</li>
+  <li>2.4 Defined as `TypedRequestConfig` _(✅ Recommended, `RequestInit` with extra type safety)_</li>
+  <li>2.5-2.9 Any of the above mentioned options (2.1 - 2.4) in a function variant</li>
+</ul>
+3. Resolver _(optional)_ - default [`response`](#response-type-safety) resolver
+
+Check the examples below to see it in practice.
+
+
+### Static requests
+
+```ts
+export const usersAPI = a.router({
+  name: 'users',
+  routes: [
+    // these 4 calls are equivalent in result // Enumerated Fetch body variants (list above)
+    // the recommended way ✅ (all you'll really need): 
+    a.request.get('allUsers', { url: 'api.com/users' }) // 2.4
+    // for completion sake, the other variants (you prob don't need them 🚧)
+    a.request.get('allUsers', 'api.com/users'), // 2.1
+    a.request.get('allUsers', new URL('api.com/users')) // 2.2
+    a.request.get('allUsers', new Request('api.com/users')) // 2.3
+  ]
+})
+```
+
+> For the remainded of the documentation we'll be using only the `TypedRequestConfig` (2.4) variant.  It provides the most type-safety and is the recommended way of defining requests. _You'll see why in the following chapters 🤓._
+
+### Passing arguments (dynamic requests)
+
+While the example above works nice and dandy, we often need to pass parameters to our requests. 
+That's when the function variants (2.5-2.9) come in handy
+
+```ts
+export const usersAPI = a.router({
+  name: 'users',
+  routes: [
+    a.request.get('userById', (id: string) => ({ url: `api.com/users/${id}` })),
+    a.request.post('createUser', (data: User) => ({
+      url: 'api.com/users',
+      body: JSON.stringify(data)
+    })),
+    // noticed the `post` method in the second request? 💡
+  ]
+})
+```
+
+### Calling the requests
+
+Considering we used the exported `usersAPI` from example above
+
+```ts
+usersAPI.get('userById', 'abc123')
+usersAPI.post('createUser', { name: 'John Doe', age: 30 })
+// Note: we access the routes by their individual HTTP methods! 
+```
+
+Both of these return a `Promie<Response>` that you can work with.
+If you wish to type / resolves your request data, check the [Response Resolver](#response-type-safety) section below.
+
+## Good to know
+
+While the examples above are enough for most use-cases and to get most projects started, there are some more topics that might be of interest to you.
+
+### Data vs body (serialization)
+
+The standard `body` property can be kind of annoying to work with. It is pretty rigid in terms of what types it accepts.
+If you don't care much about the `body` property, you can use the `data` property instead. It's a bit more flexible and can be used in any request method.
+
+```ts
+export const usersAPI = a.router({
+  name: 'users',
+  routes: [
+    a.request.post('createUser', (data: User) => ({
+      url: 'api.com/users',
+      data, // instead of body
+    }))
+  ]
+})
+```
+
+- If you pass a `data` property, the package will call `JSON.stringify(data)` under the hood to construct the body for you
+- If you wish to use different serialization tactic, just pass the `body` property instead
+
+```ts
+// Example of using custom serialization
+import { stringify } from 'superjson'
+
+export const usersAPI = a.router({
+  name: 'users',
+  routes: [
+    a.request.post('createUser', (data: User) => ({
+      url: 'api.com/users',
+      body: stringify(data)
+    }))
+  ]
+})
+```
+
+
+### Request Type safety
+
+First off, let's start with the most obvious thing:
+
+```ts
+a.request.put('updateUser', (data: User) => ({
+  url: 'api.com/users',
+  data,
+  method: 'POST'
+})) // ❌ TypeError: type "POST" is not assignable to "PUT" | "put"
+```
+
+That one's fairly self-explanatory. How about this?
+
+```ts
+a.request.get('getUser', (id: string) => ({
+  url: 'invalid-url!users',
+})) // ❌ Error (runtime): Invalid URL
+```
+
+Now time for a little brain teaser.
+
+```ts
+// see if you can spot what's wrong here: 👀
+export const usersAPI = a.router({
+  name: 'users',
+  routes: [
+    a.request.get('getUser', (user: User) => ({
+      url: 'api.com/users',
+      body: JSON.stringify(user)
+    }))
+  ]
+})
+```
+
+Noticed the subtle error? If not, don't worry, it's a very common mistake that got through many-a-code-review.
+
+<Spoiler>
+The passed request is a  `GET` request, which means it cannot have a `body` _(or well, technically it can, but it doesn't get passed)_. The correct way to define the request would be:
+
+```ts
+a.request.get('getUser', (user: User) => ({
+  url: 'api.com/users',
+  body: JSON.stringify(user)
+})) // ❌ TypeError:
+//  Type 'string' is not assignable to TypeError<
+//    "ERROR: method "GET" cannot contain a body", 
+//    "https://developer.mozilla.org/en-US/docs/Web/API/Request/body"
+//  >
+
+// Since this is a TypeError and not a runtime-error, if you really wish to pass a `body` 
+// (e.g. your frame-work has special fetch polyfill that allows body in GET)
+// just do a //@ts-ignore and it will work
+```
+Luckily the package will catch this mistake for you and throw a typescript error. 
+</Spoiler>
+
+The package helps you make your requests more type-safe and catch common mistakes early on.
+
+
+### Response Type Safety
+
+Each `request.method` call has a third argument, a [resolver](/docs/api/advanced/resolvers) function, just like in [procedures](/docs/api/core-concepts/procedures). 
+
+By default it calls an intenral resolver called `response` which returns a `Promise<Response>`. Which is what standard a `fetch` returns, but if you're like me, you probably want more type information than that.
+
+> Under the hood, the default resolver is a complex function, which does type-checking, parses `URL`, adds a `method` to the `Request`, and returns the `Response`, so it's 
+> a good practice to always use it. If you're curious, you can read more about it in the [custom resolvers](#custom-resolvers) section
+
+```ts
+import { response, resolve } from '@hulla/api-request'
+
+const getUserByIdConfig = (id: string) => ({
+  url: `api.com/users/${id}`
+} as const)
+
+export const usersAPI = a.router({
+  name: 'users',
+  routes: [
+    // (default, same as no resolver passed)
+    a.request.get('getUser', getUserByIdConfig, response), // Promise<Response>
+
+    // resolving the response ✅
+    a.request.get(
+      'getUser',
+      getUserByIdConfig,
+      (req, ctx) => response(req, ctx).then(res => res.json() as User)
+    ), // Promise<User>
+
+    // same as above, but with a short-hand 💎
+    a.request.get('getUser', getUserByIdConfig, resolve<User>), // Promise<User>
+  ]
+})
+```
+
+### Defining baseURL
+
+It's a fairly common pattern, that you want to keep your code DRY and have your `baseURL` automatically pre-pend to all your request URLs.
+
+To achieve this, you have the following two options:
+
+1. Use the special `baseURL` [context](/docs/api/advanced/context) property.
+
+```ts
+const a = api({
+  methods: ctx => ({
+    request: request(ctx)
+  }),
+  context: {
+    baseURL: 'api.com'
+  }
+})
+
+export const blogAPI = a.router({
+  name: 'blog',
+  request: [
+     a.request.get('/blog', { url: '/blog' })
+     a.request.post('/blog', (data: BlogPost) => ({ url: '/blog', data }))
+  ]
+})
+
+blogAPI.get('/blog') // fetch('api.com/blog', { method: 'GET' })
+blogAPI.post('/blog', { title: 'Hello World', content: 'Hello, World!' }) 
+// fetch('api.com/blog', {
+  // method: 'POST',
+  // body: JSON.stringify({ title: 'Hello World', content: 'Hello, World!' }) 
+//})
+```
+
+The `baseURL` gets automatically pre-prended to the passed url in config _(happens in `response` call)_
+
+> 💡 Also note, we used the same 'route key' with different method. This is useful when we want to map out exact api URLs
+> as request keys but we need to distinguish between different methods (and their function types) that use the same URL
+
+2. Adding it manually in an [interceptor](/docs/api/advanced/interceptors) _(or resolver if you need to target specific requests only)_
+
+```ts
+export const blogAPI = a.router({
+  name: 'blog',
+  routes: [
+    a.request.post('/blog', (data: BlogPost) => ({
+      url,
+      data,
+    }))
+  ],
+  interceptors: {
+    fn: (req, ctx) => {
+      req.url = `api.com${req.url}`
+      return req
+    }
+  }
+})
+```
+
+> It's up to your personal which pattern you decide to use. Just be careful not to use both at the same time or the `baseURL` will be prepended twice!
+
+### Automatic method Passing
+
+If you have a keen eye, you may have noticed, in none of the examples above did we pass the `method` property. That's because the package does it for you
+automatically, specifically in the `response` resolver.
+
+You can still pass methods if you wish, but it's not necessary. 
+
+> If you checked the [Request Type Safety](#request-type-safety) section, you already know, the `method` property will be type-checked against the request.method definition
+
+
+## Advanced
+
+These are advanced topics that you likely don't need to worry about, but they're here if you're interested.
+
+### Automatic URL params parsing
+
+<Aside variant="warning">
+This is an experimental feature, you may run into some issues. If you do, please report them to the package maintainers.
+</Aside>
+
+In one of the earlier example we passed a function to the `request.method` that took an `id` parameter.
+
+```ts
+a.request.get('userById', (id: string) => ({ url: `api.com/users/${id}`}))
+```
+
+However, there's also a fancier way, where the package parses params for you, with the special `rq` helper
+
+```ts
+import { rq } from '@hulla/api-request'
+
+export const usersAPI = a.router({
+  name: 'users',
+  a.request.get('userById', (id: string) => rq({
+    url: 'api.com/users/:id',
+    params: { id }
+  }))
+})
+```
+
+The `rq` helper will automatically parse your passed `url` _(via complex TypeScript string literals)_ and automatically generate the `params` type for you.
+
+Some examples
+
+```ts
+rq({
+  url: 'api.com/users/:id', // path params
+  params: { id: '123' }
+}) // { url: 'api.com/users/123' }
+rq({
+  url: 'api.com/users/:id/:posts', // nested path params
+  params: { id: '123', posts: 'private' }
+}) // { url: 'api.com/users/123/private' }
+rq({
+  url: 'api.com/users?page', // search params
+  params: { page: '1' },
+}) // { url: 'api.com/users/123?page=1' }
+rq({
+  url: `api.com/users?page&limit`, // chained search params
+  params: { page: '1', limit: '10' }
+}) // { url: 'api.com/users?page=1&limit=10' }
+```
+
+Note these param definitions are type-safe and will throw a TypeScript error if you pass an invalid param.
+
+```ts
+rq({
+  url: 'api.com/users/:id',
+  params: { bad: '123' } // ❌ TypeError: Property bad does not exist on type { id: string }
+})
+```
+
+### Custom resolvers
+
+
+Check out the [request type safety](#request-type-safety) chapter first if you haven't, because we'll be using methods straight from it.
+
+Usually it's enough to do the default `response` resolver to do it's thing. If you overwrite it, it's likely going to do you more harm 
+than good. Before you look into writing a custom resolver, here are some common use-cases and why __you might not need custom ones__.
+
+
+> But I need to run a side-effect/middleware in the response!
+
+```ts
+a.request.get('example', { url: 'api.com/example'}, (req, ctx) => {
+  doSomething()
+  return response(req, ctx)
+})
+```
+> I need a different response instead of json
+
+```ts
+a.request.get(
+  'example',
+  { url: 'api.com/example'},
+  (req, ctx) => response(req, ctx).then(res => res.text())
+)
+```
+
+> I need to mutate the URL / arguments
+
+-  Checkout the [`baseURL` section](#defining-baseurl) above. 
+- If you need to do something more complex than pre-pend base url, you can do it in two ways:
+
+1. Modify the request object (duhh..)
+
+```ts
+a.request.get('userById', (id: string) => ({ url: `api.com/users${id}` }))
+```
+
+2. Modify it in the response resolver argument:
+
+```ts
+a.request.get('authPeers', { url: 'api.com'}, (req, ctx) => {
+  return response({ ...req, url: `${req.url}/${ctx.isAdmin ? 'admins' : 'users'}`}, ctx)
+})
+```
+
+If you need to do this on every request, you could potentially also write an [interceptor](/docs/api/advanced/interceptors) for it.
+
+> I need a more precise type that `Promise<Response>`
+
+Check the [Response Type Safety](#response-type-safety) chapter above.
+___
+
+As you can see, you can manipulate both the request and response pretty much to your liking. If despite this all, yoou still
+found a reason to write a custom resolver, first off, feel free to leave me a message as to why, as I'm curious to know
+and want to always improve the package -- the only reason I can think of is, if you need to do a different call than `fetch`.
+
+You need to however understand, since we're reliant on `response` to do a lot of heavy lifting, some parts may break.
+
+If we were to look at `response` source code definition:
+
+```ts
+// don't worry if you don't understand everything from this, not necessary.
+export function response<
+  M extends LowercaseMethods | Methods,
+  RQ extends TypedRequestConfig<M> | URL | string | Request,
+  R2 = Promise<Response>,
+>(req: RQ, ctx: Context<string, Lowercase<M>, Args, string>): R2 {
+  const url: URL = parseUrl(req, ctx)
+  const body = parseBody(req)
+  const init = parseRequest(req, url, body, ctx)
+  return fetch(url, init) as R2
+}
+```
+
+As you can see, before passing data to fetch we call these 3 functions. You need to understand what each do, when writing custom resolver:
+
+1. `parseURL` - [Attaches the `baseURL`](#defining-baseurl) and checks if the passed URL is valid, returns `URL` type.
+2. `parseBody` - [`data` / `body` serialization](#data-vs-body-serialization).
+3. `parseRequest` - [Attaches the `method`](#automatic-method-passing) and parsed body + url fields.
+
+If you write a custom resolver, you need to account for this. Here are two versions
+
+1. Importing and calling these util functions
+
+```ts
+import { parseURL, parseBody, parseRequest } from '@hulla/api-request'
+
+a.request.get('example', { url: 'api.com/example' }, (req, ctx) => {
+  doSomething()
+  const url = parseURL(req, ctx)
+  const body = parseBody(req)
+  const init = parseRequest(req, url, body, ctx)
+  return customFetchCall(url, init) // essentially we just did our version of `response` call
+})
+```
+
+2. Defining your own version of these functions
+
+```ts
+a.request.post('example', { url: 'api.com/example'}, (req, ctx) => {
+  // parseURL equivalent
+  if (!isValidUrl(req.url)) {
+    throw new Error('Invalid URL')
+  }
+  // careful, we must not forget to pass the baseURL and method!
+  customFetchCall(`${ctx.baseURL ?? ''}${req.url}`, { method: ctx.method })
+})
+// note the `response` works also with Request or URL passed
+// this only works with a TypedRequestConfig object, consider it a simpler version of `response`
+```
+
+And that's pretty much all you need to know
+
+
+## Package metadata
+
+| Meta | Description |
+| --- | --- |
+| Package name |  `@hulla/api-request` |
+| Dependencies | 0 |
+| Dev Dependencies | 1: `@hulla/api` |
+| Integration type | [Custom methods](/docs/api/advanced/custom) |
+| Package size | 966 B (0.97 KB) |

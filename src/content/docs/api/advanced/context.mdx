@@ -13,10 +13,10 @@ The base context is handled by the package itself. It consists of the following 
 
 ```ts
 type BaseContext = {
-  route: string // exact - i.e. 'getUserById'. Matches the route names of procedures/requests/custom
+  route: string // exact - i.e. 'getUserById'. Matches the route names of routes
   routerName: string // exact i.e. 'users', matches the `name` of router
   args: readonly unknown[] // exactly typed arguments you passed, i.e. ['foo', 2]
-  method: string // exact method used, i.e. 'call' for procedures, 'get', 'post', etc. for request
+  method: string // exact method used, i.e. 'call' for procedures, or custom method (i.e. 'get')
   type: string // exact type, enum of 'procedure' | 'request' | 'custom'
 }
 // 💡 If used in a 'fn' or 'resolver' interceptor, also includes { result: ReturnType }
@@ -41,7 +41,7 @@ const a = api({ context })
 Now our base context is enriched with the passed custom context
 
 ```ts
-const router = a.router({
+const contextAPI = a.router({
   name: 'withContext',
   routes: [
     // using a resolver (check Resolvers docs for more info)
@@ -49,8 +49,6 @@ const router = a.router({
     // =>         fn result === 'bar' ^    ^ base context & custom context
   ],
 })
-
-const contextAPI = a.create(router)
 ```
 
 And that's all you need, in the next section we'll show a practical example of using context.
@@ -75,13 +73,13 @@ import { api } from '@hulla/api'
 
 const a = api({ context: { baseURL: 'localhost:8000' } })
 
-const router = a.router({
+export const usersAPI = a.router({
   name 'GET',
   routes: [
-    // Note there's a Request integration which does this more elegantly (check it out!), 
+    // Note there's a Request integration which does this more elegantly (check it out!) 📢, 
     // but to keep this example simple, here's how it would look using a procedure.
     a.procedure(
-      'userById',
+      'getUserById',
       (id: string) => `/users/${id}`
       (path, context) => fetch(`${context.baseURL}${path}`, { method: context.routerName })
       // =>                   `localhost:8000/users/${id}`, { method: 'GET' }

@@ -1,0 +1,43 @@
+---
+import { cn } from '@/utils/cn'
+
+export interface Props {
+  headings: {
+    depth: number
+    text: string
+    slug: string
+  }[]
+  contibuteLink: string
+  editLink: string
+}
+
+const { headings, contibuteLink, editLink } = Astro.props
+---
+
+<nav
+  class="fixed flex min-h-screen flex-col justify-between border-l-[1px] border-zinc-200/20 px-5 py-4 shadow-lg">
+  <div>
+    <h4 class="text-xl font-bold">On this page</h4>
+    <ul class="mt-2 space-y-2 *:text-description">
+      {
+        headings.map((heading) => (
+          <li
+            class:list={cn(
+              'text-sm',
+              heading.depth === 3 && 'ml-4',
+              heading.depth === 4 && 'ml-6'
+            )}>
+            <a href={`#${heading.slug}`}>{heading.text}</a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+  <footer class="mb-8">
+    <h4 class="mb-2 text-xl font-bold">Contribute</h4>
+    <ul class="space-y-2 *:text-sm *:text-description">
+      <li><a href={contibuteLink}>Contibution guide</a></li>
+      <li><a href={editLink}>Edit this page</a></li>
+    </ul>
+  </footer>
+</nav>

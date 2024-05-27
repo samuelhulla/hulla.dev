@@ -1,0 +1,97 @@
+---
+title: Astro
+---
+import { Code } from 'astro:components'
+
+Astro revolutionized the game with it's island architecture and lighting quick ssg serving.
+Here are some common fetching patterns
+
+## Static
+
+Astro [fetches __data once at build time__](https://docs.astro.build/en/guides/data-fetching/#_top) to provide a staticly generated value for your site to display
+and adds it to your statically generated page as HTML.
+
+Using these procedures is very simple
+
+```ts
+// api/example.ts
+import { api } from '@hulla/api'
+
+const a = api()
+export const exampleAPI = a.router({
+  name: 'example',
+  routes: [
+    a.procedure('example', () => fetch('https://api.com/example')),
+    a.procedure('dbExample', () => db.something.get()), // doesn't have to be only `fetch`
+  ]
+})
+```
+
+> Note we could also use the [`request` integration](/docs/api/integrations/requests)
+> ```ts
+> routes: [a.request.get('example', { url: 'https://api.com/example' })]
+> ```
+
+and then just use a top-level `await` in your Astro component
+
+```astro
+---
+import { exampleAPI } from '@/api/example'
+
+const example = await exampleAPI.call('example')
+const something = await exampleAPI.call('dbExample')
+---
+
+<div>{example}</div>
+<span>{something}</span>
+```
+
+## Dynamic
+
+If you need your data to be interactive, you need to move your data fetching to a client.
+
+### script tag
+
+You can add interactivity to your astro components in a script tag directly
+
+<Code lang="astro" code={`---
+---
+<div id="users" />
+
+<script>
+  import { usersAPI } from '@/api/users'
+
+  const users = document.getElementById('users')
+  const data = await usersAPI.call('getUsers')
+  users?.innerHTML = data.map(user => \`<div>\${user.name}</div>\`).join('')
+</script>
+`} />
+
+
+### Framework components
+
+Framework components use fetching paradigms respective of the used framework. Please check the other examples in the menu to your left.
+
+## SSR
+
+You can also switch Astro's output from static to SSR mode
+
+### Endpoints
+
+Since astro provides it's own definitiosn for endpoints, you essentially just need to make sure you procedure definition function is eligible to accept them as arguments
+
+```ts
+import { usersAPI } from '@/api/users'
+import type { APIRoute } from 'astro'
+
+export const GET: APIRoute = ({ params }) => {
+  const { id } = params
+  const user = await usersAPI.call('getUserById', id)
+
+  return new Response(JSON.stringify(user), {
+    headers: { 'content-type': 'application/json' },
+    status: 200,
+  })
+}
+```
+

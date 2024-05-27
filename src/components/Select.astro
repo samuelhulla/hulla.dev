@@ -3,10 +3,9 @@ import type { HTMLAttributes } from 'astro/types'
 
 export interface Props extends HTMLAttributes<'select'> {
   name: string
-  options: HTMLAttributes<'option'>[]
 }
 
-const { name, options, ...props } = Astro.props
+const { name, ...props } = Astro.props
 ---
 
 <select
@@ -18,5 +17,5 @@ const { name, options, ...props } = Astro.props
   id={name}
   name={name}
   {...props}>
-  {options.map((opt) => <option {...opt}>{opt.children}</option>)}
+  <slot />
 </select>

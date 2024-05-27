@@ -1,0 +1,165 @@
+---
+title: 'Procedures'
+---
+import Aside from '../../../../components/Aside.astro'
+
+Procedures are the most basic building blocks of your API.
+
+Each procedure is defined by:
+
+1. __Procedure (route) name__ _(required)_
+2. __Function call__ _(required)_
+3. [Resolver](/docs/api/advanced/resolvers) _(optional)_
+
+The goal of the procedure is to provide route definitions for your API to use later.
+
+## Declaration
+
+```ts
+import { api } from '@hulla/api'
+
+const a = api()
+
+a.procedure('hello', () => 'world') // dummy function
+a.procedure('sum', (a: number, b: number) => a + b) // with args
+
+// async procedure (+ note we ca also pass function reference)
+const getUserById = async (id: string) => db.from('users').where('id', '==', id).select('*')
+a.procedure('getUserById', getUserById) 
+
+a.procedure('api-call', (id: string) => fetch(`<your-api>/users/${id}`)) // or a HTTP request
+// ^ check out also Request integration for some more fancy stuff with HTTP requests/responses! 📢
+```
+
+You can pass pretty much anything to a procedure.
+
+## Usage
+
+> Procedures are not intended to be used by themselves! 🚧
+
+It just provides useful internal handlers for the package, that will come into play later, once you have first defined your [router](router) and created your API, so you can invoke your procedures via a `call`.
+
+```ts
+// later after you have created your API (i.e. exampleAPI)
+
+exampleAPI.call('hello') // world
+exampleAPi.call('sum', 1, 2) // 3
+exampleAPI.call('getUserById', '123') // Promise<{ id: '123', name: 'John Doe' }>
+```
+
+## Best practices
+
+Here's some true and tested principles that will do wonders for you in long term if you follow them.
+
+### Server vs client
+
+If you plan on using `@hulla/api` only on client, you can skip this section. Otherwise I'd strongly recommend giving it a read
+as it's going to help you scale your application in the long run.
+
+It's good to define your procedures in a way that will work always on server _(this way you can rest assured it will also work on client)_ and allows you to not to repeat yourself - having to define duplicate calls for server / client.
+
+```ts
+const getAllUsers = () => db.from('users').select('*')
+
+a.procedure('getUsers', getAllUsers) // ✅ good
+
+a.procedure('client/theme', () => localStorage?.getItem('theme')) // 🚧 semi ok
+// may be a good idea to mark a client only call (i.e. 'client/theme')
+// or even better, define a specific client-only router (see Router)
+
+// doesn't have to be useQuery, can be any library or framework specific method
+a.procedure('getUsersBAD', () => useQuery({
+  queryKey: ['getAllUsers'],
+  queryFn: getAllUsers
+})) // ❌ BAD, DONT DO THIS
+```
+
+Two simple rules to keep in mind:
+
+1. Never have two procedures that use the same function twice _(in our example: `getAllUsers`)_.
+2. Never bundle client-side packages to your server-compatible APIs _(in our example `@tanstack/query`)_.
+
+<Aside variant="warning" title="Regarding the procedure with useQuery:">
+As you could see, we noted the `procedure` declaration with `useQuery` as a bad practice. Why?
+
+1. __Your API no longer works on both server and client!__
+2. Your `useQuery` (@tanstack/query) dependency is going to get imported on every single api call, even in modules where you don't use the `Query` version of the calls.
+3. You have to manage queryKeys and make sure they are unique across your codebase.
+4. Your routes are no longer DRY, multiple definitions of the same routes
+5. You don't have a way of passing `queryOptions` unless you specify them as arguments in every call _(how would that even work with `...spread` args? There's no way to access it!)_.
+
+Solution? Use the [`@hulla/api-query`](/docs/api/integrations/query) integration 🔥
+</Aside>
+
+Generally, your `procedure` should contain only the minimal necessary logic to execute. Any extra logic, that's handled on client (or even server)
+that's framework or library specific should not be part of the procedure function declaration. Instead, you should import the client-side logic of that library
+only when necessary to avoid importing it on the server or parts of the client where you don't need it.
+
+```ts
+// in api router declaration
+import { api } from '@hulla/api'
+
+const a = api()
+export const usersAPI = a.router({
+  name: 'users',
+  routes: [
+    // ✅ minimal necessary logic, will work on both client and server
+    a.procedure('createUser', (user: user) => db.users.create(user)) 
+  ]
+})
+```
+
+```tsx
+// then later in your code
+import { action } from '@solidjs/router'
+import { usersAPI } from '@/api/users'
+
+// ✅ action is a framework specific method, we do not use it directly in procedure
+export const createUserAction = action(async (user: User) => usersAPI.call('createUser', user))
+```
+
+> Obviously if you decided I'm only going to interact with my data purely with `actions` _(or any other pattern)_
+> then you can use it in your `procedures`. 
+>
+> Generally as your application scales, it's better to keep your
+> procedures as minimal as possible, and handle the rest in your framework-specific code.
+> or even add a special [adapter](/docs/api/advanced/adapters) for your framework-specific code.
+
+This way you can rest assured your code will be DRY and will work on both client and server without impacting the bundle size.
+
+### Procedure Naming
+
+You can name your procedures however you like - with only one rule to keep in mind.
+
+- You cannot have procedures _(or to be precise - same methods)_  with duplicate names ⚠️
+
+```ts
+// this will throw an Error, warning you about duplicate procedure definitions ❌
+// @ts-expect-error
+routes: [
+  a.procedure('same', (a: string) => a),
+  a.procedure('same', (b: number) => b),
+]
+
+// exampleAPI.call('same', ...) // now is ... string or number? Maybe a union?
+// There's no way to know what the user truly intended :-(
+
+// What if the arg was defined as string | number, then it gets even more confusing!
+```
+
+The reason for this is, we don't know which one of the two procedures you'd want to invoke, if you tried to `call` them. We could override them with the last/first defined one, but when you create something twice, more likely than not it's an oversight, so we'll rather throw an error for your safety. 🦸 _It's always better to create one extra name than to have non-deterministic function calls!_
+
+One final important distinction to make:
+
+> You can have the same route names with different methods
+
+```ts
+// this is ok ✅, same key but different methods
+routes: [
+  // note you need the request integration for this, won't work with just const a = api()
+  a.request.get('users', 'https://api.com/users'), // method: 'get'
+  a.request.post('users', 'https://api.com/users'), // method: 'post'
+]
+```
+
+To find out more about creating different methods, see the [custom methods](/docs/api/advanced/custom) or the specific [request integration](/docs/api/integrations/requests) we used in this example.

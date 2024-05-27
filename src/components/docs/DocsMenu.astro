@@ -1,0 +1,42 @@
+---
+import Select from '../Select.astro'
+import { entries } from '@/utils/objects'
+import type { NAVIGATION } from '@/content/navigation'
+
+export interface Props {
+  chapters: (typeof NAVIGATION)[keyof typeof NAVIGATION]
+  packages: Array<{ value: keyof typeof NAVIGATION; label: string }>
+  pkg: keyof typeof NAVIGATION
+}
+const { chapters, packages, pkg } = Astro.props
+---
+
+<nav class="fixed min-h-screen w-[14dvw] space-y-4 py-4 2xl:max-w-[12dvw]">
+  <Select name="packages" class="mb-4">
+    {
+      packages.map(({ value, label }) => (
+        <option class="text-bg" value={value} selected={value === pkg}>
+          {label}
+        </option>
+      ))
+    }
+  </Select>
+  <div class="h-[88dvh] overflow-y-scroll">
+    {
+      entries(chapters).map(([category, chapters]) => (
+        <details open>
+          <summary class="mt-2 text-lg font-semibold">{category}</summary>
+          <ul class="space-y-2 py-1 pl-6 pr-6">
+            {/* @ts-expect-error not sure why ths breaks here */}
+            {(chapters ?? []).map((chapter) => (
+              <li class="text-sm font-thin text-description">
+                <a href={`/docs/${pkg}/${chapter.url}`}>{chapter.label}</a>
+              </li>
+            ))}
+          </ul>
+        </details>
+      ))
+    }
+  </div>
+</nav>
+<nav class="block sm:hidden">mobile menu placeholder</nav>

@@ -1,0 +1,166 @@
+---
+title: Solid & @solidjs/router & SolidStart
+---
+import Aside from '../../../../components/Aside.astro'
+
+Solid has an advantage of being a later stage framework, which could observe which patterns worked and more importantly which didn't from it's older bretheren.
+
+This allows `solid-js` to present a united front when it comes to data fetching and essentially export a single function that works on both server and client.
+
+## Setup
+
+First here's an example api router definition.
+
+```ts
+import { api } from '@hulla/api'
+import { db } from '../db'
+
+const a = api()
+export const usersAPI = a.router({
+  name: 'users',
+  routes: [
+    a.procedure('getUserById', (id: string) => db.users.get(id)),
+    a.procedure('createUser', (user: User) => db.users.create(user)),
+    a.procedure('example', () => fetch('https://api.com/example')),
+    // ...etc
+  ]
+})
+```
+
+> Note, we could also use the [request integration](/docs/api/integrations/requests) for type validated fetch requests and responses.
+
+## Server
+
+<Aside variant="note" title="Re-using on client">
+Due to solid's isomorphic nature of being a full-stack framework from the get-go, patterns that work on server automatically work on client
+as well. Just remove the `'use server'` from them. But since it's usually preferrable to fetch what you can on server, they will be listed under there.
+</Aside>
+
+### actions
+
+Actions are a `@solidjs/router` paradigm for communicating with server, usually _(but not only)_ with forms.
+
+```tsx
+import { action, useAction } from '@solidjs/router'
+import { usersAPI } from '@/api/users'
+
+const createUser = action(async (user: User) => usersAPI.call('createUser', user))
+
+export function MyComponent() {
+  const createUserAction = useAction(createUser)
+  return (
+    <button onClick={() => createUserAction({ name: 'New User' })}>
+      Create New User
+    </button>
+  )
+}
+```
+
+or with a `<form>`
+
+```tsx
+import { action, useAction } from '@solidjs/router'
+import { usersAPI } from '@/api/users'
+
+const createUser = action(async (user: FormData) => usersAPI.call('createUser', user))
+
+export function MyComponent() {
+  return (
+    <form action={createUser} method="POST">
+      <label for="username">Username:</label>
+      <input type="text" name="username" />
+      <button type="submit">submit</build>
+    </form>
+  )
+}
+```
+
+### route loaders
+
+Since solid is opinionated with it's primitives, here's an example using `@solidjs/router` for a server-side load.
+
+```tsx
+import { createAsync, cache } from '@solidjs/router'
+import { For } from 'solid-js'
+import { usersAPI } from '@/api/users'
+
+const getAllUsers = cache(async () => {
+  'use server'
+  return usersAPI.call('getAllUsers')
+}, 'getAllUsers')
+
+export const route = {
+  load: () => getAllUsers()
+}
+
+export default function Page() {
+  const users = createAsync(() => getAllUsers())
+  return (
+    <For each={users()}>{user => <li>{user.name}</li>}</For>
+  )
+}
+```
+
+
+## Client
+
+While it's preferred to fetch what you can on server, there are times when you need to fetch data on client.
+
+### createResource
+
+For client, we just call the resource signal
+
+```tsx
+import { createResource } from 'solid-js'
+import { usersAPI } from '@/api/users'
+
+export default function Page({ id }: { id: string }) {
+  const [user] = createResource(id, (id: string) => usersAPI.call('getUserById', id))
+  return <div>{user().name}</div>
+}
+```
+
+### routes (cache + createAsync)
+
+It's the same as the [server - route loaders examples](#route-loaders), just remove the `'use server'` from the cache function.
+
+
+## @tanstack/solid-query
+
+There's an official integration for `@tanstack/solid-query` as well, which is fairly popular in the solidjs ecosystem.
+
+What's exciting, there's an official [`@hulla/api-query`](/docs/api/integrations/query) integration. While you can read more about
+the integration itself and learn how it works by following the link, here's at least a minimal example with it.
+
+```ts
+import { api } from '@hulla/api'
+import { query } from '@hulla/api-query'
+
+const a = api()
+export const usersAPI = a.router({
+  name: 'users',
+  routes: [
+    a.procedure('getUserById', (id: string) => db.users.get(id)),
+    a.procedure('createUser', (user: User) => db.users.create(user)),
+    a.procedure('example', () => fetch('https://api.com/example')),
+    // ...etc
+  ],
+  adapters: { query }
+})
+```
+
+and then later in your component / page ui route
+
+```tsx
+import { createQuery } from '@tanstack/solid-query'
+import { usersAPI } from '@/api/users'
+
+export default function UsersPage() {
+  const { data } = createQuery(usersAPI.query.call('getAllUsers')) // 🚀 that's all!
+  // ...
+}
+```
+
+## Demo
+
+Demo is coming up!

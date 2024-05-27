@@ -1,0 +1,65 @@
+---
+import { keys } from '@/utils/objects'
+import { Code as AstroCode } from 'astro:components'
+import type { ComponentProps } from 'astro/types'
+import { CodeTabs, tab } from './client/CodeTabs'
+
+export type Props = {
+  lang: Exclude<ComponentProps<typeof AstroCode>['lang'], undefined>
+  file?: string
+  variants?: Record<string, string>
+  code: string
+  defaultVariant?: keyof typeof variants
+}
+const { lang, code, file, variants, defaultVariant } = Astro.props
+
+const variantKeys = variants ? keys(variants) : []
+const options = variantKeys.map((key) => ({
+  label: key,
+  value: key,
+}))
+---
+
+<CodeTabs options={options} client:load>
+  <AstroCode lang={lang} code={code} />
+</CodeTabs>
+{
+  (file || variants) && (
+    <div
+      aria-label="tabs"
+      role="tablist"
+      id="tabs"
+      data-default={defaultVariant ?? variantKeys[0]}
+      class="not-content relative top-7 flex rounded-md border-b-2 border-b-zinc-500/15 bg-[#24292e] font-mono text-sm">
+      {file && <div class="min-w-20 px-2 py-1">{file}</div>}
+      {variants &&
+        variantKeys.map((key) => (
+          <div
+            id={key}
+            data-prepend={variants[key]}
+            class:list={[
+              'code-variant not-content min-w-20 border-t-primary px-2 py-1 text-center shadow-sm shadow-zinc-500/15 hover:border-t hover:border-t-primary/60 hover:text-zinc-400 data-[selected=true]:border-t data-[selected=true]:font-semibold',
+            ]}>
+            {key}
+          </div>
+        ))}
+    </div>
+  )
+}
+<AstroCode lang={lang} code={code} />
+
+<script>
+  const variants = document.querySelectorAll('.code-variant')
+  const defaultVariant = document
+    .querySelector('#tabs')
+    ?.getAttribute('data-default')
+  variants.forEach((variant) => {
+    if (variant.id === defaultVariant) {
+      variant.setAttribute('data-selected', 'true')
+    }
+    variant.addEventListener('click', () => {
+      variants.forEach((v) => v.removeAttribute('data-selected'))
+      variant.setAttribute('data-selected', 'true')
+    })
+  })
+</script>

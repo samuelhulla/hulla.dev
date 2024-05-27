@@ -13,7 +13,9 @@ export default defineConfig({
       applyBaseStyles: false,
     }),
     solidJs(),
-    mdx(),
+    mdx({
+      optimize: true,
+    }),
   ],
   prefetch: true,
   experimental: {

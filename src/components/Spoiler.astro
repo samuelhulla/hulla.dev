@@ -1,0 +1,25 @@
+---
+export interface Props {
+  title?: string
+}
+
+const { title = 'Spoiler' } = Astro.props
+---
+
+<div class="rounded-md bg-primary/5 px-4 py-1 ring">
+  <div id="spoiler" class="flex w-full items-center justify-between py-2">
+    <div id="spoiler-title">{title}</div>
+    <div>Close/Hide</div>
+  </div>
+  <span class="my-2" id="spoiler-content">
+    <slot />
+  </span>
+</div>
+
+<script>
+  const spoiler = document.getElementById('spoiler')
+  const spoilerContent = document.getElementById('spoiler-content')
+  spoiler!.addEventListener('click', () => {
+    spoilerContent!.classList.toggle('hidden')
+  })
+</script>

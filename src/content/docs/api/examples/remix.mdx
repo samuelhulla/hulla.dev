@@ -1,0 +1,100 @@
+---
+title: Remix
+---
+import Aside from '../../../../components/Aside.astro'
+
+Remix was one of the main pioneers when it came to improving the fetching experience in react eco-system.
+
+Built on top of `react`, it might be worth checking out vanilla [react example](react) fetching patterns first, if you're not familiar with them.
+
+<Aside title="About upcoming react-router@v7">
+This guide focuses on current version of Remix and it's available documentation. While there is a `react-router@v7` in the making,
+which will essentially replace `remix` as we know it, it's currently under active development and until a stable release is made
+with documentation, I don't want to risk providing inaccurate info which might change in near future.
+</Aside>
+
+## Loaders
+
+One of the ground-breaking patterns of remix to eliminate loader waterfalls was it's `loader` feature.
+Here's how we'd go about implementing it with `@hulla/api`.
+
+```ts
+import { api } from '@hulla/api'
+
+const a = api()
+export const usersAPI = a.router({
+  name: 'users',
+  routes: [
+    a.procedure('getAllUsers', () => db.users.getAll()),
+    a.procedure('getUserById', (id: string) => db.users.get(id)),
+    // can be a fetch call, kv store, or anything else
+  ],
+})
+```
+
+and then in your remix route (page) or component
+
+```tsx
+import { json, type LoaderFunctionArgs } from '@remix-run/node'
+import { useLoaderData } from '@remix-run/react'
+
+export const loader = async ({ params }: LoaderFunctionArgs) => {
+  const users = await usersAPI.call('getUserById', params.id)
+  return json({ users })
+}
+
+export default function Users() {
+  const users = useLoaderData<typeof loader>()
+  return (
+    <div>
+      {users.map((user) => (
+        <div key={user.id}>{user.name}</div>
+      ))}
+    </div>
+  )
+}
+```
+
+Since remix `loader` pattern serves as a catch-all for all recommended fetching patterns, that's pretty much all you need to know.
+
+## Forms & actions
+
+Remix is built around the idea of `<form>` _(or it's optimize re-export `<Form>` component)_ submissions.
+
+While the GET requests don't really make much sense, as they are just used for navigation, we can use actions with a `POST` method.
+
+```ts
+import { json, type ActionFunctionArgs } from '@remix-run/node'
+import { usersAPI } from '@/api/users'
+
+// app/routes/users.new.tsx
+export async function action({ request }: ActionFunctionArgs) {
+  const body = await request.formData()
+  const user = await usersAPI.call('createUser', body)
+  return json({ user })
+}
+```
+
+```tsx
+import { action } from './users.new'
+
+export default function NewUser() {
+  const actionData = useActionData<typeof action>()
+  return (
+    <form method="post" action="/users/new">
+      {/* ... */}
+    </form>
+  )
+}
+```
+
+
+
+## Anything else
+
+If you found any examples not compatible with [official remix docs](https://remix.run/docs/en/main/guides/data-loading#data-libraries),
+please let me know or ideally [contribute] yourself ❤️
+
+## Demo
+
+Demo coming up soon!

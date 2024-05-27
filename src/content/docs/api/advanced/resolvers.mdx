@@ -34,8 +34,8 @@ const numFn = (num: number) => num
 ]
 
 // later:
-a.call('fn', 1)  // 1 === number
-a.call('resolver', 1) // '1' === string (resolver overrode fn return type)
+exampleAPI.call('fn', 1)  // 1 === number
+exampleAPI.call('resolver', 1) // '1' === string (resolver overrode fn return type)
 ```
 
 ## Usage
@@ -48,16 +48,15 @@ Here's a very basic _(and not very practical)_ example, that should help you und
 import { api } from '@hulla/api'
 
 const a = api()
-const router = a.router({
+export const exampleAPI = a.router({
   name: 'example',
   routes: [
     a.procedure('foo', (a: number) => a, (res) => res.toString())
   ]
 })
-const example = a.create(router)
 
 // then later:
-example.call('foo', 1) // '1'
+exampleAPI.call('foo', 1) // '1'
 ```
 
 But you should get the gist of it, obviously this pattern is a lot more powerful, when you have some complex calls and chained interactions.
@@ -75,7 +74,7 @@ import { getCurrentUser, updateUser } from './queries/users'
 const context = { theme: $theme.get() }
 
 const a = api({ context })
-const router = a.router({
+export const usersAPI = a.router({
   name: 'users',
   routes: [
     a.procedure('update-theme', getCurrentUser, async (res, ctx) => {
@@ -85,7 +84,6 @@ const router = a.router({
     })
   ]
 })
-const usersAPI = a.create(router)
 
 // then later:
 const afterLogin = async () => {
@@ -96,16 +94,19 @@ const afterLogin = async () => {
 
 ### Input/Output Validator
 
+Consider the following sample calls
+
 ```ts
-validatedAPI.call('copyUser', 'John', 'john@email.com') // ✅ ok
-validatedAPI.call('copyUser', 'John', 'incorrectEMAIL123') // 🚧 ok by TS (email is string, even though in incorrect format)
-// --> we need a validator!
+exampleAPI.call('copyUser', 'John', 'john@email.com') // ✅ ok
+exampleAPI.call('copyUser', 'John', 'incorrectEMAIL123') // 🚧 ok by TS
+// (email is string, even though in incorrect format) -> we need a validator!
 ```
 
 ```ts
 import { api } from '@hulla/api'
 import { createUser } from './queries/users'
-import { z } from 'zod' // note we don't have to use zod, can write our own validator for all intents and purposes
+import { z } from 'zod'
+// note we don't have to use zod, can write our own validator for all intents and purposes
 
 const schema = z.object({
   name: z.string()
@@ -115,12 +116,13 @@ const schema = z.object({
 const toUserObject = (name: string, email: string) => ({ name, email })
 
 const a = api()
-const router = a.router({
+export const validatedAPI = a.router({
   name: 'validated',
   routes: [
     a.procedure('copyUser', toUserObject, async (user) => {
       const payload = schema.parse(user) // throws error if incorrect
-      const newUser = await createUser(payload) // ✅ ok - could just return createUser(payload) instead
+      const newUser = await createUser(payload) // ✅ ok 
+      // could just return createUser(payload), but for demonstration purposes:
 
       // not very practical / redundant in this particular example
       // but just to showcase you can also validate output as well -- 
@@ -130,12 +132,9 @@ const router = a.router({
     })
   ]
 })
-export const validatedAPI = a.create(router)
 ```
 
 This is useful for adding extra safety that typescript cannot catch
-
-
 
 ### Reusable resolvers
 
@@ -155,12 +154,12 @@ import { api } from '@hulla/api'
 const fromString = (str: string) => str
 const fromNumber = (num: number) => str.toString()
 
-// as long as the ReturnType matches the type of function (in this case both 'string', we're good)
+// as long as ReturnType matches the type of function (in this case both 'string', we're good)
 // if they were different, you'd need to account for it (i.e. res: string | number | boolean)
 const resolver = (res: string) => res + 'bit'
 
 const a = api()
-const router = a.router({
+export const exampleAPI = a.router({
   name: 'example',
   routes: [
     a.procedure('fromString', fromString, resolver)
@@ -184,6 +183,14 @@ That was easy as well!
 
 > However what if we wanted full type safety of the exact Base Context we have in our resolvers, when we are typing resolvers inside our `a.procedure`?
 
+Generally it's always preferrable to write your  resolvers inside of procedure definitions _(when possible/reasonable)_. Issue is, this is not exactly re-usable (other than copy-pasting)
+
+```ts
+const a = api({ context: { foo: 'foo' }})
+a.procedure('example', () => null, (res, ctx) => ctx.foo) // 'foo'
+// => full type-safety out of the box, both custom and base context 
+```
+
 As you'll see it starts being a lot less
 straightforward real quick, as essentially you'll need to type out all the stuff manually, that the package infers under the hood for you 🦸.
 
@@ -206,7 +213,7 @@ const context: CTX = { foo: 'foo' }
 
 // 1. Return type of the functions (in our case `string`)
 type Res = string
-// 2. Combination of possible args (in our case `readonly [str: string] | readonly [num: number]`)
+// 2. Combination of possible args (in our case `readonly [string] | readonly [number]`)
 type Args = readonly [str: string] | readonly [num: number]
 // 3. Route name (in our case 'fromString' | 'fromNumber')
 type Routes = 'fromString' | 'fromNumber'
@@ -218,13 +225,13 @@ type RN = 'example'
 
 // our re-usable resolver definition
 const resolver = (res: Res, ctx: CTX & Context<Routes, Method, Args, RN>) => {
-  // note the intersection           ^ `&` merging custom context `CTX` with base context `Context`
+  // note the intersection `&` merging custom context `CTX` with base context `Context`
   return ctx.foo + res + 'bit'
 }
 
 // Time to put it all together:
 const a = api({ context })
-const router = a.router({
+export const exampleAPI = a.router({
   name: 'example',
   routes: [
     a.procedure('fromString', fromString, resolver)
@@ -239,10 +246,3 @@ your types are always correct and does not necessitate type assertions.
 
 Honestly it's not that difficult to write once you write a couple of re-usable resolvers of your own. Just takes some time getting used to all the types you need to pass 💪
 
-But generally it's always preferrable to write your  resolvers inside of procedure definitions _(when possible/reasonable)_
-
-```ts
-const a = api({ context: { foo: 'foo' }})
-a.procedure('example', () => null, (res, ctx) => ctx.foo) // 'foo'
-// =>                                             ^ full type-safety out of the box, both custom and base context 
-```

@@ -1,6 +1,12 @@
 ---
 title: Custom Methods
 ---
+import Aside from '../../../../components/Aside.astro'
+
+<Aside variant="note">
+Custom methods are primarily intended to be used by library authors, that build integrations on top of `@hulla/api`. It is very likely
+you will not need to understand concept of custom methods for your project
+</Aside>
 
 Custom methods are an advanced concept for creating your own methods that define routes in the [router](/docs/api/core-concepts/router).
 
@@ -45,15 +51,14 @@ import { api, method } from '@hulla/api'
 
 const a = api()
 
-const router = a.router({
+export const exampleAPI = a.router({
   name: 'custom method',
   routes: [
     method('custom', a.procedure('foo', () => 'bar'))
   ]
 })
-const example = a.create(router)
 
-example.custom('foo') // 'bar'
+exampleAPI.custom('foo') // 'bar'
 //       ^ note the custom method, 
 ```
 
@@ -93,10 +98,34 @@ export function custom<const CTX extends Obj>(context: CTX) {
 
 // Then we need to initialize our api with a custom method:
 const a = api({
-  context: { foo: 'foo' }, // you don't need to define custom context, but including it for type-safety demonstration
+  // you don't need to define custom context, but including it for type-safety demonstration
+  context: { foo: 'foo' },
   methods: ctx => ({
-    custom
+    custom: custom(ctx)
   })
 })
 ```
 
+And then we'd define our router using our custom method
+
+```ts
+export const exampleAPI = a.router({
+  name: 'with custom call',
+  routes: [
+    a.custom('fancy', () => null), // calls doSomething()
+    a.procedure('not-so-fancy', () => null), // doesn't call doSomething()
+  ]
+})
+```
+
+## Difference between adapters and custom methods
+
+While both are primarily used by library authors for integrations, there are some key differences
+
+| Difference | [Adapters](#declaration--usage) | [Custom Methods](custom) |
+| --- | --- | --- |
+| __Intended use__ | Adapting already defined routes | A way of defining new routes |
+| __Defined in__ | Inside the `.router()` call | Inside the `api()` initalization |
+| __Used in__ | in your API calls (exported `.router()` result) | `routes` parameter of `.router()` |
+| __Argument__ | `RouterAdapter` | `Context` |
+| __Return Type__ | Object with adapter methods | Object with custom methods |

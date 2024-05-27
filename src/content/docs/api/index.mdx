@@ -1,0 +1,70 @@
+---
+title: '@hulla/api'
+name: 'About'
+---
+
+Welcome to the documentation of `@hulla/api`.
+
+If you're ready to dive in and don't need motivation or comparisons with similar packages, feel free to head straight to the [Installation](api/getting-started/installation) page!
+
+## About
+
+### What is it?
+
+- **RPC manager** that organizes API (or any other calls) for you ✅
+- **Platform agnostic** - client, server, serverless, or all combined? No problem! 💎
+- **Framework agnostic** - works in any (JavaScript/TypeScript based) language/library/framework. 🏆
+- **Advanced TypeScript checker** enforcing best practices and preventing mistakes 🦸
+- **Minimal** - [97.7% smaller than comparable packages](#caveat-package-size) (with the same or better functionality) 🤯
+- **Extensible** - Comes with official [integrations](api/integrations), or allows you to create your own [methods](/docs/api/advanced/custom) & [adapters](/docs/api/advanced/adapters) 🧩
+
+### What is it not?
+
+- **Not a fetching/back-end tool**. It doesn't implement or override any native methods or fetching logic. How your data is fetched is up to you to define in your [procedures](api/core-concepts/procedures). However, there are solutions for common patterns like [requests](api/integrations/requests), [@tanstack/query](api/integrations/query), and [swr](api/integrations/swr). Check out the list of [integrations](api/integrations) or consider writing your own [custom methods](api/advanced/custom) & [adapters](api/advanced/adapters). Think of it as a tool that helps you organize and scale your API, not one that implements fetching/caching or assists in writing back-end code.
+- **Not a documentation tool**. It doesn't generate OpenAPI/Swagger docs. It's simply a manager that expects you already have these defined. If you're looking to generate them, check out my other package: [`@hulla/docs`](/docs/docs).
+
+## Comparison
+
+| Functionality                 | `@hulla/api` | `@trpc` | `axios` | `superagent` |
+| ----------------------------- | ------------ | ------- | ------- | ------------ |
+| Bundle size (minified)        | 1.2 KB       | 31 KB   | 52 KB   | 138 KB       |
+| Framework agnostic            | ✅           | ✅      | ✅      | ✅           |
+| Type-safe                     | ✅           | ✅      | ❌      | ❌           |
+| Server actions                | ✅           | ❌      | ❌      | ❌           |
+| Requests                      | ✅           | ✅      | ✅      | ✅           |
+| Procedures                    | ✅           | ✅      | ❌      | ❌           |
+| Integrations/Adapters         | ✅           | ✅      | ❌      | ❌           |
+| Middleware                    | ✅           | ✅      | ❌      | ❌           |
+| Interceptors                  | ✅           | ❌      | ✅      | ❌           |
+| Native                        | ✅           | ❌      | ❌      | ❌           |
+| Dependencies                  | 0            | 0       | 3       | 9            |
+| Learning curve _(subjective)_ | Medium       | Hard    | Medium  | Easy         |
+
+<p class="text-xs text-right">- Last updated: 25.5.2024</p>
+
+## Motivation
+
+Fetching has been a challenge for the longest time in JavaScript. Entire languages and frameworks have been built primarily to improve handling and organization of calls. Over the past decade, we've made huge strides towards API management with tools like `axios`, which helped immensely but was too large and lacked type safety.
+
+Then came `@trpc`, which addressed most of my issues with `axios`. For a while, it was the perfect solution. However, technology always progresses, and with the advent of server components and actions, `trpc` has become less compatible (through no fault of its own). Making it work with server actions and the client has become a headache.
+
+When creating this package, I set the following goals:
+
+- Must be framework/library agnostic
+- Must be easy to learn (within minutes)
+- Must be 100% type-safe (on par with `trpc`)
+- Must have a server-actions-first approach
+- Must improve developer experience (DX) on both client and server
+- Must reduce package size bloat (minimal but extensible)
+
+## Caveat: Package size
+
+You might call it boasting, but size matters! At least when it comes to your JavaScript bundles. 😅
+
+So, how is the package size so drastically different when it claims to do as much as similar tools?
+
+1. **Advanced type inference**: We let the types (0 KB when served to the client) do the heavy lifting instead of the JavaScript.
+2. **Minimalist philosophy**: The package avoids "Swiss-army knife" approaches that aim to do too much and must be bundled even though you don't need them 90% of the time. The goal was to keep it minimal but extensible.
+3. **No special "package-isms"**: It doesn't override behavior. It's just pure TypeScript built on top of `Functions` and `Promises`. How you define your procedures is up to you.
+
+For full disclosure, the core of `@hulla/api` doesn't provide any "extra fetching logic," which is part of both `trpc` and `axios`. As mentioned in the [motivation](#motivation) section, one of my goals was to make the package minimal but extensible. You can still make fetch calls with just [procedures](/docs/api/core-concepts/procedures), but if you want to be truly pedantic, the recommended [integration for requests](/docs/api/integrations/requests) -- `@hulla/api-request` comes in at a whopping 1.3 KB. So even with that included (2.5 KB combined), it's still 95.19% smaller than `axios` and 91.94% smaller than `trpc`.

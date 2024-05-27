@@ -1,0 +1,36 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+import { cva, type VariantProps } from 'class-variance-authority'
+
+const styles = cva('aside', {
+  variants: {
+    variant: {
+      note: 'bg-secondary/20 rounded-md px-4 py-1 ring ring-secondary/50',
+      warning: 'bg-warning/15 rounded-md px-4 py-1 border border-warning/50',
+      error: 'bg-error/20 rounded-md px-4 py-1 ring ring-error',
+      success: 'bg-accent/20 rounded-md px-4 py-1 ring ring-success',
+      info: 'bg-primary/20 rounded-md px-4 py-1 ring ring-info',
+    },
+  },
+  defaultVariants: {
+    variant: 'note',
+  },
+})
+
+export interface Props
+  extends HTMLAttributes<'aside'>,
+    Required<Pick<VariantProps<typeof styles>, 'variant'>> {
+  title?: string
+}
+
+const { variant, title } = Astro.props
+---
+
+<aside class:list={styles({ variant })}>
+  {
+    title !== undefined && (
+      <h4 class="my-2 p-0 text-lg font-semibold">{title}</h4>
+    )
+  }
+  <slot />
+</aside>
