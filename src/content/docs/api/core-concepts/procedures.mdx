@@ -53,7 +53,7 @@ Here's some true and tested principles that will do wonders for you in long term
 
 ### Server vs client
 
-If you plan on using `@hulla/api` only on client, you can skip this section. Otherwise I'd stongly recommend giving it a read
+If you plan on using `@hulla/api` only on client, you can skip this section. Otherwise I'd strongly recommend giving it a read
 as it's going to help you scale your application in the long run.
 
 It's good to define your procedures in a way that will work always on server _(this way you can rest assured it will also work on client)_ and allows you to not to repeat yourself - having to define duplicate calls for server / client.
@@ -74,26 +74,26 @@ a.procedure('getUsersBAD', () => useQuery({
 })) // ❌ BAD, DONT DO THIS
 ```
 
-Two simple rules to keep in mind
+Two simple rules to keep in mind:
 
-1. Never have two procedures that use same function twice _(in our example: `getAllUsers`)_.
-2. Never bundle client-side packages to your server-compatible APIs _(in our exampe `@tanstack/query`)_.
+1. Never have two procedures that use the same function twice _(in our example: `getAllUsers`)_.
+2. Never bundle client-side packages to your server-compatible APIs _(in our example `@tanstack/query`)_.
 
 <Aside variant="warning" title="Regarding the procedure with useQuery:">
 As you could see, we noted the `procedure` declaration with `useQuery` as a bad practice. Why?
 
 1. __Your API no longer works on both server and client!__
 2. Your `useQuery` (@tanstack/query) dependency is going to get imported on every single api call, even in modules where you don't use the `Query` version of the calls.
-3. You have to manage queryKeys and make sure they are unique accross your codebase.
+3. You have to manage queryKeys and make sure they are unique across your codebase.
 4. Your routes are no longer DRY, multiple definitions of the same routes
-5. You don't have a way of passing `queryOptions` unless you specify them as argument in every call _(how would that even work with `...spread` args? There's no way to access it!)_.
+5. You don't have a way of passing `queryOptions` unless you specify them as arguments in every call _(how would that even work with `...spread` args? There's no way to access it!)_.
 
 Solution? Use the [`@hulla/api-query`](/docs/api/integrations/query) integration 🔥
 </Aside>
 
 Generally, your `procedure` should contain only the minimal necessary logic to execute. Any extra logic, that's handled on client (or even server)
-that's famework or library specfic should not be part of the procedure function declaration. Instead you should import the client-side logic of that library
-only when necessary to avoiding importing it on server or parts of client where you don't need it.
+that's framework or library specific should not be part of the procedure function declaration. Instead, you should import the client-side logic of that library
+only when necessary to avoid importing it on the server or parts of the client where you don't need it.
 
 ```ts
 // in api router declaration
@@ -122,12 +122,10 @@ export const createUserAction = action(async (user: User) => usersAPI.call('crea
 > then you can use it in your `procedures`. 
 >
 > Generally as your application scales, it's better to keep your
-> procedures as minimal as possible, and handle the rest in your framework specific code.
-> or even add a special [adapter](/docs/api/advanced/adapters) for your framework specific code.
+> procedures as minimal as possible, and handle the rest in your framework-specific code.
+> or even add a special [adapter](/docs/api/advanced/adapters) for your framework-specific code.
 
 This way you can rest assured your code will be DRY and will work on both client and server without impacting the bundle size.
-
-
 
 ### Procedure Naming
 
@@ -153,7 +151,7 @@ The reason for this is, we don't know which one of the two procedures you'd want
 
 One final important distinction to make:
 
-> You can have same route names with different methods
+> You can have the same route names with different methods
 
 ```ts
 // this is ok ✅, same key but different methods
@@ -164,6 +162,4 @@ routes: [
 ]
 ```
 
-To find out more about creating different methods, see the [custom methods](/docs/api/advanced/custom) or the specific [request integration](/docs/api/integrations/requests) we used in this example
-
-
+To find out more about creating different methods, see the [custom methods](/docs/api/advanced/custom) or the specific [request integration](/docs/api/integrations/requests) we used in this example.

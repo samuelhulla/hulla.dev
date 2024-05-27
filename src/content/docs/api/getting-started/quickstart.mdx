@@ -2,7 +2,6 @@
 title: 'Quick-start'
 ---
 
-
 > This section presumes you've already [installed the package](installation)
 
 ## Creating your API
@@ -24,7 +23,7 @@ const a = api() // initialize the api
 ```ts
 function getAllUsers() {
   return db.from('users').select('*') // Promise<{ name: string, id: string}[]>
-} 
+}
 function getUserById(id: string) {
   return db.query('users').where('id', '==', id) // Promise<{ name: string, id: string}>
 }
@@ -42,7 +41,6 @@ export const usersAPI = a.router({
 ```
 
 > You don't have to worry about distinguishing between client and server, this will work everywhere _(as long as your function doesn't execute client-side only code)_
-
 
 That's it! We're ready to start using our API now.
 
