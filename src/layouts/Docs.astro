@@ -22,6 +22,9 @@ const packages = keys(NAVIGATION).map((pkgName) => ({
   value: pkgName,
 }))
 
+const editLink = `https://github.com/samuelhulla/hulla.dev/blob/master/src/content/docs/${slug}.mdx`
+const contributeLink = `https://github.com/hulladev/${pkg}/blob/master/CONTRIBUTING.md`
+
 // we could do getCollections and map them programatically, but since we need to do sorting
 // anyways if we want other order than alphabetical, we might as well hard-code it
 // as it's more performant to write a static json-like structure than do sorting and mutation in JS
@@ -30,20 +33,25 @@ const chapters = NAVIGATION[pkg] ?? {}
 
 <Page class="" title={frontmatter.title}>
   <div class="flex w-full px-8 py-4">
-    <nav class="fixed flex justify-end"><ThemeToggle /></nav>
+    <nav class="fixed flex w-full gap-8">
+      <ThemeToggle />
+    </nav>
   </div>
   <main class="space-between flex">
     <div
-      class="min-h-screen w-[16dvw] bg-text px-8 dark:bg-bg 2xl:max-w-[12dvw]">
+      class="hidden min-h-screen w-[16dvw] bg-text px-8 dark:bg-bg md:block 2xl:max-w-[12dvw]">
       <DocsMenu chapters={chapters} packages={packages} pkg={pkg} />
     </div>
-    <article
-      class="2xl:min-w-none prose min-w-[64dvw] p-8 dark:prose-invert 2xl:max-w-[50dvw]">
+    <article class="2xl:min-w-none prose min-w-[64dvw] p-8 dark:prose-invert">
       <h1 class="pb-4">{frontmatter.title}</h1>
       <slot />
     </article>
     <div class="w-[18dvw] 2xl:max-w-[15dvw]">
-      <TOC headings={headings} />
+      <TOC
+        editLink={editLink}
+        contibuteLink={contributeLink}
+        headings={headings}
+      />
     </div>
   </main>
 </Page>
