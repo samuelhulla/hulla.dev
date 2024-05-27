@@ -7,9 +7,11 @@ export interface Props {
     text: string
     slug: string
   }[]
+  contibuteLink: string
+  editLink: string
 }
 
-const { headings } = Astro.props
+const { headings, contibuteLink, editLink } = Astro.props
 ---
 
 <nav
@@ -31,12 +33,11 @@ const { headings } = Astro.props
       }
     </ul>
   </div>
-  <footer class="my-2">
+  <footer class="mb-8">
     <h4 class="mb-2 text-xl font-bold">Contribute</h4>
     <ul class="space-y-2 *:text-sm *:text-description">
-      <li>Contibution guide</li>
-      <li>Edit this page</li>
-      <li>Contribute to package</li>
+      <li><a href={contibuteLink}>Contibution guide</a></li>
+      <li><a href={editLink}>Edit this page</a></li>
     </ul>
   </footer>
 </nav>
