@@ -71,19 +71,18 @@ const { data } = useQuery(usersAPI.query.call('getAllUsers')) // 💡 see Integr
 
 And that's all you need to know to get your very minimal API definition up and running. Here's a comprehensive list of examples, so it's clearer with the technology you love using.
 
-## Examples reference
+## Example Reference
 
-| Library/Framework/Package           | Server | Client |
-| ----------------------------------- | ------ | ------ |
-| [React](react)                      | ✅     | ✅     |
-| [Solid](solid)                      | ✅     | ✅     |
-| [Vue (Nuxt)](vue)                   | ✅     | ✅     |
-| [Astro](astro)                      | ✅     | ✅     |
-| [@tanstack/query](query)            | N/A    | ✅     |
-| [swr](swr)                          | N/A    | ✅     |
-| [Express/Node/Bun/Hono/...](server) | ✅     | N/A    |
-| [Remix](remix)                      | ✅     | ✅     |
-| [Next](next)                        | ✅     | ✅     |
-| [React Native](native)              | N/A    | ✅     |
+| Library/Framework/Package                        | Server | Client |
+| ------------------------------------------------ | ------ | ------ |
+| [React](/docs/api/examples/react)                | ✅     | ✅     |
+| [Next](/docs/api/examples/next)                  | ✅     | ✅     |
+| [Astro](/docs/api/examples/astro)                | ✅     | ✅     |
+| [Remix](/docs/api/examples/remix)                | ✅     | ✅     |
+| [Solid](/docs/api/examples/solid)                | ✅     | ✅     |
+| [Vue & Nuxt](/docs/api/examples/vlue)            | ✅     | ✅     |
+| [React Native & expo](/docs/api/examples/native) | N/A    | ✅     |
+| [@tanstack/query](/docs/api/integrations/query)  | N/A    | ✅     |
+| [swr](/docs/api/integrations/swr)                | N/A    | ✅     |
 
 **Even if your favourite framework isn't listed here, 99% chance it's compatible with `@hulla/api`** -- all the package does is organize the calls for you. It does not implement any fetching logic under the hood, that's up to you to provide! If you follow best practices it will work anywhere, be it server, client or a service worker.
