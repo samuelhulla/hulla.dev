@@ -22,6 +22,7 @@ const api: {
   'Core Concepts': [
     { label: 'Procedures', url: '/core-concepts/procedures' },
     { label: 'Router', url: '/core-concepts/router' },
+    { label: 'Overview & Lifecycle', url: '/core-concepts/lifecycle' },
   ],
   Advanced: [
     { label: 'Resolvers', url: '/advanced/resolvers' },
