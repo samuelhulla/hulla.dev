@@ -1,6 +1,7 @@
 ---
 title: Resolvers
 ---
+import SVGResolver from '@/assets/docs/api/usageresolver.astro'
 
 Here are some common use-cases for Resolvers:
 
@@ -59,7 +60,9 @@ export const exampleAPI = a.router({
 exampleAPI.call('foo', 1) // '1'
 ```
 
-But you should get the gist of it, obviously this pattern is a lot more powerful, when you have some complex calls and chained interactions.
+Hopefully you should get the gist of it, obviously this pattern is a lot more powerful, when you have some complex calls and chained interactions.
+
+<SVGResolver class="mx-auto mt-4" />
 
 ### Accessing context (& mutating result)
 

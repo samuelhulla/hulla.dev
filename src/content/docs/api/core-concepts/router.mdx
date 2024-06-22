@@ -1,6 +1,8 @@
 ---
 title: Router
 ---
+import SVGRouter from '@/assets/docs/api/router.astro'
+import SVGUsageSimple from '@/assets/docs/api/usagesimple.astro'
 
 Router is the brains of your operations. It creates your API definitions for you and packs some useful utilities along the way!
 
@@ -38,6 +40,8 @@ export const exampleAPI = a.router({
 })
 ```
 
+<SVGRouter class="mx-auto mt-4" />
+
 ## Usage
 
 You should always export your ready API definition as the result of the `.router()` call
@@ -72,6 +76,8 @@ const john = await usersAPI.call('byId', '0') // { id: '0', name: 'John' } ✅
 const badCall = await usersAPI.call('byId', 0) // ❌ type error
 //                                     ^ expected 'string', got 'number'
 ```
+
+<SVGUsageSimple class="mx-auto mt-4" />
 
 ## Return type (API)
 

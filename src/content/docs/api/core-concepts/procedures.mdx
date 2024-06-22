@@ -1,7 +1,9 @@
 ---
 title: 'Procedures'
 ---
-import Aside from '../../../../components/Aside.astro'
+import Aside from '@/components/Aside.astro'
+import SVGProcedure from '@/assets/docs/api/procedure.astro'
+import SVGUsage from '@/assets/docs/api/usagesimple.astro'
 
 Procedures are the most basic building blocks of your API.
 
@@ -33,6 +35,8 @@ a.procedure('api-call', (id: string) => fetch(`<your-api>/users/${id}`)) // or a
 
 You can pass pretty much anything to a procedure.
 
+<SVGProcedure class="mx-auto mt-4" />
+
 ## Usage
 
 > Procedures are not intended to be used by themselves! 🚧
@@ -46,6 +50,10 @@ exampleAPI.call('hello') // world
 exampleAPi.call('sum', 1, 2) // 3
 exampleAPI.call('getUserById', '123') // Promise<{ id: '123', name: 'John Doe' }>
 ```
+
+Here's how the `getUserById` would look in graphical representation.
+
+<SVGUsage class="mx-auto mt-4" />
 
 ## Best practices
 

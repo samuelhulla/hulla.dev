@@ -25,8 +25,10 @@ export default {
           '-apple-system',
           'system-ui',
           'sans-serif',
+          'Virgil',
+          'Assistant',
         ],
-        mono: ['JetBrains Mono', 'ui-monospace', 'monospace'],
+        mono: ['JetBrains Mono', 'Cascadia', 'ui-monospace', 'monospace'],
       },
       fontSize: {
         '10xl': '10rem',

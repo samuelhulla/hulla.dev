@@ -1,0 +1,130 @@
+---
+title: Overview & Lifecycle
+---
+import { Image } from 'astro:assets'
+import SVGInitialization from '@/assets/docs/api/initialization.astro'
+import SVGRouter from '@/assets/docs/api/router.astro'
+import SVGProcedureBasic from '@/assets/docs/api/procedure.astro'
+import SVGCustomMethod from '@/assets/docs/api/custom-method.astro'
+import SVGUsageSimple from '@/assets/docs/api/usagesimple.astro'
+import SVGUsageResolver from '@/assets/docs/api/usageresolver.astro'
+import SVGInterceptors from '@/assets/docs/api/interceptors.astro'
+import SVGAdapters from '@/assets/docs/api/adapter.astro'
+import Aside from '@/components/Aside.astro'
+
+In this section we'll go over the entire lifecycle of using `@hulla/api` in action and will graph out all it's features.
+The reading is structured in a way that you can follow along and understand the concepts as you go.
+
+<Aside>
+Don't worry if you're feeling overwhelmed with all the information here at first reading! While `@hulla/api`'s most basic use-case of [creating a router with couple of basic procedure calls is easy](/docs/api/getting-started/quickstart), it is indeed a feature-rich package that is capable of doing complex things.
+So much so, it's easy to get lost with all the functionality when you see it all in one place like this
+
+The most important take-away is a broad understanding what the package consists of and what it does, where it's defined and how it's invoked.
+
+You can always return to this section later on when you're more comfortable with the package and want to understand the inner workings better. 🧠
+</Aside>
+
+## Initialization
+
+The first step is to initialize the API. This is done by calling the `api()` function, which returns an instance of the API SDK that you can use to create [routers](router) and it's [procedures](procedures) (routes).
+
+```ts
+import { api } from '@hulla/api'
+const a = api() // initialization
+```
+
+The `api` function also takes arguments that help you further modify your sdk behaviour.
+
+1. [Context](/docs/api/advanced/context) - allows you to pass in a context object that can be useful in route definitions and calls.
+2. [Custom methods](/docs/api/advanced/custom) 🧪 - special way of defining api routes, think of them as procedures with side-effects. *Primarily useful for library authors that build integrations with `@hulla/api`.*
+
+<Aside title="How many times should I initialize the API? 🤔" variant="info">
+You can initialize (`const a = api()`) the API SDK how many times you want. It doesn't matter if you do it once and re-export it
+or you initializate it per router level _(or even use multiple insances in same router)_.
+
+Just keep in mind the context and custom methods are unique per instance.
+</Aside>
+
+<SVGInitialization class="mx-auto mt-4" />
+
+## Router definition
+
+Once we have initialization our API SDK, we're ready to define and export our [router](router) that will serve as a logical encapsulation of our API/Procedure routes.
+
+Each router must take a router name, that's useful for registering route names and deduplicating them under the hood to separate identical route names under different routers. Apart from that, you can pass the following properties to the router
+
+1. Routes - [Procedures](procedures), Procedures with [resolvers](/docs/api/advanced/resolvers) or the procedures created via [custom methods](/docs/api/advanced/custom) *(you can define custom methods in the previous initialization step)*
+2. [Interceptors](/docs/api/advanced/interceptors) - special middleware calls, that can mutate the arguments of procedures/custom methods, results of these routes or even their [resolvers](/docs/api/advanced/resolvers).
+3. [Adapters](/docs/api/advanced/adapters) 🧪 - special functions, that alter the entire behaviour of the router and extends it's functionality. For example the [@tanstack/query integration](/docs/api/integrations/query) or the [swr integration](/docs/api/integrations/swr)
+
+Here's a quick example of a router definition
+
+```ts
+// a.router / a.procedure is available from the initialization step above
+export const usersAPI = a.router({
+  name: 'usersAPI',
+  routes: [
+    // this is a single route definition 👀
+    a.procedure('getAllUsers', () => db.from('users').select('*')),
+    a.procedure('getUserById', (id: string) => db.from('users').where('id', '==', id).select('*')),
+    // with resolver:
+    a.procedure('withResolver', someFunction, (sum, ctx) => sum + ctx.foo),
+    // or a custom method:
+    a.request.get('posts', (userId: string) => `/users/${userId}/posts`)
+  ]
+})
+```
+
+Or if you're more of a visual learner, here's what the code sample above would look in a graph. *In the code sample, we didn't specify a any [interceptors](/docs/api/advanced/interceptors) or [adapters](/docs/api/advanced/adapters) for the sake of simplicity.* 
+But feel free to check out their docs sections if you want to find out more about them.
+
+<SVGRouter class="mx-auto mt-4" />
+
+While we will not go super in-depth how [procedures](proceures), [interceptors](/docs/api/advanced/interceptors) and [adapters](/docs/api/advanced/adapters) work here *(read their own docs section if you're interested)*, it might be useful in terms of visualisations to show you
+how they are composed in relation to the color-coded fields in the graphs above.
+
+## Usage
+
+Here's how we'd use our defined router in action.
+
+### Standard procedure
+Now that we've defined our router API, it's time to see it in action. We'll import our defined router and call it's procedures *(in this case `getUserById`)*.
+
+```ts
+import { usersAPI } from '@/api/users'
+
+const users = usersAPI.call('getUserById', '123') // Promise<User>
+```
+
+
+<SVGUsageSimple class="mx-auto mt-4" />
+
+### Procedure with resolver
+
+In the following examples we'll no longer show the router graph to free up more space *(and trust me we're gonna need it* 😅<i>)</i>, but consider it's always there, as we import our router from it.
+
+If we were to call our procedure with resolver, it would look like this instead
+
+
+<SVGUsageResolver class="mx-auto mt-4" />
+
+### Procedure with resolver and interceptors
+
+and finally, we'll add all 3 types of interceptors to the mix. Also keep in mind you're not obligated to use every single one of these interceptors. You can deifne all 3
+or you can define exactly 0 of them, so picture those in graph that you only define in the [router definition](#router-definition) step
+
+<SVGInterceptors class="mx-auto my-4" />
+
+<Aside variant="warning" class="mt-4" title="Keep in mind 👀">
+If a route didn't have a resolver defined, the resolver function and resolver interceptor would not run.
+So the graph would end either at the procedure function return - or if you had a fn interceptor defined, than at the interceptor return.
+</Aside>
+
+### Adapters
+
+Last but not least, you may have noticed we didn't show adapters in any of our graphs. The reason why we can't provide a specific graph for adapters is because we're kind of in a unchartable territory *(pun intended)* as to how the library (adapter) author chooses for it to interract.
+They have freedom to return whatever they want as well as choose wether to run interceptors, resolvers or only the vanilla procedure function.
+
+<SVGAdapters class="mx-auto mt-4" />
+
+So you should consult the documentation for individual adapters as to how exactly they operate. There's no graph that will fit all of them.

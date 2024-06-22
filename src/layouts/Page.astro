@@ -30,84 +30,102 @@ const {
   @tailwind components;
   @tailwind utilities;
 
-  @font-face {
-    font-family: 'Inter';
-    font-style: normal;
-    font-weight: 400;
-    font-display: auto;
-    src: url('/fonts/Inter-Regular.woff2') format('woff2');
-  }
+  @layer base {
+    @font-face {
+      font-family: 'Inter';
+      font-style: normal;
+      font-weight: 400;
+      font-display: auto;
+      src: url('/fonts/Inter-Regular.woff2') format('woff2');
+    }
 
-  @font-face {
-    font-family: 'Inter', sans-serif;
-    font-style: normal;
-    font-weight: 600;
-    font-display: auto;
-    src: url('/fonts/Inter-SemiBold.woff2') format('woff2');
-  }
+    @font-face {
+      font-family: 'Inter', sans-serif;
+      font-style: normal;
+      font-weight: 600;
+      font-display: auto;
+      src: url('/fonts/Inter-SemiBold.woff2') format('woff2');
+    }
 
-  @font-face {
-    font-family: 'Inter', sans-serif;
-    font-style: normal;
-    font-weight: 300;
-    font-display: auto;
-    src: url('/fonts/Inter-Thin.woff2') format('woff2');
-  }
+    @font-face {
+      font-family: 'Inter', sans-serif;
+      font-style: normal;
+      font-weight: 300;
+      font-display: auto;
+      src: url('/fonts/Inter-Thin.woff2') format('woff2');
+    }
 
-  @font-face {
-    font-family: 'Inter', sans-serif;
-    font-style: normal;
-    font-weight: 700;
-    font-display: auto;
-    src: url('/fonts/Inter-Bold.woff2') format('woff2');
-  }
+    @font-face {
+      font-family: 'Inter', sans-serif;
+      font-style: normal;
+      font-weight: 700;
+      font-display: auto;
+      src: url('/fonts/Inter-Bold.woff2') format('woff2');
+    }
 
-  @font-face {
-    font-family: 'Inter', sans-serif;
-    font-style: italic;
-    font-weight: 400;
-    font-display: auto;
-    src: url('/fonts/Inter-Italic.woff2') format('woff2');
-  }
+    @font-face {
+      font-family: 'Inter', sans-serif;
+      font-style: italic;
+      font-weight: 400;
+      font-display: auto;
+      src: url('/fonts/Inter-Italic.woff2') format('woff2');
+    }
 
-  @font-face {
-    font-family: 'JetBrains Mono', monospace;
-    font-style: normal;
-    font-weight: 400;
-    font-display: auto;
-    src: url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
-  }
+    @font-face {
+      font-family: 'JetBrains Mono', monospace;
+      font-style: normal;
+      font-weight: 400;
+      font-display: auto;
+      src: url('/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+    }
 
-  @font-face {
-    font-family: 'JetBrains Mono', monospace;
-    font-style: normal;
-    font-weight: 700;
-    font-display: auto;
-    src: url('/fonts/JetBrainsMono-Bold.woff2') format('woff2');
-  }
+    @font-face {
+      font-family: 'JetBrains Mono', monospace;
+      font-style: normal;
+      font-weight: 700;
+      font-display: auto;
+      src: url('/fonts/JetBrainsMono-Bold.woff2') format('woff2');
+    }
 
-  @font-face {
-    font-family: 'JetBrains Mono', monospace;
-    font-style: italic;
-    font-weight: 400;
-    font-display: auto;
-    src: url('/fonts/JetBrainsMono-Italic.woff2') format('woff2');
-  }
+    @font-face {
+      font-family: 'JetBrains Mono', monospace;
+      font-style: italic;
+      font-weight: 400;
+      font-display: auto;
+      src: url('/fonts/JetBrainsMono-Italic.woff2') format('woff2');
+    }
 
-  @font-face {
-    font-family: 'JetBrains Mono', monospace;
-    font-style: normal;
-    font-weight: 600;
-    font-display: auto;
-    src: url('/fonts/JetBrainsMono-SemiBold.woff2') format('woff2');
-  }
+    @font-face {
+      font-family: 'JetBrains Mono', monospace;
+      font-style: normal;
+      font-weight: 600;
+      font-display: auto;
+      src: url('/fonts/JetBrainsMono-SemiBold.woff2') format('woff2');
+    }
 
-  @font-face {
-    font-family: 'JetBrains Mono', monospace;
-    font-style: normal;
-    font-weight: 300;
-    font-display: auto;
-    src: url('/fonts/JetBrainsMono-Thin.woff2') format('woff2');
+    @font-face {
+      font-family: 'JetBrains Mono', monospace;
+      font-style: normal;
+      font-weight: 300;
+      font-display: auto;
+      src: url('/fonts/JetBrainsMono-Thin.woff2') format('woff2');
+    }
+
+    @font-face {
+      font-family: 'Virgil';
+      font-display: swap;
+      src: url('https://excalidraw.com/Virgil.woff2') format('woff2');
+    }
+    @font-face {
+      font-family: 'Cascadia';
+      font-display: swap;
+      src: url('https://excalidraw.com/Cascadia.woff2') format('woff2');
+    }
+    @font-face {
+      font-family: 'Assistant';
+      font-display: swap;
+      src: url('https://excalidraw.com/Assistant-Regular.woff2') format('woff2');
+    }
   }
 
   /* For Webkit browsers */

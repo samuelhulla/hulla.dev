@@ -1,6 +1,12 @@
 ---
 title: 'Quick-start'
 ---
+import SVGInitialization from '@/assets/docs/api/initialization.astro'
+import SVGRouter from '@/assets/docs/api/router.astro'
+import SVGProcedure from '@/assets/docs/api/procedure.astro'
+import SVGUsage from '@/assets/docs/api/usagesimple.astro'
+
+`@hulla/api` is a powerful tool that allows you to create a unified API for your project, regardless of the environment you're in. It's a great way to organize your API calls and keep them in one place.
 
 > This section presumes you've already [installed the package](installation)
 
@@ -17,6 +23,10 @@ import { api } from '@hulla/api'
 
 const a = api() // initialize the api
 ```
+
+in a graphical representation this would mean:
+
+<SVGInitialization class="mx-auto mt-4" />
 
 2. We'll define our [router](/docs/api/core-concepts/router) and routes. We'll use [procedures](/docs/api/core-concepts/procedures) for routes.
 
@@ -41,6 +51,8 @@ export const usersAPI = a.router({
 ```
 
 > You don't have to worry about distinguishing between client and server, this will work everywhere _(as long as your function doesn't execute client-side only code)_
+
+<SVGRouter class="mx-auto mt-4" />
 
 That's it! We're ready to start using our API now.
 
@@ -68,6 +80,12 @@ useEffect(() => {
 import { useQuery } from '@tanstack/query'
 const { data } = useQuery(usersAPI.query.call('getAllUsers')) // 💡 see Integrations documentation
 ```
+
+and of course the visual representation *(without the adapter part)*. Here we only used the most minimal version
+of a direct RPC procedure call. But obviously this can get a lot more complex *(and powerful 💪)* with stuff like [resolvers](/docs/api/advanced/resolvers), [interceptors](/docs/api/advanced/interceptors) or [adapters](/docs/api/advanced/adapters).
+
+<SVGUsage class="mx-auto mt-4" />
+
 
 And that's all you need to know to get your very minimal API definition up and running. Here's a comprehensive list of examples, so it's clearer with the technology you love using.
 
