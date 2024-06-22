@@ -1,6 +1,7 @@
 ---
 title: Interceptors
 ---
+import SVGInterceptors from '@/assets/docs/api/interceptors.astro'
 
 > Before writing interceptors, if you need to mutate/transform specific procedure results, or run middleware only on specific routes - check out [resolvers](resolvers) first.
 >
@@ -41,6 +42,13 @@ export const interceptorAPI = a.router({
   }
 })
 ```
+
+or a graphical representation of the code above
+
+<SVGInterceptors class="mx-auto mt-4" />
+
+> Keep in mind, the graph above assumes you provided all 3 (`args`, `fn` and `resolver`)  interceptors, but you can provide only the ones you need,
+> so obviously the graph would return at the last define part.
 
 ## Usage
 

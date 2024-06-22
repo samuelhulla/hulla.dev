@@ -2,6 +2,9 @@
 title: Context
 ---
 
+import SVGInitialization from '@/assets/docs/api/initialization.astro'
+import SVGResolver from '@/assets/docs/api/usageresolver.astro'
+
 There are two kinds of context that you need to be aware of:
 
 1. **Base context** Which is the context included in every [resolver](resolvers), [adapter](adapters), [custom method](custom) and [interceptor](interceptors) by default.
@@ -37,6 +40,8 @@ import { api } from '@hulla/api'
 const context = { foo: 'foo' }
 const a = api({ context })
 ```
+
+<SVGInitialization class="mx-auto mt-4" />
 
 Now our base context is enriched with the passed custom context
 
@@ -91,6 +96,8 @@ export const usersAPI = a.router({
 ```
 
 And as easy as that, we made use of our context inside the actual calls.
+
+<SVGResolver class="mx-auto mt-4" />
 
 ## Where to find context
 

@@ -1,7 +1,8 @@
 ---
 title: Custom Methods
 ---
-import Aside from '../../../../components/Aside.astro'
+import Aside from '@/components/Aside.astro'
+import SVGCustomMethod from '@/assets/docs/api/custom-method.astro'
 
 <Aside variant="note">
 Custom methods are primarily intended to be used by library authors, that build integrations on top of `@hulla/api`. It is very likely
@@ -26,11 +27,16 @@ i.e.
 
 ```ts
 routes: [
-  request.get(...) // method === 'get'
+  a.request.get(...) // method === 'get'
 ]
 // later:
 myAPI.get(...) // accessing method 'get'
 ```
+
+Essentially custom methods are intended to be used as a helpers for defining your own routes (procedures). They do not
+do anything special, just think of them as extra functions attached your api sdk in [initialization](/docs/api/core-concepts/lifecycle#initialization)
+
+<SVGCustomMethod class="mx-auto mt-4" />
 
 ## Usage
 
