@@ -1,127 +1,405 @@
 ---
-import Bubble from '@/components/Bubble.astro'
-import Page from '@/layouts/Page.astro'
-import Linebreak from '@/components/Linebreak.astro'
-import Bento from '@/components/bento/Bento.astro'
-import BentoItem from '@/components/bento/BentoItem.astro'
-import Content from '@/layouts/Content.astro'
-import TextReveal from '@/components/animated/TextReveal.astro'
-import Slide from '@/components/client/Slide'
-import Card from '@/components/Card.astro'
-import Chip from '@/components/Chip.astro'
-import Carousel from '@/components/Carousel.astro'
+
 ---
 
-<Page title="hulla.dev">
-  <Linebreak class="sticky inset-0" />
-  <!-- hero sectioon -->
-  <Content element="header" class="">
-    <div
-      class="fixed -right-20 top-20 rotate-[60deg] rounded-sm bg-yellow-400 px-12 py-2 font-bold text-black shadow-lg">
-      <p>under construction</p>
-    </div>
-    <TextReveal class="mb-4 mt-8" text="hulla.dev" element="h1" stagger={0.1} />
-    <Slide
-      client:load
-      transition={{ duration: 1.5, delay: 0.2 }}
-      initial={{ x: -100, opacity: 0 }}
-      animate={{ x: 0, opacity: 1 }}>
-      <p class="text-sm text-description">
-        <span aria-hidden="true" class="text-primary">{'> '}</span>In a hurry?
-        Go to a section you need straight away
-      </p>
-    </Slide>
-    <Bento class="mx-auto mt-6 min-h-[60vh] grid-rows-2">
-      <BentoItem
-        title="> about me"
-        description="My backstory, my goals and my dreams, my motivation.">
-        <div
-          class="bg-grid group flex h-full w-full items-center justify-between gap-2 px-4 shadow-inner">
-          <Bubble
-            title="Hello there! 👋"
-            description="I'm Samuel and I've created this website"
-          />
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Samuel Hulla - Developer, Engineering Manager & Consultant"
+    />
+    <title>hulla.dev | Coming Soon</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <main>
+      <!-- Console-like header with typewriter effect -->
+      <div class="console">
+        <div class="console-header">
+          <div class="console-button red"></div>
+          <div class="console-button yellow"></div>
+          <div class="console-button green"></div>
+          <div class="console-title">~/hulla.dev</div>
         </div>
-      </BentoItem>
-      <BentoItem
-        class="md:col-span-2"
-        title="> open-source"
-        description="Web and mobile is awesome, but some parts are a hassle. Focus on building awesome projects, without sacrificing DX!">
-        <Carousel class="flex h-full flex-1 items-center">
-          <Card
-            class="min-w-52"
-            title="@hulla/api"
-            description="RPC Manager of the futue">
-            <Chip class="w-16" variant="accent">stable</Chip>
-          </Card>
-          <Card
-            class="min-w-52"
-            title="@hulla/ui"
-            description="Multi-platform packageless UI">
-            <Chip class="w-16" variant="error">wip</Chip>
-          </Card>
-          <Card
-            class="min-w-52"
-            title="@hulla/docs"
-            description="Automatic docs generator">
-            <Chip class="w-16" variant="warning">alpha</Chip>
-          </Card>
-          <Card
-            class="min-w-52"
-            title="@hulla/forms"
-            description="Form handling made easy">
-            <Chip class="w-16" variant="primary">beta</Chip>
-          </Card>
-          <Card
-            class="min-w-52"
-            title="@hulla/env"
-            description="Hassle-free .env files">
-            <Chip class="w-16" variant="error">wip</Chip>
-          </Card>
-          <Card
-            class="min-w-52"
-            title="@hulla/ts"
-            description="Minimal & fastest">
-            <Chip variant="error" class="w-16">wip</Chip>
-          </Card>
-          <Card
-            class="mr-4 min-w-52"
-            title="@hulla/create"
-            description="Opionated project starters">
-            <Chip variant="error" class="w-16">wip</Chip>
-          </Card>
-        </Carousel>
-      </BentoItem>
-      <BentoItem
-        class="md:row-span"
-        title="> blog & videos"
-        description="Internet is full of fluff. View stuff that respects your time!">
-        I'm
-      </BentoItem>
-      <BentoItem
-        title="> contact & socials"
-        description="Wanna stay in touch or got a pressing matter to discuss?">
-        here
-      </BentoItem>
-      <BentoItem
-        title="> courses"
-        description=`${new Date().getFullYear() - 2011} years of successes, failures and lessons - packaged`>
-        p
-      </BentoItem>
-    </Bento>
-    <Slide
-      client:load
-      transition={{ duration: 1.2, delay: 1.7 }}
-      initial={{ y: 200, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}>
-      <section class="my-8 text-center">
-        <h3>Got time to spare?</h3>
-        <p class="text-sm text-description">
-          Scroll down to see the entire presentation
-        </p>
-      </section>
-    </Slide>
-  </Content>
-  <div class="h-screen"></div>
-  <div class="h-screen"></div>
-</Page>
+
+        <div class="command typewriter">
+          <span class="command-prompt">$</span> pnpm start hulla.dev<span
+            class="blink">_</span
+          >
+        </div>
+
+        <div class="output typewriter-delay">
+          <span>Loading developer portfolio...</span>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="content">
+        <h1 class="title">hulla.dev</h1>
+        <p class="subtitle">{'{ under construction }'}</p>
+        <div class="divider"></div>
+
+        <div class="message">
+          <p>
+            Currently focused on open-source projects and client work. The full
+            portfolio is coming soon!
+          </p>
+        </div>
+
+        <div class="card">
+          <h2 class="card-title">What I'm working on:</h2>
+          <ul class="project-list">
+            <li class="project-item">
+              <span class="arrow">→</span>
+              <span
+                >Building and maintaining <span class="highlight"
+                  >@hulla/ open-source packages</span
+                > for the JS/TS ecosystem</span
+              >
+            </li>
+            <li class="project-item">
+              <span class="arrow">→</span>
+              <span
+                >Consulting as an <span class="highlight"
+                  >Engineering Manager & Tech Lead</span
+                > on client projects</span
+              >
+            </li>
+            <li class="project-item">
+              <span class="arrow">→</span>
+              <span
+                >Experimenting and helping companies with <span
+                  class="highlight">AI tools</span
+                > to enhance developer productivity</span
+              >
+            </li>
+          </ul>
+        </div>
+
+        <div class="cv-cta">
+          <p>
+            While the full site is under construction, you can check out my CV:
+          </p>
+          <a href="/cv" class="cv-button">
+            <svg
+              class="cv-icon"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round">
+              <path
+                d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+              ></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            View CV
+          </a>
+        </div>
+      </div>
+
+      <!-- Social links -->
+      <div class="social-links">
+        <a
+          href="https://github.com/samuelhulla"
+          class="social-link"
+          aria-label="GitHub"
+          target="_blank"
+          rel="noopener noreferrer">
+          <svg
+            class="social-icon"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true">
+            <path
+              fill-rule="evenodd"
+              d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+              clip-rule="evenodd"></path>
+          </svg>
+        </a>
+        <a
+          href="https://www.linkedin.com/in/samuel-hulla-6215a1345/"
+          aria-label="LinkedIn"
+          class="social-link"
+          target="_blank"
+          rel="noopener noreferrer">
+          <svg
+            class="social-icon"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true">
+            <path
+              d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
+            ></path>
+          </svg>
+        </a>
+        <a
+          href="mailto:hulla@hulla.dev"
+          class="social-link"
+          aria-label="Email hulla@hulla.dev">
+          <svg
+            class="social-icon"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            ></path>
+          </svg>
+        </a>
+      </div>
+    </main>
+
+    <style>
+      body {
+        background: linear-gradient(to bottom right, #111827, #0f172a);
+        color: #f3f4f6;
+        font-family: 'Inter', sans-serif;
+        min-height: 100vh;
+        margin: 0;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      main {
+        max-width: 48rem;
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      .console {
+        background-color: rgba(31, 41, 55, 0.5);
+        border: 1px solid rgba(75, 85, 99, 0.5);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow:
+          0 20px 25px -5px rgba(0, 0, 0, 0.1),
+          0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        margin-bottom: 2rem;
+        overflow: hidden;
+      }
+
+      .console-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+
+      .console-button {
+        width: 0.75rem;
+        height: 0.75rem;
+        border-radius: 9999px;
+        margin-right: 0.5rem;
+      }
+
+      .red {
+        background-color: #ef4444;
+      }
+      .yellow {
+        background-color: #eab308;
+      }
+      .green {
+        background-color: #22c55e;
+      }
+
+      .console-title {
+        margin-left: 1rem;
+        font-family: 'Fira Code', monospace;
+        font-size: 0.875rem;
+        color: #9ca3af;
+      }
+
+      .command {
+        font-family: 'Fira Code', monospace;
+        color: #4ade80;
+        margin-bottom: 0.75rem;
+      }
+
+      .command-prompt {
+        color: #60a5fa;
+      }
+
+      .output {
+        font-family: 'Fira Code', monospace;
+        color: #d1d5db;
+      }
+
+      .content {
+        text-align: center;
+        margin-bottom: 3rem;
+      }
+
+      .title {
+        font-size: 4.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(to right, #60a5fa, #818cf8);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .subtitle {
+        font-size: 1.25rem;
+        color: #9ca3af;
+        margin-bottom: 1.5rem;
+      }
+
+      .divider {
+        height: 0.25rem;
+        width: 6rem;
+        background-color: #3b82f6;
+        border-radius: 9999px;
+        margin: 0 auto 2rem auto;
+      }
+
+      .message {
+        font-size: 1.125rem;
+        color: #d1d5db;
+        max-width: 36rem;
+        margin: 0 auto 2rem auto;
+      }
+
+      .card {
+        background-color: rgba(31, 41, 55, 0.4);
+        border: 1px solid rgba(75, 85, 99, 0.5);
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow:
+          0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        text-align: left;
+      }
+
+      .card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #e5e7eb;
+        margin-bottom: 1rem;
+      }
+
+      .project-list {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .project-item {
+        display: flex;
+        align-items: flex-start;
+      }
+
+      .arrow {
+        color: #60a5fa;
+        margin-right: 0.75rem;
+        margin-top: 0.25rem;
+      }
+
+      .highlight {
+        color: #60a5fa;
+      }
+
+      .cv-cta {
+        text-align: center;
+        margin: 2rem 0;
+      }
+
+      .cv-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background-color: #3b82f6;
+        color: #f9fafb;
+        border-radius: 0.375rem;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background-color 0.2s;
+      }
+
+      .cv-button:hover {
+        background-color: #2563eb;
+      }
+
+      .cv-icon {
+        width: 1.25rem;
+        height: 1.25rem;
+      }
+
+      .social-links {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+      }
+
+      .social-link {
+        color: #9ca3af;
+        transition: color 0.2s;
+      }
+
+      .social-link:hover {
+        color: #f9fafb;
+      }
+
+      .social-icon {
+        width: 1.75rem;
+        height: 1.75rem;
+      }
+
+      .blink {
+        animation: blink-animation 1s steps(2, start) infinite;
+      }
+
+      @keyframes blink-animation {
+        to {
+          visibility: hidden;
+        }
+      }
+
+      .typewriter {
+        overflow: hidden;
+        white-space: nowrap;
+        animation: typing 2.5s steps(30, end);
+      }
+
+      .typewriter-delay {
+        overflow: hidden;
+        white-space: nowrap;
+        width: 0;
+        animation: typing 1.5s steps(30, end) forwards;
+        animation-delay: 2.5s;
+      }
+
+      @keyframes typing {
+        from {
+          width: 0;
+        }
+        to {
+          width: 100%;
+        }
+      }
+    </style>
+  </body>
+</html>
