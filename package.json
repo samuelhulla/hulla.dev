@@ -23,6 +23,7 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "cv:pdf": "node scripts/export-cv-pdf.mjs",
     "astro": "astro",
     "lint": "bun run eslint .",
     "lint:fix": "bun run eslint . --fix",

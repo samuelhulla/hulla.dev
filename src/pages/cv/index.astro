@@ -1081,16 +1081,129 @@
     }
   }
 
+  body.pdf-export {
+    background-color: white;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    font-size: 11px;
+  }
+
+  body.pdf-export .container {
+    width: 100%;
+    max-width: none;
+    min-height: auto;
+    padding: 1rem 1.1rem;
+    box-shadow: none;
+  }
+
+  body.pdf-export a {
+    text-decoration: none;
+  }
+
+  body.pdf-export header {
+    padding-bottom: 1rem;
+    margin-bottom: 1.15rem;
+  }
+
+  body.pdf-export main {
+    padding-top: 0;
+  }
+
+  body.pdf-export section {
+    margin-bottom: 1.1rem;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  body.pdf-export .summary {
+    margin-bottom: 1.25rem;
+    padding: 0.6rem 0.9rem 0.6rem 1.7rem;
+    line-height: 1.45;
+  }
+
+  body.pdf-export .role {
+    margin-bottom: 0.95rem;
+    padding-bottom: 0.7rem;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  body.pdf-export .role-header,
+  body.pdf-export .education,
+  body.pdf-export .certification-list li {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  body.pdf-export .role ul li {
+    padding-bottom: 0.2rem;
+  }
+
+  body.pdf-export .role-skills {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.35rem 0.55rem;
+    margin-top: 0.45rem;
+    padding: 0.55rem;
+    break-inside: auto;
+    page-break-inside: auto;
+  }
+
+  body.pdf-export .skill-item {
+    width: calc(33.333% - 0.4rem);
+    flex: 0 0 calc(33.333% - 0.4rem);
+    padding: 0.1rem 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  body.pdf-export .skill-item span {
+    font-size: 0.7rem;
+  }
+
+  body.pdf-export .education-certs {
+    margin-bottom: 1.25rem;
+    padding: 0.9rem;
+  }
+
+  body.pdf-export .two-column {
+    gap: 1.4rem;
+  }
+
+  body.pdf-export footer {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+  }
+
+  body.pdf-export h3 {
+    page-break-after: avoid;
+    margin-bottom: 0.85rem;
+  }
+
+  body.pdf-export h4 {
+    page-break-inside: avoid;
+    break-after: avoid;
+  }
+
+  body.pdf-export .background-element {
+    opacity: 0.02;
+  }
+
   /* Print styles */
   @media print {
     body {
       background-color: white;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      font-size: 11px;
     }
 
     .container {
       width: 100%;
+      max-width: none;
       min-height: auto;
-      padding: 1.5rem;
+      padding: 1rem 1.1rem;
       box-shadow: none;
     }
 
@@ -1098,13 +1211,90 @@
       text-decoration: none;
     }
 
-    h3 {
-      page-break-after: avoid;
+    header {
+      padding-bottom: 1rem;
+      margin-bottom: 1.15rem;
     }
 
-    .role,
+    main {
+      padding-top: 0;
+    }
+
+    section {
+      margin-bottom: 1.1rem;
+      break-inside: auto;
+      page-break-inside: auto;
+    }
+
+    .summary {
+      margin-bottom: 1.25rem;
+      padding: 0.6rem 0.9rem 0.6rem 1.7rem;
+      line-height: 1.45;
+    }
+
+    .role {
+      margin-bottom: 0.95rem;
+      padding-bottom: 0.7rem;
+      break-inside: auto;
+      page-break-inside: auto;
+    }
+
+    .role-header,
+    .education,
+    .certification-list li {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .role ul li {
+      padding-bottom: 0.2rem;
+    }
+
+    .role-skills {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 0.35rem 0.55rem;
+      margin-top: 0.45rem;
+      padding: 0.55rem;
+      break-inside: auto;
+      page-break-inside: auto;
+    }
+
+    .skill-item {
+      width: calc(33.333% - 0.4rem);
+      flex: 0 0 calc(33.333% - 0.4rem);
+      padding: 0.1rem 0;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .skill-item span {
+      font-size: 0.7rem;
+    }
+
+    .education-certs {
+      margin-bottom: 1.25rem;
+      padding: 0.9rem;
+    }
+
+    .two-column {
+      gap: 1.4rem;
+    }
+
+    footer {
+      margin-top: 1rem;
+      padding-top: 0.75rem;
+    }
+
+    h3 {
+      page-break-after: avoid;
+      margin-bottom: 0.85rem;
+    }
+
     h4 {
       page-break-inside: avoid;
+      break-after: avoid;
     }
 
     .background-element {
