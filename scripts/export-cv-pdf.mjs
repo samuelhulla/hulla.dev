@@ -15,6 +15,8 @@ const debugPort = 9222
 const sitePort = 4321
 const siteOrigin = `http://127.0.0.1:${sitePort}`
 const cvUrl = `${siteOrigin}/cv/`
+const phoneNumber = '+420 602 329 073'
+const includePhone = process.argv.slice(2).includes('--include-phone')
 
 async function main() {
   await mkdir(outputDir, { recursive: true })
@@ -65,6 +67,24 @@ async function main() {
       await client.send('Runtime.evaluate', {
         expression: "document.body.classList.add('pdf-export')",
       })
+      if (includePhone) {
+        await client.send('Runtime.evaluate', {
+          expression: `(() => {
+            const contactInfo = document.querySelector('.contact-info')
+            const email = contactInfo?.querySelector('a[href^="mailto:"]')?.closest('p')
+
+            if (!contactInfo || !email) {
+              throw new Error('Could not find CV contact information')
+            }
+
+            const phone = document.createElement('p')
+            const icon = document.createElement('i')
+            icon.className = 'fa-solid fa-phone'
+            phone.append(icon, document.createTextNode(${JSON.stringify(` ${phoneNumber}`)}))
+            contactInfo.insertBefore(phone, email)
+          })()`,
+        })
+      }
       await client.send('Runtime.evaluate', {
         expression:
           'document.fonts ? document.fonts.ready.then(() => true) : Promise.resolve(true)',
