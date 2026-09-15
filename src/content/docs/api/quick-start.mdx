@@ -1,0 +1,101 @@
+---
+title: Quick start
+description: Declare one route, implement it exhaustively, and call it through a typed in-process client before adding framework or network concerns.
+usefulFor:
+  - You want the smallest complete example of the 2.0 contract lifecycle.
+  - You need to see which code is shared, server-only, and client-facing.
+---
+
+This example creates `GET /api/users/:id`. The client supplies a path parameter, the server validates it, the handler returns one of two declared statuses, and the client narrows the corresponding body type. The in-process transport keeps the first run self-contained while exercising the same contract encoding and decoding rules used by other transports.
+
+## 1. Declare the shared boundary
+
+Put paths, schemas, and response declarations in a module that both the server and client may import.
+
+```ts filename="src/api/contract.ts"
+import { defineContract, response, route } from '@hulla/api'
+import { z } from 'zod'
+
+const user = z.object({ id: z.string(), name: z.string() })
+
+export const contract = defineContract({
+  basePath: '/api',
+  routes: {
+    user: route.get('/users/:id', {
+      params: z.object({ id: z.string().min(1) }),
+      responses: {
+        200: response.json(user),
+        404: response.json(z.object({ message: z.string() })),
+      },
+    }),
+  },
+})
+```
+
+`defineContract()` resolves the complete path and creates immutable selection metadata. It does not register a server or attach business logic.
+
+## 2. Implement every selected route
+
+The handler tree mirrors the contract tree. For this single-route contract, `implement()` requires exactly one `user` handler.
+
+```ts filename="src/api/implementation.ts"
+import { defineServer } from '@hulla/api/server'
+import { contract } from './contract'
+
+const server = defineServer(contract)
+
+export const implementation = server.implement({
+  user: ({ params, response }) =>
+    params.id === 'ada'
+      ? response(200, { id: 'ada', name: 'Ada' })
+      : response(404, { message: 'User not found' }),
+})
+```
+
+The `response()` helper accepts only statuses and bodies declared by this route. Input parsing and response validation run around the handler; the handler receives decoded values, not raw transport objects.
+
+## 3. Create and call a client
+
+Use `inProcessTransport()` when the client and implementation share a JavaScript process. It performs no URL match or network request, but it keeps request/response conversion, middleware, declared errors, and cancellation semantics intact.
+
+```ts filename="src/api/example.ts"
+import { createClient } from '@hulla/api/client'
+import { inProcessTransport } from '@hulla/api/in-process'
+import { contract } from './contract'
+import { implementation } from './implementation'
+
+const api = createClient(contract, {
+  transport: inProcessTransport(implementation),
+})
+
+const result = await api.user({ params: { id: 'ada' } })
+
+if (result.status === 200) {
+  console.log(result.body.name)
+} else {
+  console.log(result.body.message)
+}
+```
+
+Every call returns a promise and a status-discriminated union. Declared `4xx` and `5xx` responses are values by default; transport, schema, and undeclared-response failures reject the promise.
+
+## Move the same implementation to HTTP
+
+Replace only the transport boundary. A Web-standard host mounts the implementation with `fetchAdapter()`, while a remote client uses `fetchTransport()`.
+
+```ts filename="src/api/http.ts"
+import { createClient } from '@hulla/api/client'
+import { fetchAdapter, fetchTransport } from '@hulla/api/fetch'
+import { contract } from './contract'
+import { implementation } from './implementation'
+
+export const handler = fetchAdapter().mount(implementation)
+
+export const api = createClient(contract, {
+  transport: fetchTransport({ baseUrl: 'https://api.example.com' }),
+})
+```
+
+A framework adapter replaces `fetchAdapter()` when the host should retain its native router, context, body parser, or response writer. The contract, implementation, and client call shape stay the same.
+
+Next, read the [mental model](/docs/api/mental-model), then choose [Fetch](/docs/api/transports/fetch) or a native server adapter.

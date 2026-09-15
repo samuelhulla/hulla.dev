@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Write @hulla/* Docs'
+  short_description: 'Write purpose-led @hulla/* package docs'
+  default_prompt: 'Use $write-hulla-docs to create or refactor @hulla/* package documentation around user needs, mental models, and verified examples.'

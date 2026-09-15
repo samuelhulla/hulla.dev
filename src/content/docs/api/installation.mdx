@@ -1,0 +1,57 @@
+---
+title: Installation
+description: Install the 2.0 core, one Standard Schema validator, and only the transport or host packages your deployment needs.
+usefulFor:
+  - You are starting a new TypeScript API or upgrading from the procedure-based package.
+  - You need to choose between core subpaths and separately installed integrations.
+---
+
+import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
+
+Install `@hulla/api` with a Standard Schema-compatible validator. The examples use Zod, but the core package does not depend on or peer-depend on a validator.
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun add @hulla/api@2.0.0 zod',
+    npm: 'npm install @hulla/api@2.0.0 zod',
+    pnpm: 'pnpm add @hulla/api@2.0.0 zod',
+    yarn: 'yarn add @hulla/api@2.0.0 zod',
+  }}
+/>
+
+Use Node.js 22 or newer for Node-hosted integrations. Some full-stack packages have stricter framework or runtime requirements; each integration guide lists its peer versions and host-specific setup.
+
+## Core entrypoints
+
+These entrypoints ship in `@hulla/api`; they are not separate packages.
+
+| Entrypoint              | Use it for                                                       |
+| ----------------------- | ---------------------------------------------------------------- |
+| `@hulla/api`            | Contracts, routes, request/response declarations, codecs, errors |
+| `@hulla/api/client`     | Typed clients, middleware, transports, response results          |
+| `@hulla/api/server`     | Server definitions, handlers, middleware, context, composition   |
+| `@hulla/api/fetch`      | Fetch transport and Fetch-compatible server adapter              |
+| `@hulla/api/in-process` | Zero-network calls through a completed implementation            |
+| `@hulla/api/stream`     | NDJSON, SSE JSON, and custom stream formats                      |
+| `@hulla/api/errors`     | Operational error guards and protocol problem conversion         |
+| `@hulla/api/validation` | Standard Schema execution and codec helpers                      |
+| `@hulla/api/adapters`   | Advanced adapter-authoring boundary                              |
+| `@hulla/api/compiler`   | Immutable compiled route manifest for tooling                    |
+
+## Optional packages
+
+Install an adapter only in the application that mounts or consumes that boundary.
+
+| Boundary              | Packages                                                                                                                                                           |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Node servers          | `@hulla/api-node`, `@hulla/api-express`, `@hulla/api-fastify`, `@hulla/api-koa`, `@hulla/api-nestjs`                                                               |
+| Web-native servers    | `@hulla/api-hono`, `@hulla/api-h3`, `@hulla/api-elysia`                                                                                                            |
+| Full-stack frameworks | `@hulla/api-next`, `@hulla/api-tanstack-start`, `@hulla/api-react-router`, `@hulla/api-solid-start`, `@hulla/api-sveltekit`, `@hulla/api-nuxt`, `@hulla/api-astro` |
+| Serverless hosts      | `@hulla/api-cloudflare`, `@hulla/api-aws-lambda`, `@hulla/api-azure-functions`, `@hulla/api-google-cloud-functions`, `@hulla/api-netlify-functions`                |
+| Other transports      | `@hulla/api-message-port`, `@hulla/api-websocket`                                                                                                                  |
+| Client helpers        | `@hulla/api-tanstack-query`, `@hulla/api-swr`                                                                                                                      |
+| Contract tooling      | `@hulla/api-openapi`                                                                                                                                               |
+
+The package files are ESM and side-effect free. Keep server-only implementation and adapter imports behind explicit server module boundaries so a browser bundle retains only the contract, client, and selected transport.
+
+Continue with the [quick start](/docs/api/quick-start) to exercise the full contract lifecycle in one process before choosing a deployment adapter.

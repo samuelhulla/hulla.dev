@@ -1,0 +1,28 @@
+---
+title: Package exports
+description: Find the public core entrypoints and integration packages without importing server or host code into the wrong runtime.
+---
+
+The root `@hulla/api` entrypoint owns contract declarations: `defineContract`, `router`, `route`, `request`, `response`, `codec`, contract compilation, declared errors, and their public types.
+
+| Entrypoint              | Primary exports                                                                                          |
+| ----------------------- | -------------------------------------------------------------------------------------------------------- |
+| `@hulla/api/client`     | `createClient`, `clientMiddleware`, `clientRouteIntegration`, client/transport/result types              |
+| `@hulla/api/server`     | `defineServer`, `createServerAdapter`, `serverContextAdapterId`, server middleware/context/handler types |
+| `@hulla/api/fetch`      | `fetchTransport`, `fetchAdapter`, `createFetchHandler`, Fetch boundary types                             |
+| `@hulla/api/in-process` | `inProcessTransport`, `inProcessAdapter`                                                                 |
+| `@hulla/api/stream`     | `ndjson`, `sseJson`, stream format and response helpers                                                  |
+| `@hulla/api/errors`     | `isAPIError`, `toAPIProblem`, `annotateAPIErrorIssues`, operational error types                          |
+| `@hulla/api/validation` | `codec`, schema execution helpers, Standard Schema-related types                                         |
+| `@hulla/api/compiler`   | `compileContract`, `freezeCompiledRoutes`, compiled manifest types                                       |
+| `@hulla/api/adapters`   | Advanced route executor, representation readers/writers, adapter response types                          |
+
+Every host integration is a separate package so client bundles do not retain framework or Node dependencies. Packages with distinct runtime surfaces use explicit subpaths: `@hulla/api-next/client` and `/server`, `@hulla/api-nuxt/client` and `/server`, `@hulla/api-sveltekit/server` and `/remote`, `@hulla/api-cloudflare/pages`, and `@hulla/api-node/http`.
+
+Use the relevant integration guide for its mounting function and native context types. The complete symbol inventory is validated against the package declarations by this documentation workspace; application code should prefer the smallest public entrypoint that owns the capability it needs.
+
+## Result-returning clients
+
+`@hulla/api-control` is a separate integration with `@hulla/control`. Its `createClient` returns a resolved Result for each call: 2xx responses produce an `Ok`, declared non-2xx responses produce an `Err` with `kind: 'http'`, and rejected calls produce an `Err` with `kind: 'request'` and the original cause. Client construction errors still throw synchronously.
+
+The package exports `ControlClient` and `ControlClientOptions` for the client shape and configuration, `ClientResult` for the result union, `SuccessResponse` and `FailureResponse` for status-filtered responses, and `HTTPFailure` and `RequestFailure` for the two failure categories. Query libraries that depend on rejected promises need an explicit conversion before using this client.

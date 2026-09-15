@@ -1,0 +1,62 @@
+---
+title: Components & styling
+description: Composable components for Astro, React, and Solid, with shared design tokens and source you own.
+---
+
+import ComponentPreview from '@/components/docs/ComponentPreview.astro'
+
+## One design, across frameworks
+
+`@hulla/ui` provides components for Astro, React, and Solid. The generated components use the same design tokens and public variants across all three frameworks.
+
+<ComponentPreview />
+
+The example uses the default card and button styles. Its surrounding page only controls layout.
+
+## Compose an example
+
+With the components installed under `src/components`, an Astro composition looks like this:
+
+```astro filename="Example.astro"
+---
+import Button from '@/components/button/button.astro'
+import Card from '@/components/card/card.astro'
+import CardHeader from '@/components/card/card-header.astro'
+import CardTitle from '@/components/card/card-title.astro'
+import CardContent from '@/components/card/card-content.astro'
+---
+
+<Card>
+  <CardHeader>
+    <CardTitle>Your next project</CardTitle>
+  </CardHeader>
+  <CardContent>
+    <Button>Get started</Button>
+  </CardContent>
+</Card>
+```
+
+## Keep the shared styles together
+
+Component source and the shared stylesheet are a pair. Update both when you update the components. The stylesheet includes the fonts, theme tokens, and supporting rules used by the generated source.
+
+| Layer        | Responsibility                                           |
+| ------------ | -------------------------------------------------------- |
+| Shared theme | Fonts, colors, radii, shadows, and shared states         |
+| Components   | Appearance and behavior of each public part              |
+| Page layout  | Placement, available width, and spacing between examples |
+| Markdown     | Headings, paragraphs, lists, and links in the document   |
+
+## Markdown and components
+
+Write explanations in Markdown and use components for richer examples. This documentation maps Markdown elements to explicit renderers: inline code and tables use shared components, and fenced code uses the same code-block composition as other examples.
+
+> Prose styles should belong to the prose elements. A paragraph inside a card should keep the card component's typography.
+
+The preview below is nested in a Markdown blockquote to exercise that boundary:
+
+> <ComponentPreview />
+
+## Color themes
+
+Use the theme control in the header to switch between light and dark. Components use the shared theme tokens in both modes.

@@ -1,0 +1,38 @@
+---
+title: Fetch
+description: Use Web-standard Request, Response, Headers, AbortSignal, and fetch as either a client transport or server adapter.
+usefulFor:
+  - Your runtime or framework already exposes a Fetch-compatible request handler.
+  - A browser or remote service should call the contract over HTTP.
+---
+
+`@hulla/api/fetch` contains two independent boundaries. `fetchTransport()` turns typed client requests into Fetch calls. `fetchAdapter().mount()` turns a completed server implementation into a function from `Request` to `Promise<Response>`.
+
+## Mount a Fetch handler
+
+```ts filename="src/api/handler.ts"
+import { fetchAdapter } from '@hulla/api/fetch'
+import { implementation } from './implementation'
+
+export const handler = fetchAdapter().mount(implementation)
+```
+
+Pass `handler` to a Web-standard server route. The adapter owns catch-all route matching, request representation reads, response writing, cancellation, and protocol errors.
+
+Set `maxBodyBytes` when the adapter should impose a byte budget. The default is `Infinity`; a host may still apply its own limit. Set `preserveRequestBody: true` only when native context needs to read the original body after contract decoding.
+
+## Create a Fetch client
+
+```ts filename="src/api/client.ts"
+import { createClient } from '@hulla/api/client'
+import { fetchTransport } from '@hulla/api/fetch'
+import { contract } from './contract'
+
+export const api = createClient(contract, {
+  transport: fetchTransport({ baseUrl: 'https://api.example.com' }),
+})
+```
+
+An omitted or relative `baseUrl` resolves against the document URL when the runtime supports relative `Request` objects. Node.js and most SSR modules should pass an absolute origin. Supply a custom `fetch` when the framework provides request-local dispatch or caching behavior.
+
+Fetch is one adapter, not the universal internal representation. Use a native adapter when the host framework should own routing, parsed bodies, hooks, streaming, or native context without translating through a second Fetch request.

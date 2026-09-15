@@ -1,0 +1,94 @@
+---
+title: Mental model
+description: Separate declarations, implementations, adapters, clients, and transports so each runtime owns only the work it can perform correctly.
+usefulFor:
+  - You are deciding what belongs in a shared contract versus a server module.
+  - You need to choose between Fetch, a native adapter, and a zero-network transport.
+---
+
+import DocsConceptFlow from '@/components/docs/DocsConceptFlow.astro'
+import DocsProjectBoundary from '@/components/docs/DocsProjectBoundary.astro'
+
+Start with a contract, not a server. The contract describes what crosses a boundary. A server implementation supplies behavior for the selected contract. An adapter translates between that portable implementation and a host. A client constructs typed calls, while its transport decides how those calls reach the server.
+
+## Follow one call in each direction
+
+<DocsConceptFlow
+  label="Client request lifecycle"
+  steps={[
+    {
+      title: 'Select a route',
+      description:
+        'The client leaf already knows its contract key, method, path, and declared representations.',
+      example: 'api.users.byId({ params: { id } })',
+    },
+    {
+      title: 'Encode and enrich',
+      description:
+        'Codecs encode application values; client context and middleware may add headers or reject the call.',
+      example: 'codec.encode → middleware → transport',
+    },
+    {
+      title: 'Cross one transport',
+      description:
+        'Fetch, in-process, MessagePort, or WebSocket performs exactly one invocation.',
+      example: 'transport(request)',
+    },
+    {
+      title: 'Decode the response',
+      description:
+        'Declared headers and bodies become a status-discriminated result; unknown statuses reject.',
+      example: 'if (result.status === 200) result.body',
+    },
+  ]}
+/>
+
+<DocsConceptFlow
+  label="Server request lifecycle"
+  steps={[
+    {
+      title: 'Route in the host',
+      description:
+        'Native adapters use the framework router; catch-all adapters use the shared route matcher.',
+      example: 'GET /api/users/:id',
+    },
+    {
+      title: 'Decode declared fields',
+      description:
+        'Parameters, query, headers, and body are processed in order and stop on failure.',
+      example: 'params → query → headers → body',
+    },
+    {
+      title: 'Create context and run',
+      description:
+        'Request context and scoped middleware wrap the selected exhaustive handler.',
+      example: 'context → middleware → handler',
+    },
+    {
+      title: 'Validate and write',
+      description:
+        'The declared status selects the response representation before the adapter writes it.',
+      example: 'response(200, body) → host response',
+    },
+  ]}
+/>
+
+## Schemas have a direction
+
+An ordinary request schema accepts the client's wire-shaped value and exposes its validated output to the server handler. An ordinary response schema accepts the handler value, validates or transforms it on the server, and sends that output to the client. The client does not rerun the response schema.
+
+Use `codec(wireSchema, applicationSchema, { encode, decode })` when client and server should both work with a richer application value such as `Date` while the transport carries a string. Use type-only `request.json<T>()` and `response.json<T>()` when native JSON parsing and static types are enough; a type argument does not add runtime validation.
+
+## Selections are real contract nodes
+
+The root contract, every mounted router, and every route expose immutable `$contract` metadata. Pass any selection directly to `createClient()` or `server.implement(selection, handlers)`. Selections retain inherited paths, parameter schemas, errors, and structural keys.
+
+There is no client builder or client composition lifecycle. Create clients from the selections a module needs, and use normal module boundaries for code splitting. Server composition remains explicit and exhaustive because every deployable implementation must cover its selected routes.
+
+## Native state stays at the adapter boundary
+
+Portable handlers do not receive a Fetch request, Express request, Hono context, or framework event. When a handler needs native state, create the server definition with that adapter's typed `context()` helper and expose only the application context your handlers need.
+
+<DocsProjectBoundary />
+
+This keeps framework imports out of the contract and makes an incompatible mount fail during setup. Continue with [contracts](/docs/api/core/contracts), then [server implementations](/docs/api/core/servers) or [typed clients](/docs/api/core/clients).
