@@ -1,0 +1,103 @@
+:where(.fa-solid, .fa-regular, .fa-brands) {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  background: currentColor;
+  vertical-align: -0.125em;
+  content: '';
+  mask: var(--cv-icon) center / contain no-repeat;
+}
+
+:where(
+  .fa-react,
+  .fa-chrome,
+  .fa-node-js,
+  .fa-js,
+  .fa-git-alt,
+  .fa-rust,
+  .fa-css3-alt,
+  .fa-npm
+) {
+  --cv-icon: url('/cv-icons/code.svg');
+}
+.fa-location-dot {
+  --cv-icon: url('/cv-icons/pin.svg');
+}
+.fa-envelope {
+  --cv-icon: url('/cv-icons/mail.svg');
+}
+.fa-quote-left {
+  --cv-icon: url('/cv-icons/quote.svg');
+}
+.fa-briefcase {
+  --cv-icon: url('/cv-icons/briefcase.svg');
+}
+.fa-calendar {
+  --cv-icon: url('/cv-icons/calendar.svg');
+}
+.fa-cloud {
+  --cv-icon: url('/cv-icons/cloud.svg');
+}
+.fa-brain {
+  --cv-icon: url('/cv-icons/brain.svg');
+}
+.fa-plug {
+  --cv-icon: url('/cv-icons/plug.svg');
+}
+.fa-mobile-screen {
+  --cv-icon: url('/cv-icons/mobile.svg');
+}
+.fa-layer-group {
+  --cv-icon: url('/cv-icons/layers.svg');
+}
+.fa-users {
+  --cv-icon: url('/cv-icons/users.svg');
+}
+.fa-sitemap {
+  --cv-icon: url('/cv-icons/network.svg');
+}
+.fa-vial {
+  --cv-icon: url('/cv-icons/flask.svg');
+}
+.fa-database {
+  --cv-icon: url('/cv-icons/database.svg');
+}
+.fa-gears {
+  --cv-icon: url('/cv-icons/gears.svg');
+}
+.fa-code-branch {
+  --cv-icon: url('/cv-icons/branch.svg');
+}
+.fa-search {
+  --cv-icon: url('/cv-icons/search.svg');
+}
+.fa-terminal {
+  --cv-icon: url('/cv-icons/terminal.svg');
+}
+.fa-tags {
+  --cv-icon: url('/cv-icons/tag.svg');
+}
+.fa-graduation-cap {
+  --cv-icon: url('/cv-icons/education.svg');
+}
+:where(.fa-certificate, .fa-award) {
+  --cv-icon: url('/cv-icons/award.svg');
+}
+.fa-shield-halved {
+  --cv-icon: url('/cv-icons/shield.svg');
+}
+.fa-globe {
+  --cv-icon: url('/cv-icons/globe.svg');
+}
+.fa-language {
+  --cv-icon: url('/cv-icons/language.svg');
+}
+.fa-heart {
+  --cv-icon: url('/cv-icons/heart.svg');
+}
+.fa-copyright {
+  --cv-icon: url('/cv-icons/copyright.svg');
+}
+.fa-phone {
+  --cv-icon: url('/cv-icons/phone.svg');
+}
