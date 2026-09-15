@@ -1,0 +1,4 @@
+interface:
+  display_name: 'Update @hulla/* Website Docs'
+  short_description: 'Prepare website docs for package changes'
+  default_prompt: 'Use $update-hulla-docs to assess this package PR and prepare a matching website docs PR, or explain why no docs change is needed.'
