@@ -1,0 +1,87 @@
+name: Sync released API documentation
+
+on:
+  schedule:
+    - cron: '23 7 * * *'
+  workflow_dispatch:
+    inputs:
+      api_tag:
+        description: Published API release tag (empty selects latest stable release)
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-api-docs
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      sha: ${{ steps.release.outputs.sha }}
+    steps:
+      - uses: actions/github-script@v8
+        id: release
+        with:
+          script: |
+            const repo = { owner: 'hulladev', repo: 'api' };
+            const tag = context.payload.inputs?.api_tag;
+            let release;
+            try {
+              release = tag
+                ? (await github.rest.repos.getReleaseByTag({ ...repo, tag })).data
+                : (await github.rest.repos.getLatestRelease(repo)).data;
+            } catch (error) {
+              if (!tag && error.status === 404) return core.info('No published API release yet.');
+              throw error;
+            }
+            if (release.draft) throw new Error('Draft releases cannot be synced.');
+            const { data: commit } = await github.rest.repos.getCommit({ ...repo, ref: release.tag_name });
+            const { data: file } = await github.rest.repos.getContent({ ...repo, path: 'packages/core/package.json', ref: commit.sha });
+            const pkg = JSON.parse(Buffer.from(file.content, 'base64').toString());
+            if (Number(pkg.version.split('.')[0]) < 2) return core.info('The site targets API v2; leave its curated docs intact until a v2 release is published.');
+            core.setOutput('tag', release.tag_name);
+            core.setOutput('sha', commit.sha);
+
+  sync:
+    needs: release
+    if: needs.release.outputs.sha != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: site
+      - uses: actions/checkout@v4
+        with:
+          repository: hulladev/api
+          ref: ${{ needs.release.outputs.sha }}
+          path: api
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Import release guides without installing or building packages
+        working-directory: site
+        env:
+          HULLA_API_REF: ${{ needs.release.outputs.sha }}
+          HULLA_API_RELEASE: ${{ needs.release.outputs.tag }}
+        run: node scripts/sync-api-docs.mjs
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          path: site
+          branch: docs/api-release-sync
+          commit-message: ':books: docs: sync released API guides'
+          title: 'docs: sync released API guides'
+          body: |
+            Import the guides from API release `${{ needs.release.outputs.tag }}` at `${{ needs.release.outputs.sha }}`.
+
+            The source reference is recorded in `.hulla/docs.json`. Curated pages outside the sync mapping remain owned by this site. Review the rendered documentation before merging.
+          add-paths: |
+            src/content/docs/api
+            .hulla/docs.json

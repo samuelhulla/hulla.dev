@@ -5,7 +5,8 @@ import process from 'node:process'
 const siteRoot = process.cwd()
 const apiRoot = path.resolve(process.env.HULLA_API_ROOT ?? '../api')
 const docsRoot = path.join(siteRoot, 'src/content/docs/api')
-const repositoryUrl = 'https://github.com/hulladev/api/tree/main'
+const sourceRef = process.env.HULLA_API_REF ?? 'master'
+const repositoryUrl = `https://github.com/hulladev/api/tree/${encodeURIComponent(sourceRef)}`
 
 const pages = {
   'architecture.md': {
@@ -229,10 +230,18 @@ const destinationForSource = new Map(
   ])
 )
 
-for (const [source, page] of Object.entries(pages)) {
-  const sourcePath = path.join(apiRoot, 'docs', source)
+// Read every guide before changing any destination so an incomplete release
+// cannot leave a partially imported documentation tree.
+const guides = await Promise.all(
+  Object.entries(pages).map(async ([source, page]) => ({
+    source,
+    page,
+    raw: await readFile(path.join(apiRoot, 'docs', source), 'utf8'),
+  }))
+)
+
+for (const { source, page, raw } of guides) {
   const targetPath = path.join(docsRoot, page.destination)
-  const raw = await readFile(sourcePath, 'utf8')
   const body = transformMarkdown(raw, source)
   const frontmatter = [
     '---',
@@ -244,6 +253,14 @@ for (const [source, page] of Object.entries(pages)) {
 
   await mkdir(path.dirname(targetPath), { recursive: true })
   await writeFile(targetPath, `${frontmatter}${body.trim()}\n`)
+}
+
+if (process.env.HULLA_API_RELEASE) {
+  await mkdir(path.join(siteRoot, '.hulla'), { recursive: true })
+  await writeFile(
+    path.join(siteRoot, '.hulla/docs.json'),
+    `${JSON.stringify({ api: { release: process.env.HULLA_API_RELEASE, commit: sourceRef } }, null, 2)}\n`
+  )
 }
 
 console.log(
