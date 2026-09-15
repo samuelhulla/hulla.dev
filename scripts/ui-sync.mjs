@@ -51,10 +51,6 @@ const solidComponents = [
   'kbd',
 ]
 
-await access(path.join(registry, 'ui.config.ts')).catch(() => {
-  throw new Error(`UI registry is unavailable at ${registry}`)
-})
-
 if (!cli) {
   if (!check)
     throw new Error(
@@ -66,6 +62,10 @@ if (!cli) {
   )
   process.exit(0)
 }
+
+await access(path.join(registry, 'ui.config.ts')).catch(() => {
+  throw new Error(`UI registry is unavailable at ${registry}`)
+})
 
 await access(path.resolve(cli)).catch(() => {
   throw new Error(`Packed hulla CLI binary is unavailable at ${cli}`)
@@ -217,8 +217,8 @@ async function fixtureCheck(binary) {
 
 async function staticCheck() {
   const packageJson = await readFile(path.join(root, 'package.json'), 'utf8')
-  if (packageJson.includes('file:'))
-    throw new Error('Tracked package.json contains a local file dependency.')
+  if (/\b(?:file|link):/.test(packageJson))
+    throw new Error('Tracked package.json contains a local dependency.')
   const files = await listFiles(path.join(root, 'src/components'))
   if (
     !files.some((file) => file.endsWith('.astro')) ||
