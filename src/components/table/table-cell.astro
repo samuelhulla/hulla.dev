@@ -1,0 +1,15 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'td'>
+
+const { class: className, ...props } = Astro.props as Props
+---
+
+<td
+  {...props}
+  data-slot="table-cell"
+  class={cn('px-4 py-3 align-middle tabular-nums', className)}>
+  <slot />
+</td>

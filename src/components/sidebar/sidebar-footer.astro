@@ -1,0 +1,15 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'footer'>
+
+const { class: className, ...props } = Astro.props as Props
+---
+
+<footer
+  {...props}
+  data-slot="sidebar-footer"
+  class={cn('shrink-0 border-t border-border p-3', className)}>
+  <slot />
+</footer>

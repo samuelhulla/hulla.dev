@@ -1,0 +1,28 @@
+---
+import { vn, cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+const $variant = vn({
+  outline: 'border-border bg-surface shadow-xs',
+  elevated: 'border-border bg-surface-raised shadow-(--shadow-raised) ',
+  ghost: 'border-transparent bg-transparent shadow-none',
+})
+
+type Props = HTMLAttributes<'article'> & {
+  variant?: typeof $variant.infer
+}
+
+const { class: className, variant = 'outline', ...props } = Astro.props as Props
+---
+
+<article
+  {...props}
+  data-slot="card"
+  data-variant={variant}
+  class={cn(
+    'group/card flex min-w-0 flex-col gap-6 rounded-lg border p-6 text-foreground',
+    $variant(variant),
+    className
+  )}>
+  <slot />
+</article>

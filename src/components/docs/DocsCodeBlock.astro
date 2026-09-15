@@ -1,0 +1,98 @@
+---
+import type { BundledLanguage } from 'shiki'
+import { bundledLanguages } from 'shiki'
+import Button from '@/components/button/button.astro'
+import CodeBlock from '@/components/code/code-block.astro'
+import CodeBlockActions from '@/components/code/code-block-actions.astro'
+import CodeBlockBody from '@/components/code/code-block-body.astro'
+import CodeBlockContent from '@/components/code/code-block-content.astro'
+import CodeBlockDescription from '@/components/code/code-block-description.astro'
+import CodeBlockFooter from '@/components/code/code-block-footer.astro'
+import CodeBlockHeader from '@/components/code/code-block-header.astro'
+import CodeBlockTitle from '@/components/code/code-block-title.astro'
+import { createShikiCodeHighlighter } from '@/components/code-highlighter-shiki/code-highlighter-shiki'
+import { Copy } from '@lucide/astro'
+type Props = {
+  code: string
+  language?: string
+  filename?: string
+  caption?: string
+  lineNumbers?: boolean
+}
+const {
+  code,
+  language = 'ts',
+  filename,
+  caption,
+  lineNumbers = false,
+} = Astro.props
+const normalized = code.replace(/\t/g, '  ').replace(/\s+$/g, '')
+const lines = normalized.replace(/^\n+/, '').split('\n')
+if (!normalized.startsWith('\n')) lines[0] = lines[0]?.trimStart() ?? ''
+const nonempty = lines.filter((line) => line.trim())
+const indent =
+  normalized.startsWith('\n') && nonempty.length
+    ? Math.min(...nonempty.map((line) => line.match(/^ */)![0].length))
+    : 0
+const source = lines.map((line) => line.slice(indent)).join('\n')
+const known = language in bundledLanguages
+const highlighter = known
+  ? await createShikiCodeHighlighter({
+      languages: [language as BundledLanguage],
+    })
+  : undefined
+const highlighted = highlighter?.highlight(source, {
+  language: language as BundledLanguage,
+})
+const label =
+  filename ??
+  (language === 'sh' || language === 'bash'
+    ? 'Terminal'
+    : language === 'ts'
+      ? 'TypeScript'
+      : language)
+---
+
+<div class="docs-example" data-component-boundary>
+  <CodeBlock>
+    <CodeBlockHeader>
+      <CodeBlockTitle>{label}</CodeBlockTitle>
+      <CodeBlockActions>
+        <Button
+          size="sm"
+          variant="ghost"
+          data-copy={source}
+          aria-label={`Copy ${label}`}>
+          <Copy size={14} aria-hidden="true" />
+          <span data-copy-label>Copy</span>
+        </Button>
+      </CodeBlockActions>
+    </CodeBlockHeader>
+    <CodeBlockBody>
+      <CodeBlockContent {highlighted} code={source} {language} {lineNumbers} />
+    </CodeBlockBody>
+    {caption && (
+      <CodeBlockFooter>
+        <CodeBlockDescription>{caption}</CodeBlockDescription>
+      </CodeBlockFooter>
+    )}
+  </CodeBlock>
+</div>
+<script>
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-copy]')
+    .forEach((button) =>
+      button.addEventListener('click', async () => {
+        const label = button.querySelector('[data-copy-label]')
+        try {
+          await navigator.clipboard.writeText(button.dataset.copy ?? '')
+          if (label) label.textContent = 'Copied'
+        } catch {
+          if (label) label.textContent = 'Copy failed'
+        }
+        setTimeout(() => {
+          if (label) label.textContent = 'Copy'
+        }, 1800)
+      })
+    )
+</script>

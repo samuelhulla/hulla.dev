@@ -1,0 +1,14 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'span'>
+const { class: className, ...props } = Astro.props as Props
+---
+
+<span
+  {...props}
+  data-slot="navigation-menu-link-content"
+  class={cn('grid min-w-0 gap-0.5', className)}>
+  <slot />
+</span>

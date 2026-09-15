@@ -1,0 +1,15 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'strong'>
+
+const { class: className, ...props } = Astro.props as Props
+---
+
+<strong
+  {...props}
+  data-slot="alert-title"
+  class={cn('block font-semibold tracking-[-0.01em]', className)}>
+  <slot />
+</strong>

@@ -1,0 +1,9 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+type Props = HTMLAttributes<'em'>
+const props = Astro.props
+---
+
+<em {...props} class:list={['md-em', props.class]}>
+  <slot />
+</em>

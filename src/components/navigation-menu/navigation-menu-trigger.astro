@@ -1,0 +1,21 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'button'>
+
+const { class: className, type = 'button', ...props } = Astro.props as Props
+---
+
+<button
+  {...props}
+  type={type}
+  aria-expanded="false"
+  data-slot="navigation-menu-trigger"
+  data-state="closed"
+  class={cn(
+    "relative inline-flex min-h-10 cursor-pointer select-none items-center gap-2 rounded-md border-0 bg-transparent px-3.5 py-2 text-sm font-medium tracking-[-0.012em] text-muted-foreground transition-[background-color,color] duration-150 after:size-1.5 after:-translate-y-0.5 after:rotate-45 after:border-r after:border-b after:border-current after:content-[''] enabled:hover:bg-hover-surface enabled:hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring data-[state=open]:bg-hover-surface data-[state=open]:text-foreground data-[state=open]:after:translate-y-0.5 data-[state=open]:after:-rotate-[135deg] disabled:cursor-not-allowed disabled:text-disabled-foreground motion-reduce:transition-none motion-reduce:after:transition-none",
+    className
+  )}>
+  <slot />
+</button>

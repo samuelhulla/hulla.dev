@@ -1,0 +1,390 @@
+@import '@fontsource-variable/schibsted-grotesk/wght.css';
+@import '@fontsource-variable/schibsted-grotesk/wght-italic.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
+
+@theme {
+  --font-sans:
+    'Schibsted Grotesk Variable', 'Schibsted Grotesk', ui-sans-serif, system-ui,
+    sans-serif;
+  --font-mono:
+    'IBM Plex Mono', ui-monospace, 'SFMono-Regular', 'Cascadia Code', Menlo,
+    monospace;
+
+  --color-background: oklch(0.982 0.012 250);
+  --color-surface: oklch(0.996 0.004 250);
+  --color-surface-raised: oklch(1 0 0);
+  --color-foreground: oklch(0.16 0.04 265);
+  --color-muted-foreground: oklch(0.44 0.04 255);
+  --color-border: color-mix(in oklab, var(--color-foreground) 14%, transparent);
+  --color-primary: oklch(0.52 0.22 264);
+  --color-primary-text: var(--color-primary);
+  --color-primary-foreground: oklch(0.99 0.005 245);
+  --color-focus-ring: color-mix(
+    in oklab,
+    var(--color-primary) 82%,
+    var(--color-foreground)
+  );
+  --color-success: oklch(0.54 0.14 150);
+  --color-warning: oklch(0.77 0.13 85);
+  --color-danger: oklch(0.56 0.18 27);
+  --color-on-emphasis: oklch(0.99 0.005 245);
+  --color-disabled-foreground: color-mix(
+    in oklab,
+    var(--color-muted-foreground) 75%,
+    transparent
+  );
+  --color-disabled-surface: color-mix(
+    in oklab,
+    var(--color-foreground) 3.5%,
+    transparent
+  );
+  --color-disabled-border: color-mix(
+    in oklab,
+    var(--color-foreground) 8%,
+    transparent
+  );
+  --color-hover-surface: color-mix(
+    in oklab,
+    var(--color-foreground) 8%,
+    transparent
+  );
+  --color-selected-surface: color-mix(
+    in oklab,
+    var(--color-primary) 10%,
+    transparent
+  );
+  --color-selected-hover-surface: color-mix(
+    in oklab,
+    var(--color-primary) 16%,
+    transparent
+  );
+
+  /* Depth roles: tactile controls, raised content, floating surfaces, modal layers.
+     Keep geometry stable across themes; tune contrast and edge light instead. */
+  --shadow-control:
+    0 1px 2px oklch(0 0 0 / 0.1), inset 0 1px 0 oklch(1 0 0 / 0.12);
+  --shadow-raised:
+    0 2px 4px -2px oklch(0 0 0 / 0.08), 0 12px 32px -12px oklch(0 0 0 / 0.14);
+  --shadow-floating:
+    0 2px 4px -2px oklch(0 0 0 / 0.1), 0 16px 48px -16px oklch(0 0 0 / 0.26);
+  --shadow-overlay:
+    0 2px 4px -2px oklch(0 0 0 / 0.12), 0 24px 80px -28px oklch(0 0 0 / 0.28);
+
+  --radius-sm: 0.4375rem;
+  --radius-md: 0.6875rem;
+  --radius-lg: 1rem;
+
+  --animate-skeleton-pulse: skeleton-pulse 2.4s ease-in-out infinite;
+  --animate-skeleton-shimmer: skeleton-shimmer 1.8s ease-in-out infinite;
+
+  @keyframes skeleton-pulse {
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.64;
+    }
+  }
+
+  @keyframes skeleton-shimmer {
+    from {
+      transform: translateX(-100%);
+    }
+
+    to {
+      transform: translateX(100%);
+    }
+  }
+}
+
+@keyframes progress-indeterminate {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: 0 0;
+  }
+}
+
+@keyframes hulla-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--hulla-toast-enter-y, 0.5rem)) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes hulla-toast-countdown {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
+}
+
+:root {
+  --hulla-code-background: oklch(0.98 0 0);
+  --hulla-code-foreground: oklch(0.25 0 0);
+  --hulla-code-token-comment: oklch(0.49 0 0);
+  --hulla-code-token-constant: oklch(0.5 0.18 28);
+  --hulla-code-token-function: oklch(0.44 0.16 275);
+  --hulla-code-token-keyword: oklch(0.43 0.19 315);
+  --hulla-code-token-link: oklch(0.46 0.15 238);
+  --hulla-code-token-parameter: oklch(0.42 0.09 210);
+  --hulla-code-token-punctuation: oklch(0.4 0 0);
+  --hulla-code-token-string: oklch(0.4 0.12 150);
+  --hulla-code-token-string-expression: oklch(0.4 0.12 150);
+
+  color-scheme: light;
+}
+
+:root:where(.dark, [data-theme='dark']) {
+  --shadow-control:
+    0 1px 2px oklch(0 0 0 / 0.3), inset 0 1px 0 oklch(1 0 0 / 0.1);
+  --shadow-raised:
+    0 2px 4px -2px oklch(0 0 0 / 0.18), 0 12px 32px -12px oklch(0 0 0 / 0.5),
+    inset 0 1px 0 oklch(1 0 0 / 0.05);
+  --shadow-floating:
+    0 2px 4px -2px oklch(0 0 0 / 0.24), 0 16px 48px -16px oklch(0 0 0 / 0.75),
+    inset 0 1px 0 oklch(1 0 0 / 0.08);
+  --shadow-overlay:
+    0 2px 4px -2px oklch(0 0 0 / 0.28), 0 24px 80px -28px oklch(0 0 0 / 0.9),
+    inset 0 1px 0 oklch(1 0 0 / 0.08);
+
+  --color-background: oklch(0.105 0 0);
+  --color-surface: oklch(0.145 0 0);
+  --color-surface-raised: oklch(0.19 0 0);
+  --color-foreground: oklch(0.97 0 0);
+  --color-muted-foreground: oklch(0.7 0 0);
+  --color-hover-surface: color-mix(
+    in oklab,
+    var(--color-foreground) 12%,
+    transparent
+  );
+  --color-selected-surface: color-mix(
+    in oklab,
+    var(--color-primary) 18%,
+    transparent
+  );
+  --color-selected-hover-surface: color-mix(
+    in oklab,
+    var(--color-primary) 26%,
+    transparent
+  );
+  --color-border: color-mix(in oklab, var(--color-foreground) 14%, transparent);
+  --color-primary: oklch(0.52 0.22 264);
+  --color-primary-text: color-mix(
+    in oklab,
+    var(--color-primary) 55%,
+    var(--color-foreground)
+  );
+  --color-primary-foreground: oklch(0.97 0 0);
+  --color-focus-ring: color-mix(in oklab, var(--color-primary) 72%, white);
+  --color-success: oklch(0.73 0.105 155);
+  --color-warning: oklch(0.77 0.105 75);
+  --color-danger: oklch(0.68 0.18 20);
+  --hulla-code-background: oklch(0.13 0.012 260);
+  --hulla-code-foreground: oklch(0.9 0.018 250);
+  --hulla-code-token-comment: oklch(0.62 0.04 250);
+  --hulla-code-token-constant: oklch(0.75 0.15 32);
+  --hulla-code-token-function: oklch(0.75 0.13 275);
+  --hulla-code-token-keyword: oklch(0.75 0.16 320);
+  --hulla-code-token-link: oklch(0.72 0.12 230);
+  --hulla-code-token-parameter: oklch(0.76 0.1 205);
+  --hulla-code-token-punctuation: oklch(0.72 0.025 250);
+  --hulla-code-token-string: oklch(0.74 0.12 150);
+  --hulla-code-token-string-expression: oklch(0.74 0.12 150);
+
+  color-scheme: dark;
+}
+
+@layer base {
+  html {
+    min-width: 20rem;
+    scrollbar-gutter: stable;
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    text-rendering: optimizeLegibility;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100dvh;
+    background: var(--color-background);
+    color: var(--color-foreground);
+  }
+
+  button,
+  input,
+  optgroup,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    color: inherit;
+  }
+
+  input,
+  textarea {
+    caret-color: var(--color-primary);
+  }
+
+  :where(button, [role='button'], select, summary) {
+    touch-action: manipulation;
+  }
+
+  :where(
+    a[href],
+    button,
+    input[type='button'],
+    input[type='checkbox'],
+    input[type='color'],
+    input[type='file'],
+    input[type='image'],
+    input[type='radio'],
+    input[type='range'],
+    input[type='reset'],
+    input[type='submit'],
+    select:not([multiple]),
+    summary,
+    [role='button'],
+    [role='checkbox'],
+    [role='link'],
+    [role='menuitem'],
+    [role='menuitemcheckbox'],
+    [role='menuitemradio'],
+    [role='radio'],
+    [role='switch'],
+    [role='tab']
+  ) {
+    cursor: pointer;
+  }
+
+  :where(
+    input:not([type]),
+    input[type='date'],
+    input[type='datetime-local'],
+    input[type='email'],
+    input[type='month'],
+    input[type='number'],
+    input[type='password'],
+    input[type='search'],
+    input[type='tel'],
+    input[type='text'],
+    input[type='time'],
+    input[type='url'],
+    input[type='week'],
+    textarea,
+    [contenteditable]:not([contenteditable='false'])
+  ) {
+    cursor: text;
+  }
+
+  :where([draggable='true']) {
+    cursor: grab;
+  }
+
+  :where([draggable='true']:active) {
+    cursor: grabbing;
+  }
+
+  :where(button, input, select, textarea):disabled,
+  :where([aria-disabled='true']) {
+    cursor: not-allowed;
+  }
+
+  :where(a) {
+    color: inherit;
+    text-decoration-thickness: from-font;
+    text-underline-offset: 0.18em;
+  }
+
+  :where(:focus-visible) {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-primary) 28%, transparent);
+    color: var(--color-foreground);
+  }
+}
+
+@layer components {
+  [data-slot='code-block-content'] {
+    .th-comment,
+    .th-meta {
+      color: var(--hulla-code-token-comment);
+    }
+
+    .th-keyword,
+    .th-selector,
+    .th-tag {
+      color: var(--hulla-code-token-keyword);
+    }
+
+    .th-string,
+    .th-code-inline,
+    .th-inserted {
+      color: var(--hulla-code-token-string);
+    }
+
+    .th-function,
+    .th-command {
+      color: var(--hulla-code-token-function);
+    }
+
+    .th-number,
+    .th-literal,
+    .th-deleted {
+      color: var(--hulla-code-token-constant);
+    }
+
+    .th-property,
+    .th-variable,
+    .th-attr {
+      color: var(--hulla-code-token-parameter);
+    }
+
+    .th-link {
+      color: var(--hulla-code-token-link);
+      text-decoration: underline;
+      text-underline-offset: 0.15em;
+    }
+
+    .th-operator,
+    .th-heading,
+    .th-type {
+      color: var(--hulla-code-token-punctuation);
+    }
+  }
+
+  [data-slot='code-block-content'][data-line-numbers] [data-code-line]::before {
+    display: inline-block;
+    width: 3ch;
+    margin-right: 1.25rem;
+    color: color-mix(in oklab, var(--color-muted-foreground) 70%, transparent);
+    content: attr(data-line);
+    text-align: right;
+    user-select: none;
+  }
+}

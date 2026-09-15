@@ -1,0 +1,15 @@
+---
+import Code from '@/components/code/code.astro'
+import { tokenizeInlineCode } from '@/lib/inline-code'
+
+type Props = {
+  text: string
+}
+
+const { text } = Astro.props as Props
+const parts = tokenizeInlineCode(text)
+---
+
+{parts.map((part) =>
+  part.kind === 'code' ? <Code>{part.value}</Code> : part.value
+)}

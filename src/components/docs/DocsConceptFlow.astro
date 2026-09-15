@@ -1,0 +1,40 @@
+---
+import Card from '@/components/card/card.astro'
+import CardHeader from '@/components/card/card-header.astro'
+import CardTitle from '@/components/card/card-title.astro'
+import CardDescription from '@/components/card/card-description.astro'
+import CardContent from '@/components/card/card-content.astro'
+import Badge from '@/components/badge/badge.astro'
+import DocsCodeBlock from './DocsCodeBlock.astro'
+type Props = {
+  label: string
+  steps: { title: string; description: string; example?: string }[]
+}
+const { label, steps } = Astro.props
+---
+
+<section class="docs-example" aria-label={label} data-component-boundary>
+  <p class="eyebrow mb-4">{label}</p>
+  <ol class="grid list-none gap-4 p-0">
+    {steps.map((step, index) => (
+      <li>
+        <Card>
+          <CardHeader>
+            <>
+              <div>
+                <Badge size="sm">{String(index + 1).padStart(2, '0')}</Badge>
+              </div>
+              <CardTitle>{step.title}</CardTitle>
+              <CardDescription>{step.description}</CardDescription>
+            </>
+          </CardHeader>
+          {step.example && (
+            <CardContent>
+              <DocsCodeBlock code={step.example} language="ts" />
+            </CardContent>
+          )}
+        </Card>
+      </li>
+    ))}
+  </ol>
+</section>

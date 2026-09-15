@@ -1,0 +1,15 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'li'>
+
+const { class: className, ...props } = Astro.props as Props
+---
+
+<li
+  {...props}
+  data-slot="sidebar-menu-item"
+  class={cn('relative min-w-0', className)}>
+  <slot />
+</li>

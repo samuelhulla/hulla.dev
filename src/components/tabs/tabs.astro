@@ -1,0 +1,64 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = Omit<HTMLAttributes<'div'>, 'defaultValue'> & {
+  activationMode?: 'automatic' | 'manual'
+  defaultValue?: string
+  orientation?: 'horizontal' | 'vertical'
+  value?: string
+}
+
+const {
+  activationMode = 'automatic',
+  class: className,
+  defaultValue,
+  orientation = 'horizontal',
+  value,
+  ...props
+} = Astro.props as Props
+---
+
+<hulla-tabs
+  {...props}
+  data-activation-mode={activationMode}
+  data-initial-value={value ?? defaultValue}
+  data-orientation={orientation}
+  data-slot="tabs"
+  class={cn(
+    'grid min-w-0 gap-4 data-[orientation=vertical]:grid-cols-[auto_minmax(0,1fr)] data-[orientation=vertical]:items-start',
+    className
+  )}>
+  <slot />
+</hulla-tabs>
+
+<script>
+  import { connectTabs, type TabsController } from '@/lib/tabs'
+
+  const elementName = 'hulla-tabs'
+
+  if (!customElements.get(elementName)) {
+    class HullaTabsElement extends HTMLElement {
+      controller: TabsController | undefined
+
+      connectedCallback() {
+        this.controller ??= connectTabs(this)
+      }
+
+      disconnectedCallback() {
+        this.controller?.destroy()
+        this.controller = undefined
+      }
+
+      get value(): string {
+        return this.controller?.getValue() ?? ''
+      }
+
+      set value(value: string) {
+        this.controller?.setValue(value)
+      }
+    }
+
+    customElements.define(elementName, HullaTabsElement)
+  }
+</script>

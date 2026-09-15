@@ -1,0 +1,12 @@
+---
+import Table from '@/components/table/table.astro'
+import TableContainer from '@/components/table/table-container.astro'
+---
+
+<div class="md-table">
+  <TableContainer tabindex="0" role="region" aria-label="Scrollable table">
+    <Table {...Astro.props}>
+      <slot />
+    </Table>
+  </TableContainer>
+</div>

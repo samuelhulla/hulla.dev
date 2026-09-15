@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "sources": ["../ui/generated"],
+  "installs": [
+    {
+      "sourceUrl": "../ui/generated",
+      "libraryName": "@hulla/ui",
+      "composer": "cn",
+      "codeRoot": "src",
+      "componentsRoot": "src/components",
+      "copyFilesRoot": "src",
+      "rootTsconfigPath": "tsconfig.json",
+      "frameworks": [
+        {
+          "name": "astro",
+          "templatePath": "astro",
+          "outputPath": "src/components",
+          "tsconfigPath": "tsconfig.json"
+        },
+        {
+          "name": "solid",
+          "templatePath": "solid",
+          "outputPath": "src/components",
+          "tsconfigPath": "tsconfig.json"
+        }
+      ]
+    }
+  ],
+  "postAddUpdateStep": "prettier --write {files}"
+}

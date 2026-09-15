@@ -1,0 +1,17 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'span'>
+const { class: className, ...props } = Astro.props as Props
+---
+
+<span
+  {...props}
+  data-slot="breadcrumb-ellipsis"
+  class={cn('inline-flex font-mono tracking-[0.12em]', className)}>
+  <slot>
+    <span aria-hidden="true">···</span>
+    <span class="sr-only">More pages</span>
+  </slot>
+</span>

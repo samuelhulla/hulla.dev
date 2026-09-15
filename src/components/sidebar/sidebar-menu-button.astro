@@ -1,0 +1,25 @@
+---
+import { vn, cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+const $control = vn({
+  default:
+    'relative flex min-h-9 ml-[var(--sidebar-row-inset)] w-[calc(100%-var(--sidebar-row-inset))] min-w-0 items-center gap-2.5 pr-2.5 pl-[calc(var(--sidebar-inset,0.625rem)-var(--sidebar-row-inset))] [--sidebar-row-inset:max(0px,calc(var(--sidebar-inset,0.625rem)-0.875rem+var(--sidebar-railed,0)*0.5rem))] py-1.5 text-left text-sm leading-5 no-underline [&:not(:disabled):not([aria-disabled=true])]:aria-[current=page]:bg-selected-surface [&:not(:disabled):not([aria-disabled=true])]:aria-[current=page]:hover:bg-selected-hover-surface aria-[current=page]:font-medium [&:not(:disabled):not([aria-disabled=true])]:aria-[current=page]:text-primary-text aria-[current=page]:[&>svg]:text-primary-text focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:text-disabled-foreground aria-disabled:cursor-not-allowed aria-disabled:text-disabled-foreground [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-muted-foreground',
+})
+const $interactiveRow = vn({
+  default:
+    'rounded-md text-muted-foreground transition-[background-color,color] duration-100 [&:not(:disabled):not([aria-disabled=true])]:hover:bg-hover-surface [&:not(:disabled):not([aria-disabled=true])]:hover:text-foreground motion-reduce:transition-none',
+})
+
+type Props = HTMLAttributes<'button'>
+
+const { class: className, type = 'button', ...props } = Astro.props as Props
+---
+
+<button
+  {...props}
+  type={type}
+  data-slot="sidebar-menu-button"
+  class={cn($control('default'), $interactiveRow('default'), className)}>
+  <slot />
+</button>

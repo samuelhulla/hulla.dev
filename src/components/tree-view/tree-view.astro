@@ -1,0 +1,57 @@
+---
+import { cn } from '@/lib/style'
+import type { TreeViewSelectionMode } from '@/lib/tree-view'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = Omit<HTMLAttributes<'ul'>, 'defaultValue'> & {
+  defaultValue?: string
+  selectionMode?: TreeViewSelectionMode
+  value?: string
+}
+
+const {
+  class: className,
+  defaultValue,
+  role = 'tree',
+  selectionMode = 'single',
+  value,
+  ...props
+} = Astro.props as Props
+---
+
+<ul
+  {...props}
+  role={role}
+  data-initial-value={value ?? defaultValue}
+  data-selection-mode={selectionMode}
+  data-slot="tree-view"
+  class={cn(
+    'm-0 grid min-w-0 list-none gap-0.5 p-0 text-foreground',
+    className
+  )}>
+  <slot />
+</ul>
+
+<script>
+  import { connectTreeView, type TreeViewController } from '@/lib/tree-view'
+
+  const controllers = new WeakMap<HTMLElement, TreeViewController>()
+
+  const connectTreeViews = () => {
+    document
+      .querySelectorAll<HTMLElement>("[data-slot='tree-view']")
+      .forEach((root) => {
+        if (!controllers.has(root)) controllers.set(root, connectTreeView(root))
+      })
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', connectTreeViews, {
+      once: true,
+    })
+  } else {
+    connectTreeViews()
+  }
+
+  document.addEventListener('astro:page-load', connectTreeViews)
+</script>

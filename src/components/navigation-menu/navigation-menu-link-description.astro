@@ -1,0 +1,14 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'span'>
+const { class: className, ...props } = Astro.props as Props
+---
+
+<span
+  {...props}
+  data-slot="navigation-menu-link-description"
+  class={cn('text-xs leading-5 text-muted-foreground', className)}>
+  <slot />
+</span>

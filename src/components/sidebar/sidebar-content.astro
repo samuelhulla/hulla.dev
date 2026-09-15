@@ -1,0 +1,23 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'nav'>
+
+const {
+  'aria-label': ariaLabel = 'Sidebar navigation',
+  class: className,
+  ...props
+} = Astro.props as Props
+---
+
+<nav
+  {...props}
+  aria-label={ariaLabel}
+  data-slot="sidebar-content"
+  class={cn(
+    'min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 [scrollbar-width:thin]',
+    className
+  )}>
+  <slot />
+</nav>

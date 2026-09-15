@@ -1,0 +1,18 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'div'>
+
+const { class: className, ...props } = Astro.props as Props
+---
+
+<div
+  {...props}
+  data-slot="collapsible-content"
+  class={cn(
+    'min-w-0 -translate-y-0.5 opacity-0 transition-[opacity,translate] duration-150 ease-out group-open/collapsible:translate-y-0 group-open/collapsible:opacity-100 motion-reduce:translate-y-0 motion-reduce:transition-none',
+    className
+  )}>
+  <slot />
+</div>

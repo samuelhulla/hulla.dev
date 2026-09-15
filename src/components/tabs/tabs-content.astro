@@ -1,0 +1,30 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'div'> & {
+  value: string
+}
+
+const {
+  class: className,
+  role = 'tabpanel',
+  tabindex = 0,
+  value,
+  ...props
+} = Astro.props as Props
+---
+
+<div
+  {...props}
+  role={role}
+  tabindex={tabindex}
+  hidden
+  data-slot="tabs-content"
+  data-value={value}
+  class={cn(
+    'min-w-0 rounded-sm transition-opacity duration-120 ease-out starting:opacity-0 motion-reduce:transition-none text-sm leading-6 text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
+    className
+  )}>
+  <slot />
+</div>

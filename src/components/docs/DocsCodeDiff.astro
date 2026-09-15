@@ -1,0 +1,36 @@
+---
+import Badge from '@/components/badge/badge.astro'
+import DocsCodeBlock from './DocsCodeBlock.astro'
+import { FileDiff } from '@lucide/astro'
+
+type Props = {
+  diff: string
+  filename: string
+  caption?: string
+}
+
+const { diff, filename, caption } = Astro.props
+const lines = diff.split('\n')
+const additions = lines.filter(
+  (line) => line.startsWith('+') && !line.startsWith('+++')
+).length
+const removals = lines.filter(
+  (line) => line.startsWith('-') && !line.startsWith('---')
+).length
+---
+
+<section class="docs-example" aria-label={`Change in ${filename}`}>
+  <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+    <span class="inline-flex min-w-0 items-center gap-2 font-mono text-xs text-muted-foreground">
+      <FileDiff class="size-4 shrink-0" aria-hidden="true" />
+      <span class="truncate">{filename}</span>
+    </span>
+    <span
+      class="flex items-center gap-2"
+      aria-label={`${additions} additions and ${removals} removals`}>
+      <Badge size="sm">+{additions}</Badge>
+      <Badge size="sm">−{removals}</Badge>
+    </span>
+  </div>
+  <DocsCodeBlock code={diff} language="diff" filename={filename} {caption} />
+</section>

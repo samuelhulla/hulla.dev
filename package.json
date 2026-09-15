@@ -1,132 +1,71 @@
 {
   "name": "hulla-dev",
-  "version": "0.0.1",
-  "dependencies": {
-    "@astrojs/mdx": "^3.1.1",
-    "@astrojs/solid-js": "^4.0.1",
-    "@astrojs/tailwind": "^5.1.0",
-    "@nanostores/solid": "^0.4.2",
-    "astro": "^4.8.6",
-    "class-variance-authority": "^0.7.0",
-    "clsx": "^2.1.0",
-    "embla-carousel": "^8.0.0",
-    "embla-carousel-autoplay": "^8.0.0",
-    "motion": "latest",
-    "nanostores": "^0.10.3",
-    "sharp": "latest",
-    "solid-js": "^1.8.15",
-    "solid-motionone": "^1.0.0",
-    "tailwind-merge": "^2.2.1"
+  "version": "0.0.0-beta.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.0",
+  "engines": {
+    "node": "^22.13.0 || >=24"
   },
   "scripts": {
     "dev": "astro dev",
-    "start": "astro dev",
-    "build": "astro build",
+    "build": "astro build && pagefind --site dist && node scripts/report-bundles.mjs",
     "preview": "astro preview",
+    "check": "astro check && bun run check:native",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write . --ignore-unknown",
+    "format:check": "prettier --check . --ignore-unknown",
+    "test": "bun test tests/*.test.ts",
+    "test:e2e": "bun run build && playwright test",
+    "ui:sync": "node scripts/ui-sync.mjs",
+    "ui:check": "node scripts/ui-sync.mjs --check",
+    "api:coverage": "bun scripts/check-api-coverage.ts",
+    "api:check": "bun run api:coverage && node scripts/check-api-examples.mjs",
+    "self-contained:check": "node scripts/check-self-contained.mjs --build",
     "cv:pdf": "node scripts/export-cv-pdf.mjs",
-    "astro": "astro",
-    "lint": "bun run eslint .",
-    "lint:fix": "bun run eslint . --fix",
-    "prepare": "husky"
+    "verify": "bun run format:check && bun run lint && bun run check && bun run ui:check && bun run api:check && bun run self-contained:check && bun run test && bun run build && bun run test:e2e",
+    "check:native": "tsc --project tsconfig.native.json --noEmit"
   },
-  "type": "module",
+  "dependencies": {
+    "@astrojs/markdown-remark": "^7.3.1",
+    "@astrojs/mdx": "^8.0.1",
+    "@astrojs/solid-js": "^7.0.2",
+    "@floating-ui/dom": "^1.8.0",
+    "@fontsource-variable/schibsted-grotesk": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/playfair-display": "^5.3.0",
+    "@hulla/style": "0.4.0",
+    "@lucide/astro": "^1.44.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.3.2",
+    "pagefind": "^1.5.2",
+    "shiki": "^4.4.3",
+    "solid-js": "^1.9.15",
+    "cn": "0.3.0",
+    "tailwindcss": "^4.3.3"
+  },
   "devDependencies": {
-    "@astrojs/ts-plugin": "^1.5.3",
-    "@eslint/js": "^8.56.0",
-    "@tailwindcss/aspect-ratio": "^0.4.2",
-    "@tailwindcss/typography": "^0.5.13",
-    "autoprefixer": "^10.4.17",
-    "commitizen": "^4.3.0",
-    "cssnano": "^6.0.3",
-    "cz-emoji": "^1.3.2-canary.2",
-    "eslint": "^8.56.0",
-    "eslint-config-prettier": "latest",
-    "eslint-plugin-astro": "^0.29.1",
-    "eslint-plugin-jsx-a11y": "^6.7.1",
-    "eslint-plugin-prettier": "latest",
-    "eslint-plugin-tailwind": "^0.2.1",
-    "husky": "^9.0.11",
-    "mini-svg-data-uri": "^1.4.4",
-    "postcss-import": "^16.0.1",
-    "prettier": "latest",
-    "prettier-plugin-astro": "^0.12.0",
-    "prettier-plugin-tailwindcss": "^0.5.5",
-    "tailwindcss": "^3.4.4",
-    "typescript": "latest",
-    "typescript-eslint": "^7.0.2"
-  },
-  "config": {
-    "commitizen": {
-      "path": "./node_modules/cz-emoji"
-    },
-    "cz-emoji": {
-      "skipScope": true,
-      "scopes": [
-        "portfolio",
-        "@hulla/api",
-        "@hulla/ui",
-        "@hulla/docs",
-        "@hulla/forms",
-        "@hulla/env",
-        "@hulla/create",
-        "@hulla/ts"
-      ],
-      "types": [
-        {
-          "emoji": "✅",
-          "code": ":white_check_mark: feat:",
-          "description": "a new functionality",
-          "name": "feat"
-        },
-        {
-          "emoji": "🐞",
-          "code": ":lady_beetle: fix:",
-          "description": "a bug fix",
-          "name": "fix"
-        },
-        {
-          "emoji": "🔧",
-          "code": ":wrench: update:",
-          "description": "a code change that neither fixes a bug nor adds a feature",
-          "name": "update"
-        },
-        {
-          "emoji": "📚",
-          "code": ":books: docs:",
-          "description": "documentations",
-          "name": "docs"
-        },
-        {
-          "emoji": "🎨",
-          "code": ":art: style:",
-          "description": "tailwind, formatting, etc.",
-          "name": "style"
-        },
-        {
-          "emoji": "🪛",
-          "code": ":screwdriver: config:",
-          "description": "configuration files",
-          "name": "config"
-        },
-        {
-          "emoji": "🤖",
-          "code": ":robot: devops:",
-          "description": "ci/cd or other form of automation",
-          "name": "devops"
-        },
-        {
-          "emoji": "🗂️",
-          "code": ":card_index_dividers: assets:",
-          "description": "static assets for the website",
-          "name": "assets"
-        },
-        {
-          "emoji": "♻️",
-          "code": ":recycle: cleanup:",
-          "description": "code cleanup",
-          "name": "cleanup"
-        }
-      ]
-    }
+    "@astrojs/check": "^0.9.10",
+    "@axe-core/playwright": "^4.13.0",
+    "@eslint/js": "^10.0.1",
+    "@hulla/ui": "link:@hulla/ui",
+    "@iconify-json/logos": "^1.2.14",
+    "@playwright/test": "^1.63.0",
+    "@types/bun": "^1.4.2",
+    "@types/node": "^22.20.2",
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "eslint": "^10.10.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-astro": "^3.1.0",
+    "eslint-plugin-solid": "^0.18.0",
+    "globals": "^17.12.0",
+    "pdf-lib": "^1.17.1",
+    "prettier": "^3.9.6",
+    "prettier-plugin-astro": "^1.0.0",
+    "prettier-plugin-tailwindcss": "^0.8.1",
+    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "typescript-eslint": "^8.70.0",
+    "zod": "^4.6.1"
   }
 }

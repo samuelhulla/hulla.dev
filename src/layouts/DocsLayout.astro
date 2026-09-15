@@ -1,0 +1,128 @@
+---
+import BaseLayout from './BaseLayout.astro'
+import SiteHeader from '@/components/site/SiteHeader.astro'
+import SiteFooter from '@/components/site/SiteFooter.astro'
+import DocsSidebar from '@/components/docs/DocsSidebar.astro'
+import MobileDocsNav from '@/components/docs/MobileDocsNav.astro'
+import SearchCommand from '@/components/docs/SearchCommand'
+import DocsInlineText from '@/components/docs/DocsInlineText.astro'
+import Breadcrumbs from '@/components/breadcrumbs/breadcrumbs.astro'
+import BreadcrumbItem from '@/components/breadcrumbs/breadcrumb-item.astro'
+import TableOfContents from '@/components/table-of-contents/table-of-contents.astro'
+import {
+  adjacentDocs,
+  flatApiDocs,
+  findDocGroup,
+  findDocGroupPage,
+  findDoc,
+} from '@/data/docs'
+import { stripInlineCode } from '@/lib/inline-code'
+type Props = {
+  frontmatter: { title: string; description: string; usefulFor?: string[] }
+}
+const { frontmatter } = Astro.props
+const pathname = Astro.url.pathname.replace(/\/$/, '')
+const { previous, next } = adjacentDocs(pathname)
+const group = findDocGroup(pathname) ?? findDocGroupPage(pathname)
+const current = findDoc(pathname)
+const packageMeta = pathname.startsWith('/docs/ui')
+  ? { title: '@hulla/ui', href: '/docs/ui' }
+  : pathname.startsWith('/docs/cli')
+    ? { title: 'hulla CLI', href: '/docs/cli' }
+    : { title: '@hulla/api', href: '/docs/api' }
+const fallback = [
+  ...flatApiDocs,
+  {
+    title: 'Components & styling',
+    href: '/docs/ui',
+    description: 'Shared components and Markdown styling with @hulla/ui.',
+  },
+  {
+    title: 'hulla CLI',
+    href: '/docs/cli',
+    description: 'Command-line tooling for the @hulla/* package ecosystem.',
+  },
+]
+---
+
+<BaseLayout
+  title={frontmatter.title}
+  description={stripInlineCode(frontmatter.description)}>
+  <SiteHeader>
+    <SearchCommand {fallback} client:load />
+    <MobileDocsNav {pathname} />
+  </SiteHeader>
+  <div class="docs-shell">
+    <div class="docs-sidebar-rail">
+      <DocsSidebar {pathname} />
+    </div>
+    <main class="docs-main" id="main">
+      <div class="docs-columns">
+        <article class="docs-article" data-pagefind-body>
+          <Breadcrumbs>
+            <BreadcrumbItem>
+              <a href="/docs">Docs</a>
+            </BreadcrumbItem>
+            <BreadcrumbItem>
+              <a href={packageMeta.href}>{packageMeta.title}</a>
+            </BreadcrumbItem>
+            {group && (
+              <BreadcrumbItem>
+                <a href={group.href}>{group.title}</a>
+              </BreadcrumbItem>
+            )}
+            {current && pathname !== '/docs/api' && (
+              <BreadcrumbItem aria-current="page">
+                {current.title}
+              </BreadcrumbItem>
+            )}
+          </Breadcrumbs>
+          <header class="docs-page-heading">
+            <p class="eyebrow">{group?.title ?? 'Documentation'}</p>
+            <h1 class="docs-title" data-pagefind-meta="title">
+              {frontmatter.title}
+            </h1>
+            <p class="docs-description">
+              <DocsInlineText text={frontmatter.description} />
+            </p>
+          </header>
+          <noscript>
+            <div class="mb-6 lg:hidden">
+              <details>
+                <summary>Browse documentation</summary>
+                <DocsSidebar {pathname} />
+              </details>
+            </div>
+          </noscript>
+          <div id="docs-content">
+            <slot />
+          </div>
+          {(previous || next) && (
+            <nav class="docs-pagination" aria-label="Documentation pagination">
+              {previous ? (
+                <a class="docs-pagination-link" href={previous.href}>
+                  <span class="eyebrow">Previous</span>
+                  <span>← {previous.title}</span>
+                </a>
+              ) : (
+                <span />
+              )}
+              {next && (
+                <a class="docs-pagination-link text-right" href={next.href}>
+                  <span class="eyebrow">Next</span>
+                  <span>{next.title} →</span>
+                </a>
+              )}
+            </nav>
+          )}
+        </article>
+        <aside class="docs-toc-rail">
+          <TableOfContents for="docs-content">
+            <p class="eyebrow">On this page</p>
+          </TableOfContents>
+        </aside>
+      </div>
+    </main>
+  </div>
+  <SiteFooter />
+</BaseLayout>

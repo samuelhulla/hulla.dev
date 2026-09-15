@@ -1,0 +1,39 @@
+---
+import ThemeToggle from './ThemeToggle.astro'
+const docs = Astro.url.pathname.startsWith('/docs')
+---
+
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="site-brand" href="/" aria-label="hulla.dev home">
+      <img
+        class="site-brand-mark"
+        src="/favicon.svg"
+        width="28"
+        height="28"
+        alt=""
+      />
+      <span>
+        hulla<span class="site-brand-dot">.</span>dev
+      </span>
+    </a>
+    <nav class="site-links" aria-label="Main navigation">
+      <a
+        class="site-nav-link"
+        href="/docs"
+        aria-current={docs ? 'page' : undefined}>
+        Docs
+      </a>
+      <a class="site-nav-link hidden sm:inline" href="/cv">
+        CV
+      </a>
+      <a
+        class="site-nav-link hidden sm:inline"
+        href="https://github.com/hulladev">
+        GitHub ↗
+      </a>
+      <slot />
+      <ThemeToggle />
+    </nav>
+  </div>
+</header>

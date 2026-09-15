@@ -1,0 +1,9 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+type Props = HTMLAttributes<'li'>
+const props = Astro.props
+---
+
+<li {...props} class:list={['md-li', props.class]}>
+  <slot />
+</li>

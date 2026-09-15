@@ -1,0 +1,135 @@
+---
+import Badge from '@/components/badge/badge.astro'
+import Card from '@/components/card/card.astro'
+import TreeGroup from '@/components/tree-view/tree-group.astro'
+import TreeItemLabel from '@/components/tree-view/tree-item-label.astro'
+import TreeItem from '@/components/tree-view/tree-item.astro'
+import TreeView from '@/components/tree-view/tree-view.astro'
+import {
+  FileCode,
+  Folder,
+  FolderOpen,
+  Globe,
+  ServerCog,
+  Share2,
+} from '@lucide/astro'
+---
+
+<Card
+  class="docs-example overflow-hidden p-0"
+  aria-label="Recommended API module boundaries">
+  <div class="grid min-w-0 md:grid-cols-[minmax(15rem,0.9fr)_minmax(0,1.1fr)]">
+    <div class="min-w-0 border-b border-border p-5 md:border-r md:border-b-0">
+      <div class="mb-4 flex items-center justify-between gap-3">
+        <span class="eyebrow">src/api</span>
+        <Badge size="sm">boundary map</Badge>
+      </div>
+      <TreeView
+        aria-label="API project files"
+        defaultValue="contract"
+        class="[&_[aria-expanded=true]>[data-slot=tree-item-label]>.tree-folder-closed]:hidden [&_[aria-expanded=false]>[data-slot=tree-item-label]>.tree-folder-open]:hidden"
+        data-boundary-tree>
+        <TreeItem value="api" defaultExpanded>
+          <TreeItemLabel>
+            <Folder class="tree-folder-closed" aria-hidden="true" />
+            <FolderOpen class="tree-folder-open" aria-hidden="true" />
+            api
+          </TreeItemLabel>
+          <TreeGroup>
+            <TreeItem value="contract">
+              <TreeItemLabel
+                data-title="contract.ts"
+                data-scope="Shared"
+                data-detail="Safe in every runtime. It contains declarations and schemas, never framework state or database access.">
+                <Share2 aria-hidden="true" /> contract.ts
+              </TreeItemLabel>
+            </TreeItem>
+            <TreeItem value="implementation">
+              <TreeItemLabel
+                data-title="implementation.ts"
+                data-scope="Server only"
+                data-detail="Binds exhaustive handlers, middleware, services, and server context to the shared contract.">
+                <ServerCog aria-hidden="true" /> implementation.ts
+              </TreeItemLabel>
+            </TreeItem>
+            <TreeItem value="client">
+              <TreeItemLabel
+                data-title="client.ts"
+                data-scope="Browser safe"
+                data-detail="Creates a typed client from the shared contract and a browser-appropriate transport.">
+                <Globe aria-hidden="true" /> client.ts
+              </TreeItemLabel>
+            </TreeItem>
+            <TreeItem value="route">
+              <TreeItemLabel
+                data-title="route.ts"
+                data-scope="Host boundary"
+                data-detail="Mounts the completed implementation through the framework adapter. The filename varies by framework.">
+                <FileCode aria-hidden="true" /> route.ts
+              </TreeItemLabel>
+            </TreeItem>
+          </TreeGroup>
+        </TreeItem>
+      </TreeView>
+    </div>
+    <aside
+      class="grid content-start gap-4 bg-foreground/[0.025] p-5"
+      aria-live="polite">
+      <p class="eyebrow">Selected boundary</p>
+      <div class="grid gap-2">
+        <strong class="text-lg" data-boundary-title>
+          contract.ts
+        </strong>
+        <span
+          class="w-fit rounded-md bg-muted px-2 py-1 font-mono text-xs text-primary-text"
+          data-boundary-scope>
+          Shared
+        </span>
+      </div>
+      <p class="text-sm leading-6 text-muted-foreground" data-boundary-detail>
+        Safe in every runtime. It contains declarations and schemas, never
+        framework state or database access.
+      </p>
+    </aside>
+  </div>
+</Card>
+
+<script>
+  const connectBoundaryTrees = () => {
+    document
+      .querySelectorAll<HTMLElement>('[data-boundary-tree]')
+      .forEach((tree) => {
+        if (tree.dataset.boundaryConnected === 'true') return
+        tree.dataset.boundaryConnected = 'true'
+        tree.addEventListener('hulla-tree-view-value-change', (event) => {
+          const value = (event as CustomEvent<{ value: string }>).detail.value
+          const label = tree.querySelector<HTMLElement>(
+            `[data-slot="tree-item"][data-value="${CSS.escape(value)}"] > [data-slot="tree-item-label"]`
+          )
+          const card = tree.closest<HTMLElement>('[data-slot="card"]')
+          const title = card?.querySelector<HTMLElement>(
+            '[data-boundary-title]'
+          )
+          const scope = card?.querySelector<HTMLElement>(
+            '[data-boundary-scope]'
+          )
+          const detail = card?.querySelector<HTMLElement>(
+            '[data-boundary-detail]'
+          )
+          if (label?.dataset.title && title)
+            title.textContent = label.dataset.title
+          if (label?.dataset.scope && scope)
+            scope.textContent = label.dataset.scope
+          if (label?.dataset.detail && detail)
+            detail.textContent = label.dataset.detail
+        })
+      })
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', connectBoundaryTrees, {
+      once: true,
+    })
+  } else connectBoundaryTrees()
+  document.addEventListener('astro:page-load', connectBoundaryTrees)
+</script>

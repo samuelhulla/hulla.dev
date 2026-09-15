@@ -1,0 +1,15 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'h3'>
+
+const { class: className, ...props } = Astro.props as Props
+---
+
+<h3
+  {...props}
+  data-slot="card-title"
+  class={cn('text-xl font-semibold leading-7 tracking-[-0.025em]', className)}>
+  <slot />
+</h3>

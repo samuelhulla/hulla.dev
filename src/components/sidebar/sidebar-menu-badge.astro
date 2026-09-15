@@ -1,0 +1,18 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'span'>
+
+const { class: className, ...props } = Astro.props as Props
+---
+
+<span
+  {...props}
+  data-slot="sidebar-menu-badge"
+  class={cn(
+    'pointer-events-none absolute top-1/2 right-2 inline-flex min-w-5 -translate-y-1/2 items-center justify-center rounded-sm bg-foreground/[0.065] px-1 font-mono text-[0.625rem] leading-5 font-medium tabular-nums text-muted-foreground',
+    className
+  )}>
+  <slot />
+</span>

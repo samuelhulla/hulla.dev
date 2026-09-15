@@ -1,0 +1,15 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'header'>
+
+const { class: className, ...props } = Astro.props as Props
+---
+
+<header
+  {...props}
+  data-slot="sidebar-header"
+  class={cn('shrink-0 border-b border-border p-3', className)}>
+  <slot />
+</header>

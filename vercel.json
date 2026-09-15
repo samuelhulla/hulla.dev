@@ -1,0 +1,31 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "astro",
+  "redirects": [
+    {
+      "source": "/docs",
+      "destination": "/docs/api",
+      "permanent": true
+    },
+    {
+      "source": "/docs/api/getting-started/installation",
+      "destination": "/docs/api/installation",
+      "permanent": true
+    },
+    {
+      "source": "/docs/api/getting-started/quickstart",
+      "destination": "/docs/api/quick-start",
+      "permanent": true
+    },
+    {
+      "source": "/docs/api/core-concepts/procedures",
+      "destination": "/docs/api/core/procedures",
+      "permanent": true
+    },
+    {
+      "source": "/docs/api/core-concepts/router",
+      "destination": "/docs/api/core/routers-routes",
+      "permanent": true
+    }
+  ]
+}

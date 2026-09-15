@@ -1,0 +1,10 @@
+.astro/
+.hulla/.cache/
+.playwright-cli/
+.vscode/
+dist/
+node_modules/
+output/playwright/report/
+output/playwright/results/
+public/pagefind/
+tmp/

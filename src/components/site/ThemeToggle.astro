@@ -1,0 +1,26 @@
+---
+import Button from '@/components/button/button.astro'
+import { SunMoon } from '@lucide/astro'
+---
+
+<Button
+  variant="ghost"
+  size="sm"
+  aria-label="Toggle color theme"
+  data-theme-toggle>
+  <SunMoon size={16} aria-hidden="true" />
+</Button>
+<script>
+  document.querySelectorAll('[data-theme-toggle]').forEach((button) =>
+    button.addEventListener('click', () => {
+      const theme =
+        document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'
+      document.documentElement.dataset.theme = theme
+      try {
+        localStorage.setItem('hulla-theme', theme)
+      } catch {
+        /* Optional persistence. */
+      }
+    })
+  )
+</script>

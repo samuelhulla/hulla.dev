@@ -1,0 +1,18 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'div'>
+
+const { class: className, ...props } = Astro.props as Props
+---
+
+<div
+  {...props}
+  data-slot="code-block-body"
+  class={cn(
+    'relative min-w-0 [&>[data-slot=code-block-actions]]:absolute [&>[data-slot=code-block-actions]]:top-2 [&>[data-slot=code-block-actions]]:right-2 [&>[data-slot=code-block-actions]]:z-10 [&>[data-slot=code-block-actions]]:ml-0',
+    className
+  )}>
+  <slot />
+</div>

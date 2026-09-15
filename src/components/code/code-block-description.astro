@@ -1,0 +1,15 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'div'>
+
+const { class: className, ...props } = Astro.props as Props
+---
+
+<div
+  {...props}
+  data-slot="code-block-description"
+  class={cn('min-w-0 text-xs leading-5 text-muted-foreground', className)}>
+  <slot />
+</div>

@@ -1,0 +1,77 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import SiteHeader from '@/components/site/SiteHeader.astro'
+import SiteFooter from '@/components/site/SiteFooter.astro'
+import Card from '@/components/card/card.astro'
+import CardHeader from '@/components/card/card-header.astro'
+import CardTitle from '@/components/card/card-title.astro'
+import CardDescription from '@/components/card/card-description.astro'
+import CardContent from '@/components/card/card-content.astro'
+import PackageIcon from '@/components/site/PackageIcon.astro'
+
+const packages = [
+  {
+    kind: 'api',
+    name: '@hulla/api',
+    href: '/docs/api',
+    description:
+      'Contract-first APIs with typed clients, exhaustive servers, and explicit transports.',
+  },
+  {
+    kind: 'ui',
+    name: '@hulla/ui',
+    href: '/docs/ui',
+    description:
+      'Composable components for Astro, React, and Solid. Shared design, source you own.',
+  },
+  {
+    kind: 'cli',
+    name: 'hulla CLI',
+    href: '/docs/cli',
+    description:
+      'Generate, synchronize, and maintain source-owned package integrations.',
+  },
+] as const
+---
+
+<BaseLayout
+  title="Documentation"
+  description="Guides and references for the @hulla/* packages.">
+  <SiteHeader />
+  <main id="main" class="home-frame py-16">
+    <p class="eyebrow">Developer resources</p>
+    <h1 class="docs-title">Documentation</h1>
+    <p class="docs-description mb-12">
+      Pick a package. Start with a working example.
+    </p>
+    <div class="grid gap-5 md:grid-cols-3">
+      {packages.map((pkg) => (
+        <Card>
+          <>
+            <CardHeader>
+              <>
+                <CardTitle aria-level={2}>
+                  <span class="flex items-center gap-2.5">
+                    <PackageIcon
+                      kind={pkg.kind}
+                      size={20}
+                      class="text-primary-text"
+                    />
+                    <span>{pkg.name}</span>
+                  </span>
+                </CardTitle>
+                <CardDescription>{pkg.description}</CardDescription>
+              </>
+            </CardHeader>
+            <CardContent>
+              <a class="text-link text-sm" href={pkg.href}>
+                Open documentation →
+              </a>
+            </CardContent>
+          </>
+        </Card>
+      ))}
+    </div>
+  </main>
+  <SiteFooter />
+</BaseLayout>

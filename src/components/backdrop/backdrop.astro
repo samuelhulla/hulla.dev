@@ -1,0 +1,18 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'div'>
+const { class: className, ...props } = Astro.props as Props
+---
+
+<div
+  {...props}
+  aria-hidden="true"
+  data-slot="backdrop"
+  class={cn(
+    'fixed inset-0 bg-foreground/40 backdrop-blur-[3px] transition-[display,opacity] duration-150 [transition-behavior:allow-discrete] motion-reduce:transition-none motion-reduce:backdrop-blur-none dark:bg-background/72 dark:backdrop-blur-[8px] [&[hidden]]:hidden [&[hidden]]:pointer-events-none [&[hidden]]:opacity-0 starting:opacity-0',
+    className
+  )}>
+  <slot />
+</div>

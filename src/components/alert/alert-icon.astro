@@ -1,0 +1,19 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'span'>
+
+const { class: className, ...props } = Astro.props as Props
+---
+
+<span
+  {...props}
+  aria-hidden="true"
+  data-slot="alert-icon"
+  class={cn(
+    'pointer-events-none absolute top-[0.9375rem] left-4 inline-flex size-[1.125rem] items-center justify-center text-[var(--alert-accent)] [&>svg]:size-full',
+    className
+  )}>
+  <slot />
+</span>

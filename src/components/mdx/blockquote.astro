@@ -1,0 +1,9 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+type Props = HTMLAttributes<'blockquote'>
+const props = Astro.props
+---
+
+<blockquote {...props} class:list={['md-blockquote', props.class]}>
+  <slot />
+</blockquote>

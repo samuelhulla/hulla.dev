@@ -1,0 +1,15 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'section'>
+
+const { class: className, ...props } = Astro.props as Props
+---
+
+<section
+  {...props}
+  data-slot="sidebar-group"
+  class={cn('min-w-0 py-1.5', className)}>
+  <slot />
+</section>

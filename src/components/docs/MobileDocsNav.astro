@@ -1,0 +1,57 @@
+---
+import DocsSidebar from './DocsSidebar.astro'
+import Button from '@/components/button/button.astro'
+import Dialog from '@/components/dialog/dialog.astro'
+import DialogHeader from '@/components/dialog/dialog-header.astro'
+import DialogTitle from '@/components/dialog/dialog-title.astro'
+import { Menu, X } from '@lucide/astro'
+type Props = { pathname: string }
+const { pathname } = Astro.props
+---
+
+<div class="lg:hidden">
+  <Button
+    size="sm"
+    variant="outline"
+    data-docs-menu-open
+    aria-label="Open documentation navigation">
+    <Menu size={16} aria-hidden="true" />
+  </Button>
+  <Dialog
+    hidden
+    variant="fullscreen"
+    data-docs-menu-dialog
+    aria-label="Documentation navigation">
+    <DialogHeader>
+      <div class="flex items-center justify-between gap-4 p-4">
+        <DialogTitle>Documentation</DialogTitle>
+        <Button
+          size="sm"
+          variant="ghost"
+          data-docs-menu-close
+          aria-label="Close documentation navigation">
+          <X size={16} aria-hidden="true" />
+        </Button>
+      </div>
+    </DialogHeader>
+    <div class="min-h-0 flex-1 overflow-auto">
+      <DocsSidebar {pathname} />
+    </div>
+  </Dialog>
+</div>
+<script>
+  const dialog = document.querySelector<HTMLElement>('[data-docs-menu-dialog]')
+  document
+    .querySelector('[data-docs-menu-open]')
+    ?.addEventListener('click', () => {
+      if (dialog) dialog.hidden = false
+    })
+  document
+    .querySelector('[data-docs-menu-close]')
+    ?.addEventListener('click', () => {
+      if (dialog) dialog.hidden = true
+    })
+  dialog?.addEventListener('hulla:dialog-dismiss', () => {
+    dialog.hidden = true
+  })
+</script>

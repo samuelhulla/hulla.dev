@@ -1,0 +1,60 @@
+---
+import DocsCodeBlock from './DocsCodeBlock.astro'
+import Tabs from '@/components/tabs/tabs.astro'
+import TabsList from '@/components/tabs/tabs-list.astro'
+import TabsTrigger from '@/components/tabs/tabs-trigger.astro'
+import TabsContent from '@/components/tabs/tabs-content.astro'
+type Props = { commands: Record<'bun' | 'npm' | 'pnpm' | 'yarn', string> }
+const { commands } = Astro.props
+---
+
+<div class="docs-example" data-component-boundary>
+  <Tabs defaultValue="bun" data-package-manager-tabs>
+    <TabsList aria-label="Package manager">
+      {Object.keys(commands).map((manager) => (
+        <TabsTrigger value={manager} aria-label={`Use ${manager}`}>
+          {manager}
+        </TabsTrigger>
+      ))}
+    </TabsList>
+    {Object.entries(commands).map(([manager, command]) => (
+      <TabsContent value={manager}>
+        <DocsCodeBlock code={command} language="sh" filename="Terminal" />
+      </TabsContent>
+    ))}
+  </Tabs>
+</div>
+
+<script>
+  import { TABS_VALUE_CHANGE_EVENT } from '@/lib/tabs'
+  type ManagerTabs = HTMLElement & { value: string }
+  const managers = ['bun', 'npm', 'pnpm', 'yarn']
+  const sync = (value: string) =>
+    document
+      .querySelectorAll<ManagerTabs>('[data-package-manager-tabs]')
+      .forEach((root) => {
+        root.value = value
+      })
+  await customElements.whenDefined('hulla-tabs')
+  try {
+    const stored = localStorage.getItem('hulla-package-manager')
+    if (stored && managers.includes(stored)) sync(stored)
+  } catch {
+    /* Optional persistence. */
+  }
+  document.addEventListener(TABS_VALUE_CHANGE_EVENT, (event) => {
+    if (
+      !(event.target instanceof Element) ||
+      !event.target.closest('[data-package-manager-tabs]')
+    )
+      return
+    const value = (event as CustomEvent<{ value: string }>).detail.value
+    if (!managers.includes(value)) return
+    sync(value)
+    try {
+      localStorage.setItem('hulla-package-manager', value)
+    } catch {
+      /* Optional persistence. */
+    }
+  })
+</script>

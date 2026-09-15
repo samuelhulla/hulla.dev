@@ -1,0 +1,18 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'tfoot'>
+
+const { class: className, ...props } = Astro.props as Props
+---
+
+<tfoot
+  {...props}
+  data-slot="table-footer"
+  class={cn(
+    'font-medium [&_td]:border-t [&_td]:border-border [&_th]:border-t [&_th]:border-border [&_tr]:bg-foreground/[0.035]',
+    className
+  )}>
+  <slot />
+</tfoot>

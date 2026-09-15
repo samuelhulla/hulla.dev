@@ -1,0 +1,25 @@
+---
+import type { HTMLAttributes } from 'astro/types'
+import Section from '@/components/table-of-contents/table-of-contents-section.astro'
+type Props = HTMLAttributes<'h2'>
+const { id, ...props } = Astro.props
+const label = (await Astro.slots.render('default'))
+  .replace(/<[^>]*>/g, '')
+  .replace(/&amp;/g, '&')
+  .replace(/&lt;/g, '<')
+  .replace(/&gt;/g, '>')
+  .replace(/&quot;/g, '"')
+  .replace(/&#39;/g, "'")
+---
+
+{id ? (
+  <Section id={id} label={label}>
+    <h2 {...props} class:list={['md-h2', props.class]}>
+      <slot />
+    </h2>
+  </Section>
+) : (
+  <h2 {...props} class:list={['md-h2', props.class]}>
+    <slot />
+  </h2>
+)}

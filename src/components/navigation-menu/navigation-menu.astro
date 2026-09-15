@@ -1,0 +1,53 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'nav'> & {
+  closeDelay?: number
+  openDelay?: number
+}
+
+const {
+  class: className,
+  closeDelay = 180,
+  openDelay = 90,
+  ...props
+} = Astro.props as Props
+---
+
+<nav
+  {...props}
+  data-close-delay={closeDelay}
+  data-open-delay={openDelay}
+  data-slot="navigation-menu"
+  class={cn('relative isolate w-fit text-foreground', className)}>
+  <slot />
+</nav>
+
+<script>
+  import {
+    connectNavigationMenu,
+    type NavigationMenuController,
+  } from '@/lib/navigation-menu'
+
+  const controllers = new WeakMap<HTMLElement, NavigationMenuController>()
+
+  const connectNavigationMenus = () => {
+    document
+      .querySelectorAll<HTMLElement>("[data-slot='navigation-menu']")
+      .forEach((root) => {
+        if (!controllers.has(root))
+          controllers.set(root, connectNavigationMenu(root))
+      })
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', connectNavigationMenus, {
+      once: true,
+    })
+  } else {
+    connectNavigationMenus()
+  }
+
+  document.addEventListener('astro:page-load', connectNavigationMenus)
+</script>

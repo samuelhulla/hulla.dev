@@ -1,0 +1,24 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'nav'>
+
+const {
+  'aria-label': ariaLabel = 'Breadcrumb',
+  class: className,
+  ...props
+} = Astro.props as Props
+---
+
+<nav
+  {...props}
+  aria-label={ariaLabel}
+  data-slot="breadcrumbs"
+  class={cn('min-w-0', className)}>
+  <ol
+    data-slot="breadcrumbs-list"
+    class="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-sm leading-5 text-muted-foreground">
+    <slot />
+  </ol>
+</nav>

@@ -1,0 +1,72 @@
+---
+import Badge from '@/components/badge/badge.astro'
+import Card from '@/components/card/card.astro'
+import CardDescription from '@/components/card/card-description.astro'
+import CardHeader from '@/components/card/card-header.astro'
+import { ArrowRight, Braces, Cable, FileCheck, ServerCog } from '@lucide/astro'
+
+const stages = [
+  {
+    icon: FileCheck,
+    label: 'Shared',
+    title: 'Contract',
+    description: 'Methods, paths, inputs, statuses, and representations.',
+    code: 'defineContract',
+  },
+  {
+    icon: Braces,
+    label: 'Server',
+    title: 'Implementation',
+    description: 'Exhaustive handlers, middleware, and request context.',
+    code: 'defineServer',
+  },
+  {
+    icon: ServerCog,
+    label: 'Host',
+    title: 'Adapter',
+    description: 'Framework routing, native context, and response writing.',
+    code: 'expressAdapter',
+  },
+  {
+    icon: Cable,
+    label: 'Client',
+    title: 'Transport',
+    description: 'One selected boundary: Fetch, in-process, IPC, or socket.',
+    code: 'createClient',
+  },
+] as const
+---
+
+<section
+  class="docs-example"
+  aria-label="Contract lifecycle"
+  data-component-boundary>
+  <p class="eyebrow mb-4">One contract, explicit boundaries</p>
+  <ol class="grid list-none gap-3 p-0 md:grid-cols-2">
+    {stages.map(({ icon: Icon, label, title, description, code }, index) => (
+      <li class="relative min-w-0">
+        <Card class="h-full">
+          <CardHeader>
+            <div class="mb-2 flex items-center justify-between gap-3">
+              <Icon class="size-4 text-primary-text" aria-hidden="true" />
+              <Badge size="sm">{label}</Badge>
+            </div>
+            <h2 class="text-xl leading-7 font-semibold tracking-[-0.025em]">
+              {title}
+            </h2>
+            <CardDescription>{description}</CardDescription>
+            <code class="mt-2 w-fit rounded-md bg-muted px-2 py-1 font-mono text-xs text-foreground">
+              {code}
+            </code>
+          </CardHeader>
+        </Card>
+        {index < stages.length - 1 && (
+          <ArrowRight
+            class="absolute -right-2 top-1/2 z-10 hidden size-4 -translate-y-1/2 text-muted-foreground md:block"
+            aria-hidden="true"
+          />
+        )}
+      </li>
+    ))}
+  </ol>
+</section>

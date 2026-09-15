@@ -1,24 +1,18 @@
-import { defineConfig, passthroughImageService } from 'astro/config'
-import tailwind from '@astrojs/tailwind'
-import solidJs from '@astrojs/solid-js'
 import mdx from '@astrojs/mdx'
-
-// https://astro.build/config
+import { unified } from '@astrojs/markdown-remark'
+import solid from '@astrojs/solid-js'
+import tailwindcss from '@tailwindcss/vite'
+import { defineConfig } from 'astro/config'
+import { remarkDocsCode } from './src/lib/remark-docs-code'
 export default defineConfig({
-  image: {
-    service: passthroughImageService(),
+  site: 'https://hulla.dev',
+  output: 'static',
+  trailingSlash: 'never',
+  integrations: [mdx(), solid()],
+  markdown: {
+    processor: unified({ remarkPlugins: [remarkDocsCode] }),
+    syntaxHighlight: false,
   },
-  integrations: [
-    tailwind({
-      applyBaseStyles: false,
-    }),
-    solidJs(),
-    mdx({
-      optimize: true,
-    }),
-  ],
   prefetch: true,
-  experimental: {
-    clientPrerender: true,
-  },
+  vite: { plugins: [tailwindcss()] },
 })

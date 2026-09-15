@@ -1,0 +1,25 @@
+---
+import { PanelsTopLeft, SquareTerminal, Waypoints } from '@lucide/astro'
+import { cn } from '@/lib/style'
+
+type Props = {
+  kind: 'api' | 'ui' | 'cli'
+  size?: number
+  class?: string
+}
+
+const { kind, size = 18, class: className } = Astro.props
+const icons = {
+  api: Waypoints,
+  ui: PanelsTopLeft,
+  cli: SquareTerminal,
+} as const
+const Icon = icons[kind]
+---
+
+<Icon
+  size={size}
+  stroke-width={1.75}
+  aria-hidden="true"
+  class={cn('shrink-0', className)}
+/>

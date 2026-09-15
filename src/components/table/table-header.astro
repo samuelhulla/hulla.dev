@@ -1,0 +1,15 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'thead'>
+
+const { class: className, ...props } = Astro.props as Props
+---
+
+<thead
+  {...props}
+  data-slot="table-header"
+  class={cn('[&_th]:border-b [&_th]:border-border', className)}>
+  <slot />
+</thead>
