@@ -31,3 +31,9 @@ The current API content still targets `2.0.0-beta.1`. The API coverage and examp
 ## Release guardrail
 
 This rebuild is private local dogfood. Do not push, tag, publish packages, or deploy it until the UI, CLI, and API beta release checks pass and Samuel explicitly authorizes each public step. Before eventual deployment, replace the local UI registry with an immutable public beta tag, install exact beta versions, regenerate with the published CLI, require no meaningful diff, and repeat a clean self-contained production build.
+
+## Documentation updates
+
+The site has no automatic package-validation workflow. Deployment builds the site; optional local verification commands remain available for site development.
+
+The documentation sync workflow checks daily for a published `@hulla/api` release and can also be run manually with a release tag. It imports the mapped guides without installing or building API/UI packages, records the immutable source commit in `.hulla/docs.json`, and opens or updates one `docs/api-release-sync` pull request. It waits for API v2 rather than replacing the current v2 docs with v1 content. Curated pages outside the mapping stay under site ownership. Review the documentation preview before merging. Automatic PR creation must be allowed in the repository's Actions settings.
