@@ -1,0 +1,2751 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="A greenfield implementation guide for redesigning @hulla/api around directional Zod contracts, framework-owned HTTP mechanics, and portable generated clients." />
+    <link rel="icon" href="../public/favicon.svg" type="image/svg+xml" />
+    <title>@hulla/api — Greenfield redesign field guide</title>
+    <style>
+      @font-face {
+        font-family: 'Field Mono';
+        src: url('../public/fonts/JetBrainsMono-Regular.woff2') format('woff2');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      @font-face {
+        font-family: 'Field Mono';
+        src: url('../public/fonts/JetBrainsMono-SemiBold.woff2') format('woff2');
+        font-weight: 600;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      :root {
+        color-scheme: light;
+        --paper: #f2eddf;
+        --paper-raised: #faf7ed;
+        --paper-deep: #e6decb;
+        --ink: #18251f;
+        --ink-soft: #536057;
+        --line: #c8bfaa;
+        --line-strong: #8a927f;
+        --forest: #153f30;
+        --forest-soft: #dce5d7;
+        --signal: #ed5d2f;
+        --signal-soft: #f8d9c8;
+        --ochre: #d5a735;
+        --code: #14251f;
+        --code-ink: #edf2df;
+        --code-soft: #a8b9a8;
+        --shadow: 0 22px 64px rgb(32 42 32 / 12%);
+        --serif:
+          'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+        --sans: 'Avenir Next', Avenir, 'Segoe UI', sans-serif;
+        --mono: 'Field Mono', 'SFMono-Regular', Consolas, monospace;
+        --content: 74rem;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+        scroll-padding-top: 2rem;
+      }
+
+      body {
+        margin: 0;
+        min-width: 20rem;
+        background:
+          linear-gradient(
+            90deg,
+            transparent 0 49.9%,
+            rgb(24 37 31 / 2.8%) 50%,
+            transparent 50.1%
+          ),
+          radial-gradient(
+            circle at 12% 8%,
+            rgb(213 167 53 / 14%),
+            transparent 30rem
+          ),
+          radial-gradient(
+            circle at 90% 22%,
+            rgb(21 63 48 / 10%),
+            transparent 36rem
+          ),
+          var(--paper);
+        color: var(--ink);
+        font-family: var(--sans);
+        line-height: 1.62;
+        text-rendering: optimizeLegibility;
+      }
+
+      body::before {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.95' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E");
+        content: '';
+        opacity: 0.14;
+        pointer-events: none;
+      }
+
+      ::selection {
+        background: var(--signal);
+        color: white;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      button,
+      a {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      :focus-visible {
+        outline: 3px solid var(--signal);
+        outline-offset: 3px;
+      }
+
+      .skip-link {
+        position: fixed;
+        top: 0.75rem;
+        left: 0.75rem;
+        z-index: 100;
+        padding: 0.65rem 0.9rem;
+        transform: translateY(-150%);
+        background: var(--ink);
+        color: white;
+        font: 600 0.75rem/1 var(--mono);
+        text-decoration: none;
+      }
+
+      .skip-link:focus {
+        transform: translateY(0);
+      }
+
+      .progress {
+        position: fixed;
+        inset: 0 0 auto;
+        z-index: 50;
+        height: 4px;
+        background: transparent;
+      }
+
+      .progress > span {
+        display: block;
+        width: 0;
+        height: 100%;
+        background: var(--signal);
+        transition: width 80ms linear;
+      }
+
+      .masthead {
+        position: relative;
+        overflow: hidden;
+        border-bottom: 1px solid var(--line-strong);
+        background: var(--forest);
+        color: #f6f1df;
+      }
+
+      .masthead::before {
+        position: absolute;
+        top: -11rem;
+        right: -7rem;
+        width: 35rem;
+        height: 35rem;
+        border: 1px solid rgb(246 241 223 / 24%);
+        border-radius: 50%;
+        box-shadow:
+          0 0 0 3.5rem rgb(246 241 223 / 4%),
+          0 0 0 7rem rgb(246 241 223 / 3%);
+        content: '';
+      }
+
+      .masthead::after {
+        position: absolute;
+        right: 5%;
+        bottom: -4.2rem;
+        color: rgb(246 241 223 / 7%);
+        content: '↔';
+        font: 700 24rem/0.5 var(--serif);
+        pointer-events: none;
+      }
+
+      .masthead-inner {
+        position: relative;
+        z-index: 1;
+        width: min(calc(100% - 2rem), var(--content));
+        margin: 0 auto;
+        padding: 2.25rem 0 4rem;
+      }
+
+      .utility-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: clamp(4rem, 11vw, 9rem);
+        font: 600 0.68rem/1 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .wordmark {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+      }
+
+      .wordmark-mark {
+        display: grid;
+        width: 1.6rem;
+        height: 1.6rem;
+        place-items: center;
+        border: 1px solid rgb(246 241 223 / 70%);
+        border-radius: 50%;
+        color: var(--ochre);
+        font-size: 0.95rem;
+      }
+
+      .edition {
+        color: rgb(246 241 223 / 68%);
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.65fr) minmax(16rem, 0.7fr);
+        gap: clamp(2rem, 8vw, 8rem);
+        align-items: end;
+      }
+
+      .eyebrow {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        margin: 0 0 1.4rem;
+        color: var(--ochre);
+        font: 600 0.72rem/1 var(--mono);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .eyebrow::before {
+        width: 2.8rem;
+        height: 1px;
+        background: currentColor;
+        content: '';
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        max-width: 15ch;
+        margin-bottom: 1.4rem;
+        font: 400 clamp(3.15rem, 7.5vw, 7rem) / 0.91 var(--serif);
+        letter-spacing: -0.055em;
+      }
+
+      h1 em {
+        color: var(--ochre);
+        font-weight: 400;
+      }
+
+      .hero-lede {
+        max-width: 42rem;
+        margin-bottom: 0;
+        color: rgb(246 241 223 / 78%);
+        font-size: clamp(1rem, 2vw, 1.28rem);
+      }
+
+      .brief-card {
+        position: relative;
+        padding: 1.35rem;
+        border: 1px solid rgb(246 241 223 / 26%);
+        background: rgb(4 23 16 / 28%);
+        box-shadow: 0 1rem 3rem rgb(0 0 0 / 14%);
+      }
+
+      .brief-card::before {
+        position: absolute;
+        top: -0.4rem;
+        left: 1.4rem;
+        width: 3.2rem;
+        height: 0.75rem;
+        transform: rotate(-2deg);
+        background: var(--ochre);
+        content: '';
+        opacity: 0.78;
+      }
+
+      .brief-card h2 {
+        margin-bottom: 1rem;
+        font: 600 0.7rem/1 var(--mono);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .brief-card dl {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.6rem 0.9rem;
+        margin: 0;
+        font-size: 0.82rem;
+      }
+
+      .brief-card dt {
+        color: rgb(246 241 223 / 52%);
+        font-family: var(--mono);
+      }
+
+      .brief-card dd {
+        margin: 0;
+      }
+
+      .page-shell {
+        display: grid;
+        grid-template-columns: 16rem minmax(0, 1fr);
+        gap: clamp(2rem, 6vw, 6rem);
+        width: min(calc(100% - 2rem), var(--content));
+        margin: 0 auto;
+        padding: 4rem 0 7rem;
+      }
+
+      .rail {
+        align-self: start;
+      }
+
+      .rail-inner {
+        position: sticky;
+        top: 1.4rem;
+        max-height: calc(100vh - 2.8rem);
+        overflow: auto;
+        padding-right: 1rem;
+        scrollbar-width: thin;
+      }
+
+      .rail-label {
+        margin-bottom: 1.2rem;
+        color: var(--ink-soft);
+        font: 600 0.66rem/1 var(--mono);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .rail ol {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        counter-reset: chapters;
+      }
+
+      .rail li {
+        counter-increment: chapters;
+      }
+
+      .rail a {
+        display: grid;
+        grid-template-columns: 1.8rem 1fr;
+        gap: 0.45rem;
+        align-items: baseline;
+        padding: 0.55rem 0;
+        border-bottom: 1px solid transparent;
+        color: var(--ink-soft);
+        font-size: 0.78rem;
+        line-height: 1.3;
+        text-decoration: none;
+        transition:
+          color 150ms ease,
+          transform 150ms ease;
+      }
+
+      .rail a::before {
+        color: var(--line-strong);
+        content: counter(chapters, decimal-leading-zero);
+        font: 400 0.62rem/1 var(--mono);
+      }
+
+      .rail a:hover,
+      .rail a[aria-current='true'] {
+        color: var(--signal);
+        transform: translateX(0.2rem);
+      }
+
+      .rail a[aria-current='true'] {
+        font-weight: 700;
+      }
+
+      .rail-note {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--line);
+        color: var(--ink-soft);
+        font: 400 0.67rem/1.55 var(--mono);
+      }
+
+      .mobile-index {
+        display: none;
+        margin-bottom: 2rem;
+        border: 1px solid var(--line-strong);
+        background: var(--paper-raised);
+      }
+
+      .mobile-index summary {
+        padding: 0.9rem 1rem;
+        cursor: pointer;
+        font: 600 0.72rem/1 var(--mono);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .mobile-index nav {
+        display: grid;
+        padding: 0 1rem 1rem;
+      }
+
+      .mobile-index a {
+        padding: 0.5rem 0;
+        border-top: 1px solid var(--line);
+        font-size: 0.82rem;
+        text-decoration: none;
+      }
+
+      main {
+        min-width: 0;
+      }
+
+      .chapter {
+        position: relative;
+        margin-bottom: clamp(5rem, 10vw, 9rem);
+      }
+
+      .chapter:last-child {
+        margin-bottom: 0;
+      }
+
+      .chapter-kicker {
+        display: flex;
+        gap: 0.7rem;
+        align-items: center;
+        margin-bottom: 1rem;
+        color: var(--signal);
+        font: 600 0.69rem/1 var(--mono);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .chapter-kicker::after {
+        width: 3.5rem;
+        height: 1px;
+        background: currentColor;
+        content: '';
+      }
+
+      .chapter h2 {
+        max-width: 22ch;
+        margin-bottom: 1.3rem;
+        font: 400 clamp(2.1rem, 5vw, 4.1rem) / 1 var(--serif);
+        letter-spacing: -0.04em;
+      }
+
+      .chapter h3 {
+        margin: 2.6rem 0 0.9rem;
+        font: 600 clamp(1.2rem, 2vw, 1.55rem) / 1.2 var(--serif);
+      }
+
+      .chapter h4 {
+        margin: 1.75rem 0 0.65rem;
+        font: 700 0.75rem/1.3 var(--mono);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .chapter > p,
+      .chapter > ul,
+      .chapter > ol,
+      .body-copy {
+        max-width: 47rem;
+      }
+
+      .lede {
+        max-width: 48rem;
+        margin-bottom: 2rem;
+        color: var(--ink-soft);
+        font: 400 clamp(1.1rem, 2vw, 1.34rem) / 1.58 var(--serif);
+      }
+
+      .principle {
+        margin: 2.5rem 0;
+        padding: clamp(1.4rem, 4vw, 2.4rem);
+        border: 1px solid var(--forest);
+        background: var(--forest);
+        color: #f7f1de;
+        box-shadow: var(--shadow);
+      }
+
+      .principle-label {
+        display: block;
+        margin-bottom: 1rem;
+        color: var(--ochre);
+        font: 600 0.68rem/1 var(--mono);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .principle p {
+        margin: 0;
+        font: 400 clamp(1.45rem, 3vw, 2.25rem) / 1.2 var(--serif);
+      }
+
+      .decision-grid,
+      .package-grid,
+      .phase-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1px;
+        margin: 2rem 0;
+        border: 1px solid var(--line-strong);
+        background: var(--line-strong);
+      }
+
+      .decision,
+      .package,
+      .phase-card {
+        padding: 1.25rem;
+        background: var(--paper-raised);
+      }
+
+      .decision strong,
+      .package strong,
+      .phase-card strong {
+        display: block;
+        margin-bottom: 0.55rem;
+        font: 600 0.78rem/1.25 var(--mono);
+      }
+
+      .decision p,
+      .package p,
+      .phase-card p {
+        margin: 0;
+        color: var(--ink-soft);
+        font-size: 0.84rem;
+      }
+
+      .decision--no strong {
+        color: #a23c20;
+      }
+
+      .decision--yes strong {
+        color: var(--forest);
+      }
+
+      .architecture {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+        margin: 2.3rem 0;
+      }
+
+      .architecture-card {
+        position: relative;
+        min-height: 13rem;
+        padding: 1.2rem;
+        border: 1px solid var(--line-strong);
+        background: var(--paper-raised);
+      }
+
+      .architecture-card:not(:last-child)::after {
+        position: absolute;
+        top: 50%;
+        right: -1.7rem;
+        z-index: 2;
+        width: 2.4rem;
+        color: var(--signal);
+        content: '→';
+        font: 600 1.25rem/1 var(--mono);
+        text-align: center;
+      }
+
+      .architecture-card .number {
+        display: block;
+        margin-bottom: 2.6rem;
+        color: var(--signal);
+        font: 600 0.7rem/1 var(--mono);
+      }
+
+      .architecture-card h3 {
+        margin: 0 0 0.65rem;
+        font-size: 1.25rem;
+      }
+
+      .architecture-card p {
+        margin: 0;
+        color: var(--ink-soft);
+        font-size: 0.8rem;
+      }
+
+      .flow {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 0;
+        margin: 2rem 0;
+        border: 1px solid var(--line-strong);
+      }
+
+      .flow-step {
+        position: relative;
+        min-height: 9rem;
+        padding: 1rem;
+        border-right: 1px solid var(--line);
+        background: var(--paper-raised);
+      }
+
+      .flow-step:last-child {
+        border-right: 0;
+      }
+
+      .flow-step small {
+        color: var(--signal);
+        font: 600 0.64rem/1 var(--mono);
+      }
+
+      .flow-step strong {
+        display: block;
+        margin: 1.4rem 0 0.45rem;
+        font-family: var(--serif);
+        font-size: 1.04rem;
+      }
+
+      .flow-step span {
+        color: var(--ink-soft);
+        font-size: 0.74rem;
+        line-height: 1.4;
+      }
+
+      .code-frame {
+        position: relative;
+        margin: 1.5rem 0 2rem;
+        overflow: hidden;
+        border: 1px solid #0b1b15;
+        background: var(--code);
+        color: var(--code-ink);
+        box-shadow: 0 1.1rem 2.6rem rgb(24 37 31 / 12%);
+      }
+
+      .code-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        min-height: 2.6rem;
+        padding: 0.55rem 0.75rem 0.55rem 1rem;
+        border-bottom: 1px solid rgb(237 242 223 / 13%);
+        color: var(--code-soft);
+        font: 400 0.64rem/1 var(--mono);
+      }
+
+      .code-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .copy-button {
+        padding: 0.42rem 0.58rem;
+        border: 1px solid rgb(237 242 223 / 18%);
+        background: transparent;
+        color: var(--code-soft);
+        cursor: pointer;
+        font: 600 0.6rem/1 var(--mono);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .copy-button:hover {
+        border-color: var(--ochre);
+        color: var(--ochre);
+      }
+
+      pre {
+        margin: 0;
+        overflow: auto;
+        padding: 1.2rem;
+        tab-size: 2;
+      }
+
+      code {
+        font-family: var(--mono);
+      }
+
+      pre code {
+        color: inherit;
+        font-size: 0.75rem;
+        line-height: 1.65;
+      }
+
+      :not(pre) > code {
+        padding: 0.12rem 0.3rem;
+        border: 1px solid var(--line);
+        background: var(--paper-raised);
+        color: #8f381e;
+        font-size: 0.82em;
+      }
+
+      .c-keyword,
+      .c-call {
+        color: #f2bd55;
+      }
+
+      .c-string {
+        color: #a9d28c;
+      }
+
+      .c-type {
+        color: #82cfd0;
+      }
+
+      .c-comment {
+        color: #7e9485;
+        font-style: italic;
+      }
+
+      .callout {
+        display: grid;
+        grid-template-columns: 2.2rem 1fr;
+        gap: 1rem;
+        margin: 1.5rem 0;
+        padding: 1.1rem 1.2rem;
+        border-left: 4px solid var(--signal);
+        background: var(--signal-soft);
+      }
+
+      .callout--green {
+        border-left-color: var(--forest);
+        background: var(--forest-soft);
+      }
+
+      .callout-mark {
+        color: var(--signal);
+        font: 600 1.25rem/1 var(--serif);
+      }
+
+      .callout--green .callout-mark {
+        color: var(--forest);
+      }
+
+      .callout strong {
+        display: block;
+        margin-bottom: 0.3rem;
+        font: 600 0.75rem/1.3 var(--mono);
+        text-transform: uppercase;
+      }
+
+      .callout p {
+        margin: 0;
+        font-size: 0.86rem;
+      }
+
+      .rule-list {
+        margin: 1.5rem 0;
+        padding: 0;
+        border-top: 1px solid var(--line-strong);
+        list-style: none;
+      }
+
+      .rule-list li {
+        display: grid;
+        grid-template-columns: 2.25rem 1fr;
+        gap: 0.8rem;
+        padding: 0.9rem 0;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .rule-list li::before {
+        color: var(--signal);
+        content: '✓';
+        font: 600 0.8rem/1.6 var(--mono);
+      }
+
+      .rule-list strong {
+        font-family: var(--mono);
+        font-size: 0.78rem;
+      }
+
+      .rule-list span {
+        display: block;
+        color: var(--ink-soft);
+        font-size: 0.84rem;
+      }
+
+      table {
+        width: 100%;
+        margin: 1.5rem 0 2rem;
+        border-collapse: collapse;
+        background: var(--paper-raised);
+        font-size: 0.82rem;
+      }
+
+      th,
+      td {
+        padding: 0.8rem;
+        border: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: var(--paper-deep);
+        font: 600 0.68rem/1.3 var(--mono);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      td:first-child {
+        font-family: var(--mono);
+        font-size: 0.74rem;
+      }
+
+      .file-tree {
+        margin: 1.5rem 0;
+        padding: 1.3rem;
+        border: 1px solid var(--line-strong);
+        background: var(--paper-raised);
+        font: 400 0.76rem/1.8 var(--mono);
+        white-space: pre-wrap;
+      }
+
+      .phase-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .phase-card {
+        min-height: 13rem;
+      }
+
+      .phase-number {
+        display: block;
+        margin-bottom: 2rem;
+        color: var(--signal);
+        font: 600 0.66rem/1 var(--mono);
+      }
+
+      .checklist {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.75rem;
+        margin: 1.5rem 0;
+      }
+
+      .check {
+        display: grid;
+        grid-template-columns: 1rem 1fr;
+        gap: 0.7rem;
+        align-items: start;
+        padding: 0.9rem;
+        border: 1px solid var(--line);
+        background: rgb(250 247 237 / 64%);
+        font-size: 0.8rem;
+      }
+
+      .check::before {
+        width: 0.75rem;
+        height: 0.75rem;
+        margin-top: 0.25rem;
+        border: 1px solid var(--line-strong);
+        content: '';
+      }
+
+      .footer {
+        border-top: 1px solid var(--line-strong);
+        background: var(--paper-deep);
+      }
+
+      .footer-inner {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 2rem;
+        width: min(calc(100% - 2rem), var(--content));
+        margin: 0 auto;
+        padding: 2rem 0 3rem;
+        color: var(--ink-soft);
+        font: 400 0.68rem/1.6 var(--mono);
+      }
+
+      .footer strong {
+        color: var(--ink);
+      }
+
+      @media (max-width: 920px) {
+        .hero-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .brief-card {
+          max-width: 31rem;
+        }
+
+        .page-shell {
+          display: block;
+        }
+
+        .rail {
+          display: none;
+        }
+
+        .mobile-index {
+          display: block;
+        }
+
+        .phase-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 680px) {
+        .masthead-inner {
+          padding-top: 1.25rem;
+        }
+
+        .utility-row {
+          margin-bottom: 4.5rem;
+        }
+
+        .edition {
+          display: none;
+        }
+
+        h1 {
+          font-size: clamp(3rem, 16vw, 5rem);
+        }
+
+        .decision-grid,
+        .package-grid,
+        .phase-grid,
+        .architecture,
+        .checklist {
+          grid-template-columns: 1fr;
+        }
+
+        .architecture-card:not(:last-child)::after {
+          top: auto;
+          right: 50%;
+          bottom: -1.55rem;
+          transform: translateX(50%) rotate(90deg);
+        }
+
+        .flow {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .flow-step:nth-child(2) {
+          border-right: 0;
+        }
+
+        .flow-step:nth-child(-n + 2) {
+          border-bottom: 1px solid var(--line);
+        }
+
+        .footer-inner {
+          grid-template-columns: 1fr;
+        }
+
+        table {
+          display: block;
+          overflow-x: auto;
+        }
+      }
+
+      @media print {
+        :root {
+          --paper: white;
+          --paper-raised: white;
+          --paper-deep: #f1f1ed;
+          --ink: black;
+          --ink-soft: #333;
+          --line: #aaa;
+          --line-strong: #555;
+        }
+
+        body {
+          background: white;
+          font-size: 10pt;
+        }
+
+        body::before,
+        .progress,
+        .rail,
+        .mobile-index,
+        .copy-button {
+          display: none !important;
+        }
+
+        .masthead {
+          background: white;
+          color: black;
+        }
+
+        .masthead::before,
+        .masthead::after {
+          display: none;
+        }
+
+        .hero-lede,
+        .edition {
+          color: #333;
+        }
+
+        .page-shell {
+          display: block;
+          width: 100%;
+          padding: 2rem 0;
+        }
+
+        .chapter {
+          break-before: page;
+          margin-bottom: 2rem;
+        }
+
+        .chapter:first-child {
+          break-before: auto;
+        }
+
+        .code-frame,
+        .principle {
+          box-shadow: none;
+          break-inside: avoid;
+        }
+
+        .decision-grid,
+        .package-grid,
+        .phase-grid,
+        table,
+        .architecture,
+        .flow {
+          break-inside: avoid;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <a class="skip-link" href="#content">Skip to implementation guide</a>
+    <div class="progress" aria-hidden="true"><span></span></div>
+
+    <header class="masthead">
+      <div class="masthead-inner">
+        <div class="utility-row">
+          <div class="wordmark">
+            <span class="wordmark-mark">↔</span>
+            <span>@hulla/api</span>
+          </div>
+          <span class="edition"
+            >Greenfield redesign · implementation field guide · 2026-08-03</span
+          >
+        </div>
+
+        <div class="hero-grid">
+          <div>
+            <p class="eyebrow">Architecture dossier 01</p>
+            <h1>Make the contract the <em>truth.</em></h1>
+            <p class="hero-lede">
+              A concrete redesign for a smaller, framework-friendly
+              <code>@hulla/api</code>: directional Zod contracts, one HTTP
+              parse, one codec pass, portable clients, and local procedures that
+              never become routes by accident.
+            </p>
+          </div>
+
+          <aside class="brief-card" aria-label="Document brief">
+            <h2>Design brief</h2>
+            <dl>
+              <dt>Status</dt>
+              <dd>Recommended direction</dd>
+              <dt>Scope</dt>
+              <dd>Greenfield replacement</dd>
+              <dt>Audience</dt>
+              <dd>Package maintainers</dd>
+              <dt>Priority</dt>
+              <dd>Radical simplicity</dd>
+              <dt>Baseline</dt>
+              <dd>Zod 4 + Web Fetch</dd>
+            </dl>
+          </aside>
+        </div>
+      </div>
+    </header>
+
+    <div class="page-shell">
+      <aside class="rail" aria-label="Guide chapters">
+        <div class="rail-inner">
+          <p class="rail-label">Field index</p>
+          <nav>
+            <ol>
+              <li><a href="#decision">The decision</a></li>
+              <li><a href="#model">Mental model</a></li>
+              <li><a href="#contract">Contract declaration</a></li>
+              <li><a href="#runtime">Runtime directions</a></li>
+              <li><a href="#surface">Package surface</a></li>
+              <li><a href="#server">Server binding</a></li>
+              <li><a href="#client">Client binding</a></li>
+              <li><a href="#procedures">Local procedures</a></li>
+              <li><a href="#distribution">Distribution modes</a></li>
+              <li><a href="#internals">Internal design</a></li>
+              <li><a href="#performance">Performance contract</a></li>
+              <li><a href="#errors">Errors &amp; compatibility</a></li>
+              <li><a href="#testing">Verification strategy</a></li>
+              <li><a href="#phases">Implementation phases</a></li>
+              <li><a href="#migration">Migration map</a></li>
+              <li><a href="#done">Definition of done</a></li>
+            </ol>
+          </nav>
+          <p class="rail-note">
+            Reading time: ~28 minutes.<br />
+            Code is illustrative TypeScript; names are part of the
+            recommendation.
+          </p>
+        </div>
+      </aside>
+
+      <main id="content">
+        <details class="mobile-index">
+          <summary>Jump to a chapter</summary>
+          <nav>
+            <a href="#decision">01 — The decision</a>
+            <a href="#model">02 — Mental model</a>
+            <a href="#contract">03 — Contract declaration</a>
+            <a href="#runtime">04 — Runtime directions</a>
+            <a href="#surface">05 — Package surface</a>
+            <a href="#server">06 — Server binding</a>
+            <a href="#client">07 — Client binding</a>
+            <a href="#procedures">08 — Local procedures</a>
+            <a href="#distribution">09 — Distribution modes</a>
+            <a href="#internals">10 — Internal design</a>
+            <a href="#performance">11 — Performance</a>
+            <a href="#errors">12 — Errors</a>
+            <a href="#testing">13 — Verification</a>
+            <a href="#phases">14 — Phases</a>
+            <a href="#migration">15 — Migration</a>
+            <a href="#done">16 — Done</a>
+          </nav>
+        </details>
+
+        <section class="chapter" id="decision" data-title="The decision">
+          <p class="chapter-kicker">Chapter 01</p>
+          <h2>The redesign in one decision</h2>
+          <p class="lede">
+            Make the executable schema the contract. Remove the independently
+            modeled HTTP wire graph. Frameworks keep responsibility for HTTP
+            mechanics; <code>@hulla/api</code> owns only contract semantics and
+            the bridge between routes, handlers, clients, and integrations.
+          </p>
+
+          <div class="principle">
+            <span class="principle-label">North-star rule</span>
+            <p>
+              A route declares what crosses the network and what application
+              code receives. Nothing else may reinterpret it.
+            </p>
+          </div>
+
+          <div class="decision-grid">
+            <article class="decision decision--yes">
+              <strong>Keep — contract-first routes</strong>
+              <p>
+                They are the portable point linking server handlers, clients,
+                docs, and framework integrations.
+              </p>
+            </article>
+            <article class="decision decision--yes">
+              <strong>Keep — local procedures</strong>
+              <p>
+                They remain validated callables for SDKs, storage,
+                orchestration, IPC, and internal work.
+              </p>
+            </article>
+            <article class="decision decision--yes">
+              <strong>Adopt — directional codecs</strong>
+              <p>
+                Zod input is the wire representation; Zod output is the
+                application representation.
+              </p>
+            </article>
+            <article class="decision decision--yes">
+              <strong>Adopt — thin framework adapters</strong>
+              <p>
+                Hono, Fastify, Express, and Fetch adapters own route
+                registration—not a competing server runtime.
+              </p>
+            </article>
+            <article class="decision decision--no">
+              <strong>Remove — custom HTTPWireType AST</strong>
+              <p>
+                Do not separately approximate schemas, unions, defaults, catch
+                behavior, or transforms.
+              </p>
+            </article>
+            <article class="decision decision--no">
+              <strong>Remove — implicit rich-type inference</strong>
+              <p>
+                Never reconstruct a Date merely because a runtime value or
+                schema looks date-like.
+              </p>
+            </article>
+            <article class="decision decision--no">
+              <strong>Remove — duplicate parsing</strong>
+              <p>
+                Adapters consume the framework’s parsed values and return values
+                for the framework to serialize.
+              </p>
+            </article>
+            <article class="decision decision--no">
+              <strong>Remove — silent degradation</strong>
+              <p>
+                Generation fails when a contract cannot be represented. It never
+                falls back to unknown unnoticed.
+              </p>
+            </article>
+          </div>
+
+          <div class="callout callout--green">
+            <span class="callout-mark">◎</span>
+            <div>
+              <strong>Product position</strong>
+              <p>
+                <code>@hulla/api</code> is not another backend framework. It is
+                the consistent contract layer between the framework a team
+                already chose and the clients and integrations they need.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="chapter" id="model" data-title="Mental model">
+          <p class="chapter-kicker">Chapter 02</p>
+          <h2>Two concepts, one sentence each</h2>
+          <p class="lede">
+            Radical simplicity comes from keeping the nouns honest. Do not call
+            every callable an endpoint, and do not pretend a local function has
+            network semantics.
+          </p>
+
+          <div class="architecture">
+            <article class="architecture-card">
+              <span class="number">01 / DECLARE</span>
+              <h3>Route</h3>
+              <p>
+                A validated HTTP contract. It has method, path, locations, and
+                response schemas—but no handler.
+              </p>
+            </article>
+            <article class="architecture-card">
+              <span class="number">02 / BIND</span>
+              <h3>Adapter</h3>
+              <p>
+                Binds the route tree to a server framework or a client transport
+                without changing its meaning.
+              </p>
+            </article>
+            <article class="architecture-card">
+              <span class="number">03 / CALL</span>
+              <h3>Procedure</h3>
+              <p>
+                A validated local callable. It has a handler and no method or
+                path. It can compose routes.
+              </p>
+            </article>
+          </div>
+
+          <div class="principle">
+            <span class="principle-label">DX decision rule</span>
+            <p>
+              If another process calls it over HTTP, declare a route. Otherwise,
+              declare a procedure.
+            </p>
+          </div>
+
+          <h3>What users see</h3>
+          <ul class="rule-list">
+            <li>
+              <div>
+                <strong>Contract author</strong
+                ><span
+                  >Uses <code>route.get</code>, <code>route.post</code>, and Zod
+                  schemas.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Server author</strong
+                ><span
+                  >Implements a typed handler tree and mounts one framework
+                  adapter.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Client author</strong
+                ><span
+                  >Calls methods from <code>createClient</code>; transport
+                  details are hidden.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Feature author</strong
+                ><span
+                  >Uses <code>procedure</code> for local orchestration and SDK
+                  wrappers.</span
+                >
+              </div>
+            </li>
+          </ul>
+
+          <h3>What stays internal</h3>
+          <p>
+            Routes bound to a client and local procedures may share an internal
+            <code>Callable</code> interface so plugins such as TanStack Query
+            and SWR can target both. That implementation commonality should not
+            add a third public noun.
+          </p>
+        </section>
+
+        <section
+          class="chapter"
+          id="contract"
+          data-title="Contract declaration">
+          <p class="chapter-kicker">Chapter 03</p>
+          <h2>Author the wire and application types once</h2>
+          <p class="lede">
+            A Zod codec is the source of truth whenever wire and application
+            values differ. Regular schemas remain the common case. The contract
+            contains executable semantics; there is no adjacent wire annotation
+            to keep synchronized.
+          </p>
+
+          <div
+            class="code-frame"
+            data-label="packages/api-contract/src/index.ts">
+            <pre><code><span class="c-keyword">import</span> { defineApi, route, router } <span class="c-keyword">from</span> <span class="c-string">'@hulla/api'</span>
+<span class="c-keyword">import</span> { z } <span class="c-keyword">from</span> <span class="c-string">'zod'</span>
+
+<span class="c-keyword">const</span> dateTime = z.codec(
+  z.iso.datetime(), <span class="c-comment">// wire: string</span>
+  z.date(),         <span class="c-comment">// application: Date</span>
+  {
+    decode: (value) =&gt; <span class="c-keyword">new</span> Date(value),
+    encode: (value) =&gt; value.toISOString(),
+  },
+)
+
+<span class="c-keyword">const</span> User = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  createdAt: dateTime,
+})
+
+<span class="c-keyword">const</span> CreateUser = z.object({
+  name: z.string().trim().min(1),
+  birthday: dateTime.optional(),
+})
+
+<span class="c-keyword">export const</span> api = defineApi({
+  basePath: <span class="c-string">'/api'</span>,
+
+  users: router(<span class="c-string">'/users'</span>, {
+    list: route.get(<span class="c-string">'/'</span>, {
+      query: z.object({
+        search: z.string().optional(),
+      }),
+      response: z.array(User),
+    }),
+
+    byId: route.get(<span class="c-string">'/:id'</span>, {
+      params: z.object({ id: z.uuid() }),
+      response: User.nullable(),
+    }),
+
+    create: route.post(<span class="c-string">'/'</span>, {
+      body: CreateUser,
+      response: User,
+    }),
+  }),
+})</code></pre>
+          </div>
+
+          <h3>Type meaning</h3>
+          <div
+            class="code-frame"
+            data-label="The contract already contains both sides">
+            <pre><code><span class="c-keyword">type</span> <span class="c-type">WireUser</span> = z.input&lt;<span class="c-keyword">typeof</span> User&gt;
+<span class="c-comment">// { id: string; name: string; createdAt: string }</span>
+
+<span class="c-keyword">type</span> <span class="c-type">ApplicationUser</span> = z.output&lt;<span class="c-keyword">typeof</span> User&gt;
+<span class="c-comment">// { id: string; name: string; createdAt: Date }</span></code></pre>
+          </div>
+
+          <h3>Contract rules</h3>
+          <ul class="rule-list">
+            <li>
+              <div>
+                <strong>Input means wire</strong
+                ><span
+                  ><code>z.input&lt;S&gt;</code> is what exists after HTTP
+                  parsing and before contract decoding.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Output means application</strong
+                ><span
+                  ><code>z.output&lt;S&gt;</code> is what handlers receive and
+                  clients expose.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Codecs are optional</strong
+                ><span
+                  >Use regular Zod schemas when both representations are
+                  identical.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Transforms are directional</strong
+                ><span
+                  >One-way <code>.transform()</code> is not permitted in shared
+                  routed schemas that must encode.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>No private introspection</strong
+                ><span
+                  >The runtime calls public decode/encode APIs; build tooling
+                  uses public JSON Schema conversion.</span
+                >
+              </div>
+            </li>
+          </ul>
+
+          <div class="callout">
+            <span class="callout-mark">!</span>
+            <div>
+              <strong>Fail closed</strong>
+              <p>
+                Contract definition or generation must reject a routed schema
+                that cannot encode. Do not emulate it, inspect private Zod
+                internals, or silently emit <code>unknown</code>.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="chapter" id="runtime" data-title="Runtime directions">
+          <p class="chapter-kicker">Chapter 04</p>
+          <h2>One parse, one contract pass</h2>
+          <p class="lede">
+            JSON parsing and schema decoding are different operations. The
+            framework turns bytes into JavaScript; the contract validates that
+            value and converts it into the application representation.
+          </p>
+
+          <h3>Request direction</h3>
+          <div class="flow" aria-label="Request processing flow">
+            <div class="flow-step">
+              <small>CLIENT</small><strong>Application value</strong
+              ><span><code>Date</code>, rich objects, validated intent.</span>
+            </div>
+            <div class="flow-step">
+              <small>ZOD</small><strong>Encode</strong
+              ><span>Validate output side; produce JSON-safe input side.</span>
+            </div>
+            <div class="flow-step">
+              <small>FRAMEWORK</small><strong>JSON transport</strong
+              ><span>Stringify, send, parse exactly once.</span>
+            </div>
+            <div class="flow-step">
+              <small>ZOD</small><strong>Decode</strong
+              ><span
+                >Validate wire side; handler receives application values.</span
+              >
+            </div>
+          </div>
+
+          <h3>Response direction</h3>
+          <div class="flow" aria-label="Response processing flow">
+            <div class="flow-step">
+              <small>SERVER</small><strong>Handler result</strong
+              ><span>Must satisfy the application side of the response.</span>
+            </div>
+            <div class="flow-step">
+              <small>ZOD</small><strong>Encode</strong
+              ><span
+                >Validate and produce the response wire representation.</span
+              >
+            </div>
+            <div class="flow-step">
+              <small>FRAMEWORK</small><strong>JSON transport</strong
+              ><span>Serialize, send, and parse once on the client.</span>
+            </div>
+            <div class="flow-step">
+              <small>ZOD</small><strong>Decode</strong
+              ><span
+                >Client receives the same application type as the handler
+                returned.</span
+              >
+            </div>
+          </div>
+
+          <div
+            class="code-frame"
+            data-label="Directional operations — conceptual runtime">
+            <pre><code><span class="c-comment">// Client request</span>
+<span class="c-keyword">const</span> wireRequest = <span class="c-keyword">await</span> z.encodeAsync(route.body, applicationBody)
+
+<span class="c-comment">// Server request</span>
+<span class="c-keyword">const</span> handlerBody = <span class="c-keyword">await</span> z.decodeAsync(route.body, frameworkParsedBody)
+
+<span class="c-comment">// Server response</span>
+<span class="c-keyword">const</span> wireResponse = <span class="c-keyword">await</span> z.encodeAsync(route.response, handlerResult)
+
+<span class="c-comment">// Client response</span>
+<span class="c-keyword">const</span> result = <span class="c-keyword">await</span> z.decodeAsync(route.response, parsedResponse)</code></pre>
+          </div>
+
+          <p>
+            An implementation should select synchronous operations when the
+            schema is synchronous and async operations only when needed. Route
+            plans are compiled once at initialization, so that decision is not
+            rediscovered per request.
+          </p>
+        </section>
+
+        <section class="chapter" id="surface" data-title="Package surface">
+          <p class="chapter-kicker">Chapter 05</p>
+          <h2>Keep the package interface small</h2>
+          <p class="lede">
+            Public exports should describe user decisions, not internal
+            machinery. Contract authors need routes; feature authors need
+            procedures; adapters need one binding API.
+          </p>
+
+          <div class="package-grid">
+            <article class="package">
+              <strong>@hulla/api</strong>
+              <p>
+                <code>defineApi</code>, <code>router</code>, <code>route</code>,
+                <code>procedure</code>, <code>defineProcedures</code>, public
+                types.
+              </p>
+            </article>
+            <article class="package">
+              <strong>@hulla/api/client</strong>
+              <p>
+                <code>createClient</code>, <code>fetchTransport</code>,
+                <code>combine</code>, client errors and request options.
+              </p>
+            </article>
+            <article class="package">
+              <strong>@hulla/api/server</strong>
+              <p>
+                <code>implement</code>, handler inference, shared error
+                normalization, adapter-facing primitives.
+              </p>
+            </article>
+            <article class="package">
+              <strong>@hulla/api/zod</strong>
+              <p>
+                Optional, tested codecs for ISO dates, bigint strings, base64
+                bytes, URL values, and decimals.
+              </p>
+            </article>
+            <article class="package">
+              <strong>@hulla/api-hono</strong>
+              <p>
+                <code>serveHulla</code> for Hono route registration and context
+                bridging.
+              </p>
+            </article>
+            <article class="package">
+              <strong>@hulla/api-fastify</strong>
+              <p>
+                <code>serveHulla</code> with Fastify lifecycle integration and
+                optional schema compilation.
+              </p>
+            </article>
+            <article class="package">
+              <strong>@hulla/api-express</strong>
+              <p>
+                <code>serveHulla</code> for Express request locations, response
+                handling, and error middleware.
+              </p>
+            </article>
+            <article class="package">
+              <strong>hulla CLI</strong>
+              <p>
+                Contract checks, OpenAPI emission, portable clients,
+                compatibility reports, and watch mode.
+              </p>
+            </article>
+          </div>
+
+          <h3>Repository shape</h3>
+          <div class="file-tree">
+            packages/ ├── core/ # contracts + local procedures; no Node
+            dependency │ └── src/ │ ├── contract.ts │ ├── route.ts │ ├──
+            router.ts │ ├── procedure.ts │ ├── schema.ts │ └── errors.ts ├──
+            client/ │ └── src/{client,fetch,request,error}.ts ├── server/ │ └──
+            src/{implement,plan,execute,error}.ts ├── zod/ │ └──
+            src/{codecs,json-schema}.ts ├── adapter-hono/ ├── adapter-fastify/
+            ├── adapter-express/ ├── openapi/ ├── tanstack-query/ ├──
+            tanstack-db/ ├── swr/ └── cli/
+          </div>
+
+          <div class="callout callout--green">
+            <span class="callout-mark">↓</span>
+            <div>
+              <strong>Dependency direction</strong>
+              <p>
+                Core knows nothing about frameworks, Node, databases, query
+                libraries, or generators. Every optional integration depends
+                inward on the small contract and callable interfaces.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="chapter" id="server" data-title="Server binding">
+          <p class="chapter-kicker">Chapter 06</p>
+          <h2>Handlers are implementations, not contracts</h2>
+          <p class="lede">
+            Keep browser-safe route declarations separate from server code. The
+            implementation tree is checked structurally against the route tree
+            and gives each handler only the locations declared by that route.
+          </p>
+
+          <div class="code-frame" data-label="apps/backend/src/api.server.ts">
+            <pre><code><span class="c-keyword">import</span> { implement } <span class="c-keyword">from</span> <span class="c-string">'@hulla/api/server'</span>
+<span class="c-keyword">import</span> { api } <span class="c-keyword">from</span> <span class="c-string">'@company/api-contract'</span>
+<span class="c-keyword">import</span> { db } <span class="c-keyword">from</span> <span class="c-string">'./db'</span>
+
+<span class="c-keyword">export const</span> handlers = implement(api, {
+  users: {
+    list: <span class="c-keyword">async</span> ({ query, context }) =&gt; {
+      <span class="c-keyword">return</span> db.users.list({
+        search: query.search,
+        viewerId: context.session.userId,
+      })
+    },
+
+    byId: <span class="c-keyword">async</span> ({ params }) =&gt; {
+      <span class="c-keyword">return</span> db.users.find(params.id)
+    },
+
+    create: <span class="c-keyword">async</span> ({ body }) =&gt; {
+      <span class="c-comment">// body.birthday is Date | undefined</span>
+      <span class="c-keyword">return</span> db.users.create(body)
+    },
+  },
+})</code></pre>
+          </div>
+
+          <h3>Hono adapter</h3>
+          <div class="code-frame" data-label="apps/backend/src/index.ts">
+            <pre><code><span class="c-keyword">import</span> { Hono } <span class="c-keyword">from</span> <span class="c-string">'hono'</span>
+<span class="c-keyword">import</span> { serveHulla } <span class="c-keyword">from</span> <span class="c-string">'@hulla/api-hono'</span>
+<span class="c-keyword">import</span> { api } <span class="c-keyword">from</span> <span class="c-string">'@company/api-contract'</span>
+<span class="c-keyword">import</span> { handlers } <span class="c-keyword">from</span> <span class="c-string">'./api.server'</span>
+
+<span class="c-keyword">const</span> app = <span class="c-keyword">new</span> Hono()
+
+serveHulla(app, {
+  api,
+  handlers,
+  context: <span class="c-keyword">async</span> (context) =&gt; ({
+    requestId: context.get(<span class="c-string">'requestId'</span>),
+    session: <span class="c-keyword">await</span> readSession(context.req.raw),
+  }),
+})</code></pre>
+          </div>
+
+          <h3>Adapter contract</h3>
+          <ul class="rule-list">
+            <li>
+              <div>
+                <strong>Register once</strong
+                ><span
+                  >Compile the route tree, path parameters, schema direction,
+                  and handler lookup at startup.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Parse once</strong
+                ><span
+                  >Use the framework’s body, params, query, and headers. Never
+                  re-read an already parsed body.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Decode once</strong
+                ><span
+                  >Decode each declared location through its contract schema
+                  before calling the handler.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Encode once</strong
+                ><span
+                  >Encode the handler result through the selected status schema
+                  before handing it to the framework.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Preserve escape hatches</strong
+                ><span
+                  >Handlers may return an explicit raw response for streaming,
+                  redirects, files, or framework-native behavior.</span
+                >
+              </div>
+            </li>
+          </ul>
+
+          <div class="callout">
+            <span class="callout-mark">↯</span>
+            <div>
+              <strong>Do not normalize the entire framework</strong>
+              <p>
+                Adapters should bridge context and request locations, not hide
+                every framework feature. A raw response escape hatch keeps the
+                abstraction honest and prevents a lowest-common-denominator
+                server API.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="chapter" id="client" data-title="Client binding">
+          <p class="chapter-kicker">Chapter 07</p>
+          <h2>Client calls mirror declared locations</h2>
+          <p class="lede">
+            Explicit <code>params</code>, <code>query</code>, and
+            <code>body</code> objects trade a few characters for stable calls,
+            straightforward OpenAPI mapping, and no location-guessing algorithm.
+          </p>
+
+          <div class="code-frame" data-label="apps/web/src/api.client.ts">
+            <pre><code><span class="c-keyword">import</span> { createClient } <span class="c-keyword">from</span> <span class="c-string">'@hulla/api/client'</span>
+<span class="c-keyword">import</span> { api } <span class="c-keyword">from</span> <span class="c-string">'@company/api-contract'</span>
+
+<span class="c-keyword">export const</span> client = createClient(api, {
+  baseUrl: <span class="c-string">'https://api.example.com'</span>,
+  headers: () =&gt; ({ authorization: readAccessToken() }),
+})</code></pre>
+          </div>
+
+          <div class="code-frame" data-label="Application usage">
+            <pre><code><span class="c-keyword">const</span> user = <span class="c-keyword">await</span> client.users.byId({
+  params: { id: userId },
+})
+
+<span class="c-keyword">const</span> created = <span class="c-keyword">await</span> client.users.create({
+  body: {
+    name: <span class="c-string">'Samuel'</span>,
+    birthday: <span class="c-keyword">new</span> Date(<span class="c-string">'1995-01-01'</span>),
+  },
+})
+
+created.createdAt <span class="c-comment">// Date — decoded by the shared response schema</span></code></pre>
+          </div>
+
+          <h3>Query and path serialization</h3>
+          <p>
+            Query and path values are textual in HTTP. Their schemas should
+            therefore use codecs when the application value is not a string. The
+            Zod integration may export tested conveniences without inventing a
+            new protocol.
+          </p>
+
+          <div class="code-frame" data-label="@hulla/api/zod helpers">
+            <pre><code><span class="c-keyword">import</span> { httpCodecs } <span class="c-keyword">from</span> <span class="c-string">'@hulla/api/zod'</span>
+
+route.get(<span class="c-string">'/search'</span>, {
+  query: z.object({
+    page: httpCodecs.integer.optional(), <span class="c-comment">// string ↔ integer</span>
+    archived: z.stringbool().optional(),  <span class="c-comment">// string ↔ boolean</span>
+  }),
+  response: z.array(User),
+})</code></pre>
+          </div>
+
+          <p>
+            The fetch transport calls <code>z.encode</code> before constructing
+            the URL and body, then <code>z.decode</code> after parsing a
+            successful response. It must not apply an additional generic
+            rich-value serializer.
+          </p>
+        </section>
+
+        <section class="chapter" id="procedures" data-title="Local procedures">
+          <p class="chapter-kicker">Chapter 08</p>
+          <h2>Procedures stay useful without pretending to be routes</h2>
+          <p class="lede">
+            Preserve the strongest non-HTTP capability: validated callables that
+            wrap SDKs, storage, composition, and internal work. Their schemas
+            use ordinary forward parse semantics because there is no network
+            direction.
+          </p>
+
+          <div
+            class="code-frame"
+            data-label="apps/web/src/session.procedures.ts">
+            <pre><code><span class="c-keyword">import</span> { defineProcedures, procedure } <span class="c-keyword">from</span> <span class="c-string">'@hulla/api'</span>
+<span class="c-keyword">import</span> { z } <span class="c-keyword">from</span> <span class="c-string">'zod'</span>
+
+<span class="c-keyword">const</span> Session = z.object({
+  userId: z.uuid(),
+  expiresAt: z.date(),
+})
+
+<span class="c-keyword">export const</span> session = defineProcedures({
+  current: procedure({
+    output: Session.nullable(),
+    handler: () =&gt; readSessionFromStorage(),
+  }),
+
+  refresh: procedure({
+    input: z.object({ force: z.boolean().optional() }),
+    output: Session,
+    handler: ({ input }) =&gt; authSdk.refreshSession(input),
+  }),
+})</code></pre>
+          </div>
+
+          <h3>Composition</h3>
+          <div
+            class="code-frame"
+            data-label="Combine remote calls and local behavior">
+            <pre><code><span class="c-keyword">export const</span> dashboard = defineProcedures({
+  overview: procedure({
+    input: z.object({ userId: z.uuid() }),
+    output: Dashboard,
+    handler: <span class="c-keyword">async</span> ({ input }) =&gt; {
+      <span class="c-keyword">const</span> [user, activity] = <span class="c-keyword">await</span> Promise.all([
+        client.users.byId({ params: { id: input.userId } }),
+        analyticsSdk.activity(input.userId),
+      ])
+
+      <span class="c-keyword">return</span> { user, activity }
+    },
+  }),
+})</code></pre>
+          </div>
+
+          <h3>Plugin compatibility</h3>
+          <p>
+            Client-bound routes and local procedures implement the same internal
+            metadata hooks, so integrations can expose identical helpers without
+            conflating their declaration models:
+          </p>
+
+          <div class="code-frame" data-label="The same integration surface">
+            <pre><code>client.users.byId.$tanstack.queryOptions({ params: { id } })
+session.current.$tanstack.queryOptions()</code></pre>
+          </div>
+        </section>
+
+        <section
+          class="chapter"
+          id="distribution"
+          data-title="Distribution modes">
+          <p class="chapter-kicker">Chapter 09</p>
+          <h2>Monorepos are convenient, not required</h2>
+          <p class="lede">
+            Exact codec behavior requires executable contract code on both
+            sides. That code can arrive through a workspace package, a published
+            package, or a Git dependency. Standalone generation is a distinct
+            portability mode.
+          </p>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Mode</th>
+                <th>Contract location</th>
+                <th>Client result</th>
+                <th>Codec capability</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Monorepo</td>
+                <td><code>packages/api-contract</code></td>
+                <td>Imports live contract</td>
+                <td>Arbitrary codecs</td>
+              </tr>
+              <tr>
+                <td>Separate repositories</td>
+                <td>Published <code>@company/api-contract</code></td>
+                <td>Installs versioned contract</td>
+                <td>Arbitrary codecs</td>
+              </tr>
+              <tr>
+                <td>Standalone generated</td>
+                <td>Server repository</td>
+                <td>Installs generated client</td>
+                <td>Wire types or recognized codecs</td>
+              </tr>
+              <tr>
+                <td>Client-only</td>
+                <td>Client repository</td>
+                <td>Defines contract for external API</td>
+                <td>Whatever contract contains</td>
+              </tr>
+              <tr>
+                <td>Server-only</td>
+                <td>Beside server implementation</td>
+                <td>No client artifact</td>
+                <td>Full server codec behavior</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Recommended non-monorepo workflow</h3>
+          <div class="file-tree">
+            server-repository/ ├── packages/api-contract/ # browser-safe package
+            ├── apps/server/ └── .github/workflows/publish-contract.yml
+            web-repository/ └── package.json # depends on
+            @company/api-contract@^3
+          </div>
+
+          <h3>Portable generation boundary</h3>
+          <p>
+            A standalone client can derive the wire schema through
+            <code>z.toJSONSchema(schema, { io: 'input' })</code>. It cannot
+            serialize arbitrary JavaScript codec functions. The CLI therefore
+            supports three explicit outcomes:
+          </p>
+
+          <ol class="rule-list">
+            <li>
+              <div>
+                <strong>Portable wire client</strong
+                ><span
+                  >Generated calls expose wire types such as ISO strings.
+                  Maximum interoperability.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Recognized codec client</strong
+                ><span
+                  >Stable codec identifiers reconstruct tested codecs shipped by
+                  <code>@hulla/api/zod</code>.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Contract-dependent client</strong
+                ><span
+                  >Generated ergonomic wrappers import the published executable
+                  contract package.</span
+                >
+              </div>
+            </li>
+          </ol>
+
+          <div class="callout">
+            <span class="callout-mark">!</span>
+            <div>
+              <strong>No invisible downgrade</strong>
+              <p>
+                The selected generation mode is part of configuration and
+                generated metadata. A custom codec in a wire-only build causes a
+                named build error unless the user explicitly chooses wire
+                output.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="chapter" id="internals" data-title="Internal design">
+          <p class="chapter-kicker">Chapter 10</p>
+          <h2>Build a tiny directional kernel</h2>
+          <p class="lede">
+            The greenfield core needs no Zod AST walker. It needs an adapter
+            capable of decoding an unknown wire value, encoding an application
+            value, and reporting normalized issues.
+          </p>
+
+          <h3>Internal schema interface</h3>
+          <div
+            class="code-frame"
+            data-label="packages/core/src/schema.ts — conceptual">
+            <pre><code><span class="c-keyword">export interface</span> <span class="c-type">DirectionalSchema</span>&lt;Wire, Application&gt; {
+  decode(value: unknown): Application | Promise&lt;Application&gt;
+  encode(value: Application): Wire | Promise&lt;Wire&gt;
+  issues(error: unknown): <span class="c-keyword">readonly</span> ContractIssue[] | undefined
+  jsonSchema?(direction: <span class="c-string">'wire'</span> | <span class="c-string">'application'</span>): unknown
+}
+
+<span class="c-keyword">export interface</span> <span class="c-type">ContractIssue</span> {
+  path: <span class="c-keyword">readonly</span> PropertyKey[]
+  message: string
+  code?: string
+}</code></pre>
+          </div>
+
+          <p>
+            The public release may intentionally be Zod-first, while the
+            internal interface prevents Zod-specific error and execution
+            assumptions from leaking into clients, adapters, and plugins.
+            Standard Schema can be supported later for one-way procedures
+            without claiming bidirectional encoding it does not expose.
+          </p>
+
+          <h3>Route descriptor</h3>
+          <div
+            class="code-frame"
+            data-label="packages/core/src/route.ts — conceptual">
+            <pre><code><span class="c-keyword">export interface</span> <span class="c-type">RouteDefinition</span> {
+  readonly kind: <span class="c-string">'route'</span>
+  readonly method: HttpMethod
+  readonly path: string
+  readonly params?: DirectionalSchema&lt;unknown, unknown&gt;
+  readonly query?: DirectionalSchema&lt;unknown, unknown&gt;
+  readonly headers?: DirectionalSchema&lt;unknown, unknown&gt;
+  readonly body?: DirectionalSchema&lt;unknown, unknown&gt;
+  readonly responses: ReadonlyMap&lt;number | <span class="c-string">'default'</span>, DirectionalSchema&lt;unknown, unknown&gt;&gt;
+}</code></pre>
+          </div>
+
+          <h3>Compile a route plan once</h3>
+          <div
+            class="code-frame"
+            data-label="packages/server/src/plan.ts — conceptual">
+            <pre><code><span class="c-keyword">type</span> <span class="c-type">RoutePlan</span> = {
+  method: HttpMethod
+  pattern: URLPattern
+  decodeRequest(locations: RawLocations): Promise&lt;HandlerInput&gt;
+  encodeResponse(status: number, value: unknown): Promise&lt;unknown&gt;
+  execute(input: HandlerInput, context: unknown): Promise&lt;HandlerResult&gt;
+}
+
+<span class="c-keyword">const</span> plans = compileRoutes(api, handlers) <span class="c-comment">// startup, never per request</span></code></pre>
+          </div>
+
+          <h3>Response model</h3>
+          <p>
+            Start with one success schema for simple DX, but model status-aware
+            responses internally from day one. A later public extension can
+            remain additive:
+          </p>
+
+          <div class="code-frame" data-label="Status-aware route declaration">
+            <pre><code>byId: route.get(<span class="c-string">'/:id'</span>, {
+  params: z.object({ id: z.uuid() }),
+  responses: {
+    200: User,
+    404: Problem,
+  },
+})</code></pre>
+          </div>
+        </section>
+
+        <section
+          class="chapter"
+          id="performance"
+          data-title="Performance contract">
+          <p class="chapter-kicker">Chapter 11</p>
+          <h2>Optimize away duplicate work, not guarantees</h2>
+          <p class="lede">
+            JSON serialization is the baseline of a JSON API. The redesign’s
+            performance goal is to eliminate @hulla/api-specific full-tree
+            passes and defer optimized serialization to the selected backend
+            framework.
+          </p>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Boundary</th>
+                <th>Required work</th>
+                <th>Owner</th>
+                <th>Rule</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Client request</td>
+                <td>Encode + stringify</td>
+                <td>Contract + fetch transport</td>
+                <td>One of each</td>
+              </tr>
+              <tr>
+                <td>Server request</td>
+                <td>Parse + decode</td>
+                <td>Framework + contract</td>
+                <td>One of each</td>
+              </tr>
+              <tr>
+                <td>Server response</td>
+                <td>Encode + stringify</td>
+                <td>Contract + framework</td>
+                <td>One of each</td>
+              </tr>
+              <tr>
+                <td>Client response</td>
+                <td>Parse + decode</td>
+                <td>fetch transport + contract</td>
+                <td>One of each</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Required performance properties</h3>
+          <ul class="rule-list">
+            <li>
+              <div>
+                <strong>No wire walk</strong
+                ><span
+                  >Remove recursive <code>encodeHTTPBodyValue</code>/<code
+                    >decodeHTTPBodyValue</code
+                  >
+                  passes.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>No per-request compilation</strong
+                ><span
+                  >Paths, handlers, status schemas, and sync/async strategy
+                  compile at adapter registration.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>No duplicate JSON parse</strong
+                ><span
+                  >Framework adapters consume already parsed body values where
+                  the framework provides them.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>No runtime schema generation</strong
+                ><span
+                  >OpenAPI and JSON Schema conversion happens in build tooling
+                  or startup-only paths.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>Streams bypass JSON</strong
+                ><span
+                  >Raw response escape hatches do not enter codec or JSON
+                  pipelines.</span
+                >
+              </div>
+            </li>
+          </ul>
+
+          <h3>Benchmark gates</h3>
+          <p>
+            Benchmark representative small objects, 1,000-item lists, and 1 MB
+            payloads against direct framework routes. Track latency and
+            allocations separately. Do not market absolute benchmark numbers;
+            enforce a regression budget in CI after a baseline is established.
+          </p>
+
+          <div class="callout callout--green">
+            <span class="callout-mark">≈</span>
+            <div>
+              <strong>Expected shape</strong>
+              <p>
+                Codecs add conversion callbacks during the validation traversal,
+                not another independent traversal. The meaningful premium is
+                runtime validation itself—and that is one of the package’s
+                explicit guarantees.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section
+          class="chapter"
+          id="errors"
+          data-title="Errors &amp; compatibility">
+          <p class="chapter-kicker">Chapter 12</p>
+          <h2>Make failure a stable part of the contract</h2>
+          <p class="lede">
+            Error transport must remain small and framework-neutral. Detailed
+            validator internals belong in server logs; clients receive a stable
+            location, code, request identifier, and normalized issue list when
+            configured.
+          </p>
+
+          <div class="code-frame" data-label="Default problem response">
+            <pre><code><span class="c-keyword">type</span> <span class="c-type">ApiProblem</span> = {
+  type: string
+  title: string
+  status: number
+  code: string
+  requestId?: string
+  issues?: <span class="c-keyword">readonly</span> {
+    location: <span class="c-string">'params'</span> | <span class="c-string">'query'</span> | <span class="c-string">'headers'</span> | <span class="c-string">'body'</span> | <span class="c-string">'response'</span>
+    path: <span class="c-keyword">readonly</span> (string | number)[]
+    message: string
+  }[]
+}</code></pre>
+          </div>
+
+          <h3>Compatibility metadata</h3>
+          <p>
+            Every emitted contract artifact includes a format version, package
+            version, content hash, generation mode, and codec identifiers. The
+            server may publish the contract hash in a response header for
+            development-time mismatch warnings; production behavior remains
+            semver- and API-compatibility-driven.
+          </p>
+
+          <div class="code-frame" data-label="Generated contract metadata">
+            <pre><code>{
+  <span class="c-string">"formatVersion"</span>: 1,
+  <span class="c-string">"packageVersion"</span>: <span class="c-string">"3.0.0"</span>,
+  <span class="c-string">"mode"</span>: <span class="c-string">"wire"</span>,
+  <span class="c-string">"hash"</span>: <span class="c-string">"sha256:…"</span>,
+  <span class="c-string">"codecs"</span>: [<span class="c-string">"hulla.iso-date-time@1"</span>]
+}</code></pre>
+          </div>
+
+          <h3>Compatibility CLI</h3>
+          <div class="code-frame" data-label="CI compatibility check">
+            <pre><code>hulla api check --against ./previous-contract.json
+
+<span class="c-comment"># Breaking: users.byId response.createdAt</span>
+<span class="c-comment">#   wire changed from string(date-time) to integer(epoch-ms)</span>
+<span class="c-comment"># Non-breaking: users.list query.search became optional</span></code></pre>
+          </div>
+        </section>
+
+        <section
+          class="chapter"
+          id="testing"
+          data-title="Verification strategy">
+          <p class="chapter-kicker">Chapter 13</p>
+          <h2>Test laws, not just examples</h2>
+          <p class="lede">
+            The removed wire layer accumulated edge cases because examples
+            cannot prove a serialization protocol. The smaller codec design
+            should still be verified across direction, frameworks, runtimes, and
+            generated artifacts.
+          </p>
+
+          <h3>Core laws</h3>
+          <div class="code-frame" data-label="Codec law tests — pseudocode">
+            <pre><code><span class="c-comment">// For every supported application value:</span>
+decode(encode(application)) ≈ application
+
+<span class="c-comment">// For every canonical wire value:</span>
+encode(decode(wire)) === canonicalWire
+
+<span class="c-comment">// Framework adaptation must not alter semantics:</span>
+hono(route, value) === fastify(route, value) === fetch(route, value)
+
+<span class="c-comment">// Direct client + server agreement:</span>
+clientResult === decode(responseSchema, encode(responseSchema, handlerResult))</code></pre>
+          </div>
+
+          <div class="checklist">
+            <div class="check">
+              Zod primitives, nested objects, arrays, tuples, unions, defaults,
+              optionals, nullable values
+            </div>
+            <div class="check">
+              Sync and async codecs, refinements, and explicit rejection of
+              one-way transforms
+            </div>
+            <div class="check">
+              Path escaping, repeated query keys, empty values, Unicode, and
+              reserved characters
+            </div>
+            <div class="check">
+              Malformed JSON, wrong media type, oversized body, aborted request,
+              and stream failure
+            </div>
+            <div class="check">
+              Response status selection, no-content responses, typed errors,
+              redirects, and raw responses
+            </div>
+            <div class="check">
+              Node, Bun, browser, React Native, edge runtime, and framework
+              adapter matrices
+            </div>
+            <div class="check">
+              Standalone wire clients versus shared-contract clients for the
+              same fixture API
+            </div>
+            <div class="check">
+              Public export and browser-bundle checks preventing Node-only code
+              from leaking into contracts
+            </div>
+          </div>
+
+          <h3>Golden reference project</h3>
+          <p>
+            Maintain one small CRUD contract exercised through every adapter and
+            both client modes. The fixture must include ISO date codecs, query
+            codecs, binary/raw response escape hatches, typed errors,
+            authentication context, TanStack Query helpers, and an intentionally
+            incompatible previous contract.
+          </p>
+        </section>
+
+        <section class="chapter" id="phases" data-title="Implementation phases">
+          <p class="chapter-kicker">Chapter 14</p>
+          <h2>Build the thin waist first</h2>
+          <p class="lede">
+            Avoid rebuilding every existing integration before proving the new
+            contract direction. Each phase should ship an executable vertical
+            slice and close with an explicit removal decision.
+          </p>
+
+          <div class="phase-grid">
+            <article class="phase-card">
+              <span class="phase-number">PHASE 00</span
+              ><strong>Freeze the brief</strong>
+              <p>
+                Record public nouns, non-goals, route schema direction, portable
+                client modes, and performance baseline.
+              </p>
+            </article>
+            <article class="phase-card">
+              <span class="phase-number">PHASE 01</span
+              ><strong>Directional core</strong>
+              <p>
+                Implement route definitions, schema adapter, normalized issues,
+                and definition-time validation. No HTTP yet.
+              </p>
+            </article>
+            <article class="phase-card">
+              <span class="phase-number">PHASE 02</span
+              ><strong>Fetch vertical slice</strong>
+              <p>
+                Bind one contract to a Fetch server and client using one
+                parse/decode/encode/stringify sequence.
+              </p>
+            </article>
+            <article class="phase-card">
+              <span class="phase-number">PHASE 03</span
+              ><strong>Framework adapters</strong>
+              <p>
+                Add Hono first, then Fastify and Express. Verify identical
+                golden-fixture behavior.
+              </p>
+            </article>
+            <article class="phase-card">
+              <span class="phase-number">PHASE 04</span
+              ><strong>Procedures + plugins</strong>
+              <p>
+                Reintroduce local procedures and the common callable hook used
+                by TanStack Query and SWR.
+              </p>
+            </article>
+            <article class="phase-card">
+              <span class="phase-number">PHASE 05</span
+              ><strong>Portable artifacts</strong>
+              <p>
+                Emit OpenAPI/JSON Schema wire contracts, hashes, codec IDs, and
+                a wire-only generated fetch client.
+              </p>
+            </article>
+            <article class="phase-card">
+              <span class="phase-number">PHASE 06</span
+              ><strong>Rich generated mode</strong>
+              <p>
+                Add recognized codec reconstruction and contract-dependent
+                wrappers only after wire mode is stable.
+              </p>
+            </article>
+            <article class="phase-card">
+              <span class="phase-number">PHASE 07</span
+              ><strong>Ecosystem migration</strong>
+              <p>
+                Port TanStack DB, Drizzle, auth examples, docs, and project
+                templates against public APIs only.
+              </p>
+            </article>
+            <article class="phase-card">
+              <span class="phase-number">PHASE 08</span
+              ><strong>Remove the old protocol</strong>
+              <p>
+                Delete custom wire conversion after parity fixtures pass. Do not
+                run both architectures indefinitely.
+              </p>
+            </article>
+          </div>
+
+          <h3>Phase exit gates</h3>
+          <ul class="rule-list">
+            <li>
+              <div>
+                <strong>01 → 02</strong
+                ><span
+                  >A nested codec contract encodes and decodes without private
+                  schema introspection.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>02 → 03</strong
+                ><span
+                  >Fetch client/server round-trip passes and benchmark shows no
+                  custom full-tree pass.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>03 → 04</strong
+                ><span
+                  >Hono and Fastify produce identical values and normalized
+                  errors for the golden contract.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>05 → 06</strong
+                ><span
+                  >Wire artifacts are deterministic, diffable, and
+                  compatibility-checkable.</span
+                >
+              </div>
+            </li>
+            <li>
+              <div>
+                <strong>07 → 08</strong
+                ><span
+                  >Every supported use case has a new-architecture example and
+                  public migration note.</span
+                >
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <section class="chapter" id="migration" data-title="Migration map">
+          <p class="chapter-kicker">Chapter 15</p>
+          <h2>Map the existing package deliberately</h2>
+          <p class="lede">
+            Treat the current code as a source of behavioral requirements, not
+            as a structure to preserve. Carry over proven tests and product
+            capabilities while replacing the protocol center.
+          </p>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Current area</th>
+                <th>Greenfield destination</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>wire.ts</code></td>
+                <td>Contract schemas + JSON Schema artifacts</td>
+                <td>Replace custom AST</td>
+              </tr>
+              <tr>
+                <td><code>wire-codec.ts</code></td>
+                <td>Zod encode/decode</td>
+                <td>Delete after parity</td>
+              </tr>
+              <tr>
+                <td><code>zod.ts</code></td>
+                <td>Public Zod adapter + codec helpers</td>
+                <td>Remove private <code>_def</code> walking</td>
+              </tr>
+              <tr>
+                <td><code>codec.ts</code></td>
+                <td>Framework/fetch JSON handling</td>
+                <td>Keep only stable errors and headers</td>
+              </tr>
+              <tr>
+                <td><code>server.ts</code></td>
+                <td><code>@hulla/api/server</code> plans + adapters</td>
+                <td>Split framework-neutral execution from routing</td>
+              </tr>
+              <tr>
+                <td><code>client.ts</code></td>
+                <td><code>@hulla/api/client</code></td>
+                <td>Bind live contract or portable artifact</td>
+              </tr>
+              <tr>
+                <td><code>clientSchema()</code></td>
+                <td>Real shared schema or declared wire mode</td>
+                <td>Remove identity-validation claim</td>
+              </tr>
+              <tr>
+                <td><code>procedure.ts</code></td>
+                <td>Local procedure core</td>
+                <td>Preserve and simplify</td>
+              </tr>
+              <tr>
+                <td><code>generate.ts</code></td>
+                <td>CLI artifact pipeline</td>
+                <td>Derive; never approximate silently</td>
+              </tr>
+              <tr>
+                <td>Express package</td>
+                <td>Thin Express adapter</td>
+                <td>Delegate parsing and response lifecycle</td>
+              </tr>
+              <tr>
+                <td>Query/SWR plugins</td>
+                <td>Callable integration hooks</td>
+                <td>Target routes and procedures uniformly</td>
+              </tr>
+              <tr>
+                <td>Drizzle/TanStack DB</td>
+                <td>Higher-level generation plugins</td>
+                <td>Port only after core stabilization</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>Migration ergonomics</h3>
+          <div class="code-frame" data-label="Before — implicit route input">
+            <pre><code>route(<span class="c-string">'PATCH'</span>, <span class="c-string">'/:id'</span>)
+  .input(z.object({ id: z.number(), title: z.string() }))
+  .output(Todo)
+  .handler(handler)</code></pre>
+          </div>
+
+          <div
+            class="code-frame"
+            data-label="After — explicit contract locations">
+            <pre><code>update: route.patch(<span class="c-string">'/:id'</span>, {
+  params: z.object({ id: httpCodecs.integer }),
+  body: z.object({ title: z.string() }),
+  response: Todo,
+})</code></pre>
+          </div>
+
+          <div class="code-frame" data-label="After — server implementation">
+            <pre><code>update: ({ params, body }) =&gt;
+  todos.update(params.id, body)</code></pre>
+          </div>
+
+          <p>
+            The migration is intentionally explicit. It removes the need to
+            guess whether fields belong in path, query, or body and makes
+            generated OpenAPI behavior a direct reflection of the declaration.
+          </p>
+        </section>
+
+        <section class="chapter" id="done" data-title="Definition of done">
+          <p class="chapter-kicker">Chapter 16</p>
+          <h2>Know when the redesign is finished</h2>
+          <p class="lede">
+            The redesign is complete when the simpler model is true in code,
+            documentation, generated artifacts, and runtime behavior—not merely
+            when a new API exists beside the old one.
+          </p>
+
+          <div class="checklist">
+            <div class="check">
+              A contract package contains no server-only dependencies and can be
+              imported by browser and React Native builds.
+            </div>
+            <div class="check">
+              A Date codec round-trips client → server → client with both
+              application sides receiving <code>Date</code>.
+            </div>
+            <div class="check">
+              A wire-only standalone client receives documented wire types and
+              never implies custom codec behavior.
+            </div>
+            <div class="check">
+              Hono, Fastify, Express, and Fetch adapters pass the same golden
+              route suite.
+            </div>
+            <div class="check">
+              Every request body is parsed once; no custom recursive wire
+              traversal remains.
+            </div>
+            <div class="check">
+              One-way transforms and unportable custom codecs fail with
+              actionable build errors.
+            </div>
+            <div class="check">
+              Server input and output validation errors use one stable,
+              framework-neutral problem shape.
+            </div>
+            <div class="check">
+              Routes and procedures expose the same integration hooks without
+              sharing public declaration terminology.
+            </div>
+            <div class="check">
+              Contract artifacts are deterministic and compatibility differences
+              are available in CI.
+            </div>
+            <div class="check">
+              The old wire converter, identity client schema, and silent output
+              fallback have been removed.
+            </div>
+            <div class="check">
+              Documentation teaches the route/procedure decision in one sentence
+              and shows all five deployment modes.
+            </div>
+            <div class="check">
+              Benchmarks and allocation profiles are recorded against direct
+              framework baselines.
+            </div>
+          </div>
+
+          <div class="principle">
+            <span class="principle-label">Final test</span>
+            <p>
+              Can a user explain the complete system without mentioning an
+              internal wire type?
+            </p>
+          </div>
+
+          <h3>Recommended first pull request</h3>
+          <p>
+            Do not begin by porting the existing generator. Create a new
+            experimental package containing only
+            <code>defineApi</code>, <code>route</code>, a Zod directional
+            adapter, one Fetch server binder, and one fetch client. Prove a
+            nested Date codec round-trip and record its call graph and
+            benchmark. Everything else should earn its way back into the design
+            after that slice is trustworthy.
+          </p>
+        </section>
+      </main>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        <div>
+          <strong>@hulla/api greenfield redesign</strong><br />Implementation
+          field guide · authored as a decision-ready working document.
+        </div>
+        <div>Route → adapter → callable<br />Schema input ↔ schema output</div>
+      </div>
+    </footer>
+
+    <script>
+      const progress = document.querySelector('.progress > span')
+      const chapters = [...document.querySelectorAll('.chapter')]
+      const railLinks = [...document.querySelectorAll('.rail a')]
+
+      function updateProgress() {
+        const root = document.documentElement
+        const available = root.scrollHeight - root.clientHeight
+        const ratio = available > 0 ? root.scrollTop / available : 0
+        progress.style.width = `${Math.min(100, Math.max(0, ratio * 100))}%`
+      }
+
+      const chapterObserver = new IntersectionObserver(
+        (entries) => {
+          const visible = entries
+            .filter((entry) => entry.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
+          if (!visible) return
+
+          for (const link of railLinks) {
+            const active = link.getAttribute('href') === `#${visible.target.id}`
+            if (active) link.setAttribute('aria-current', 'true')
+            else link.removeAttribute('aria-current')
+          }
+        },
+        { rootMargin: '-15% 0px -68% 0px', threshold: [0, 0.15, 0.4] }
+      )
+
+      for (const chapter of chapters) chapterObserver.observe(chapter)
+
+      for (const frame of document.querySelectorAll('.code-frame')) {
+        const head = document.createElement('div')
+        head.className = 'code-head'
+
+        const label = document.createElement('span')
+        label.className = 'code-label'
+        label.textContent = frame.dataset.label || 'TypeScript'
+
+        const button = document.createElement('button')
+        button.className = 'copy-button'
+        button.type = 'button'
+        button.textContent = 'Copy'
+        button.setAttribute('aria-label', `Copy ${label.textContent}`)
+        button.addEventListener('click', async () => {
+          const code = frame.querySelector('code')?.textContent || ''
+          try {
+            await navigator.clipboard.writeText(code)
+            button.textContent = 'Copied'
+            window.setTimeout(() => (button.textContent = 'Copy'), 1400)
+          } catch {
+            button.textContent = 'Select text'
+          }
+        })
+
+        head.append(label, button)
+        frame.prepend(head)
+      }
+
+      window.addEventListener('scroll', updateProgress, { passive: true })
+      window.addEventListener('resize', updateProgress)
+      updateProgress()
+    </script>
+  </body>
+</html>
