@@ -1,0 +1,55 @@
+name: Verify
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hulla.dev
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: hulla.dev
+      - uses: actions/checkout@v4
+        with:
+          repository: hulladev/ui
+          path: ui
+      - uses: actions/checkout@v4
+        with:
+          repository: hulladev/api
+          path: api
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - run: bun install --frozen-lockfile
+        working-directory: ui
+      - run: bun run --cwd packages/ui build
+        working-directory: ui
+      - run: bun install --frozen-lockfile
+        working-directory: api
+      - run: bun run build
+        working-directory: api
+      - run: bun link --cwd ../ui/packages/ui
+      - run: bun install --frozen-lockfile
+      - run: bunx playwright install --with-deps chromium webkit
+      - run: bun run verify
+        env:
+          CI: true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bundle-and-browser-reports
+          path: |
+            hulla.dev/output/bundle-report.json
+            hulla.dev/output/playwright/report
