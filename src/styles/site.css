@@ -91,38 +91,226 @@
     text-underline-offset: 0.25em;
   }
   .home-frame {
-    max-width: 80rem;
+    --home-gutter: clamp(1.25rem, 5vw, 6rem);
+    width: 100%;
+    max-width: 112rem;
     margin: auto;
-    padding: 0 2rem;
+    padding: 0 var(--home-gutter);
   }
   .home-hero {
     display: grid;
-    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
-    gap: 5rem;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 6rem);
     align-items: center;
-    padding: 7rem 0 6rem;
+    padding: clamp(2rem, 4vw, 5rem) 0 clamp(2.5rem, 5vw, 6rem);
+  }
+  .home-notice {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin-top: clamp(1.25rem, 2.5vw, 3rem);
+    padding: clamp(1.25rem, 2vw, 2rem);
+    padding-bottom: clamp(1.5rem, 2.5vw, 2.5rem);
+    overflow: hidden;
+    border: 2px solid #252315;
+    border-radius: 1rem;
+    background: #f5d95f;
+    color: #252315;
+    box-shadow: 4px 4px 0 #252315;
+  }
+  .home-notice::after {
+    content: '';
+    position: absolute;
+    inset: auto 0 0;
+    height: 0.5rem;
+    background: repeating-linear-gradient(
+      -45deg,
+      #252315 0 10px,
+      #f5d95f 10px 20px
+    );
+  }
+  .home-notice-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 3.5rem;
+    height: 3.5rem;
+    border: 2px solid currentColor;
+    border-radius: 0.75rem;
+    transform: rotate(-8deg);
+  }
+  .home-notice-label {
+    font: 600 0.6875rem/1.6 var(--font-mono);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .home-notice h2 {
+    margin: 0.25rem 0 0.5rem;
+    font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+    font-weight: 650;
+    letter-spacing: -0.035em;
+    line-height: 1.2;
+  }
+  .home-notice p {
+    margin: 0;
+    max-width: 42rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
+  }
+  .home-notice .home-notice-label {
+    font-size: 0.6875rem;
+  }
+  .home-notice-stamp {
+    margin-left: auto;
+    padding: 0.3rem 0.6rem;
+    border: 2px dashed currentColor;
+    font: 600 1rem var(--font-mono);
+    transform: rotate(9deg);
+  }
+  .home-connect {
+    min-width: 0;
+  }
+  .home-about {
+    min-width: 0;
+    container-type: inline-size;
+  }
+  .home-cv {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: clamp(1.25rem, 2vw, 2rem);
+    border: 1px solid var(--color-primary);
+    border-radius: 1rem;
+    background: var(--color-surface);
+    color: var(--color-primary-text);
+    text-decoration: none;
+  }
+  .home-cv > svg {
+    flex: none;
+  }
+  .home-cv > svg:last-child {
+    margin-left: auto;
+  }
+  .home-cv strong {
+    display: block;
+    font-size: clamp(1.125rem, 1.3vw, 1.5rem);
+    font-weight: 600;
+  }
+  .home-cv span span {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.8125rem;
+    color: var(--color-muted-foreground);
+  }
+  .home-socials {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+  }
+  .home-socials a {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    padding: clamp(1rem, 1.8vw, 2rem) 0.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+    background: var(--color-surface);
+    text-decoration: none;
+  }
+  .home-socials a:hover,
+  .home-cv:hover {
+    border-color: var(--color-primary-text);
+    color: var(--color-primary-text);
+    box-shadow: 0 3px 0 var(--color-primary-text);
+  }
+  @media (max-width: 47.999rem) {
+    .home-notice {
+      align-items: flex-start;
+      gap: 0.875rem;
+      padding: 1.25rem 1rem 1.5rem;
+    }
+    .home-notice-icon {
+      width: 2.75rem;
+      height: 2.75rem;
+    }
+    .home-notice-stamp {
+      display: none;
+    }
+    .home-cv {
+      padding: 1.25rem;
+    }
   }
   .home-title {
-    margin: 1.5rem 0 2rem;
-    font-size: clamp(3rem, 6.5vw, 6.25rem);
+    margin: clamp(1rem, 2vw, 2rem) 0;
+    font-size: clamp(2.25rem, 12.5cqw, 7rem);
     line-height: 0.99;
     font-weight: 550;
     letter-spacing: -0.07em;
   }
   .home-intro {
-    max-width: 32rem;
-    font-size: 1.125rem;
-    line-height: 1.8;
+    max-width: 46ch;
+    font-size: clamp(1rem, 1.2vw, 1.25rem);
+    line-height: 1.7;
     color: var(--color-muted-foreground);
   }
-  .home-section {
-    padding: 3rem 0 5rem;
+  .home-section-title {
+    font-size: clamp(1.5rem, 2.25vw, 2.5rem);
+    letter-spacing: -0.04em;
+    margin: 0.5rem 0 clamp(1.25rem, 2vw, 2rem);
+  }
+  body:has(.home-frame) .site-header-inner,
+  body:has(.home-frame) .site-footer {
+    max-width: 112rem;
+    padding-inline: clamp(1.25rem, 5vw, 6rem);
+  }
+  .home-workshop {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    align-items: center;
+    gap: clamp(2rem, 5vw, 6rem);
+    padding-block: clamp(2rem, 4vw, 5rem);
     border-top: 1px solid var(--color-border);
   }
-  .home-section-title {
-    font-size: 2rem;
-    letter-spacing: -0.04em;
-    margin: 0.5rem 0 2rem;
+  .home-workshop > * {
+    min-width: 0;
+  }
+  .home-workshop .home-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: clamp(1.5rem, 2vw, 2rem);
+    margin-bottom: 1rem;
+  }
+  .home-workshop-tagline {
+    font-size: clamp(1.125rem, 1.4vw, 1.5rem);
+    letter-spacing: -0.025em;
+    max-width: 30ch;
+  }
+  .home-workshop-description {
+    max-width: 45ch;
+    margin-block: 1rem 1.5rem;
+    color: var(--color-muted-foreground);
+    line-height: 1.75;
+  }
+  .home-workshop .docs-example {
+    margin: 0;
+  }
+  @media (max-width: 55.999rem) {
+    .home-hero,
+    .home-workshop {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .home-title {
+      font-size: clamp(2.25rem, 9vw, 4.5rem);
+    }
+    .home-intro {
+      max-width: 52ch;
+    }
   }
   .docs-shell {
     display: grid;
@@ -292,18 +480,8 @@
     .docs-main {
       padding: 2rem;
     }
-    .home-hero {
-      gap: 2.5rem;
-      padding: 4rem 0;
-    }
   }
   @media (max-width: 47.999rem) {
-    .home-hero {
-      grid-template-columns: minmax(0, 1fr);
-    }
-    .home-frame {
-      padding-inline: 1.25rem;
-    }
     .site-header-inner {
       padding-inline: 1.25rem;
     }
