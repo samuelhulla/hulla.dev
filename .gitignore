@@ -23,6 +23,6 @@ pnpm-debug.log*
 
 # local browser and PDF QA artifacts
 .playwright-cli/
-output/playwright/report/
-output/playwright/results/
+output/playwright/
+tests/e2e/__screenshots__/
 tmp/

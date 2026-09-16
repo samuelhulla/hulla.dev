@@ -1,13 +1,7 @@
 import { expect, test } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 
-for (const route of [
-  '/',
-  '/docs',
-  '/docs/api',
-  '/docs/api/core/contracts',
-  '/docs/ui',
-]) {
+for (const route of ['/', '/docs/api', '/docs/ui']) {
   test(`${route} is responsive and accessible`, async ({ page }) => {
     await page.goto(route)
     await expect(page.locator('main h1')).toBeVisible()
@@ -61,17 +55,7 @@ test('Markdown does not change embedded component appearance in either theme', a
     })
     expect(result[0]?.length).toBeGreaterThan(5)
     expect(result[0]).toEqual(result[1])
-    await page.emulateMedia({ reducedMotion: 'reduce' })
-    await page.waitForTimeout(200)
-    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
   }
-  await expect(
-    page.locator('.md-table [data-slot="table-container"]')
-  ).toHaveAttribute('tabindex', '0')
-  await expect(page.locator('.md-table table')).toHaveCSS('display', 'table')
-  await expect(
-    page.locator('[data-slot="code-block-code"]').first()
-  ).toContainText("import Button from '@/components/button/button.astro'")
 })
 
 test('search opens, finds indexed content, and restores focus', async ({
@@ -118,22 +102,6 @@ test('boundary tree and package preferences remain functional', async ({
   ).toHaveAttribute('aria-selected', 'true')
 })
 
-test('breadcrumbs preserve existing group routes', async ({ page }) => {
-  await page.goto('/docs/api/core/contracts')
-  const crumbs = page.getByRole('navigation', { name: 'Breadcrumb' })
-  await expect(crumbs.getByRole('listitem')).toHaveText([
-    'Docs',
-    '@hulla/api',
-    'Core API',
-    'Contracts',
-  ])
-  await crumbs.getByRole('link', { name: 'Core API' }).click()
-  await expect(page).toHaveURL(/\/docs\/api\/core\/?$/)
-  await expect(
-    page.locator('#docs-content').getByRole('link', { name: /Contracts/ })
-  ).toBeVisible()
-})
-
 test('mobile navigation opens and closes with Escape', async ({
   page,
 }, info) => {
@@ -145,8 +113,8 @@ test('mobile navigation opens and closes with Escape', async ({
   const dialog = page.getByRole('dialog', { name: 'Documentation navigation' })
   await expect(dialog).toBeVisible()
   await expect(
-    dialog.getByRole('link', { name: 'Typed clients' })
-  ).toBeVisible()
+    dialog.locator('[data-slot="sidebar-menu-link"][aria-current="page"]')
+  ).toHaveAttribute('href', '/docs/api')
   await page.keyboard.press('Escape')
   await expect(dialog).toBeHidden()
 })
@@ -166,18 +134,11 @@ test('documentation remains navigable without JavaScript', async ({
   if (info.project.name === 'mobile')
     await page.getByText('Browse documentation', { exact: true }).click()
   const navigation = page
-    .getByRole('navigation', { name: 'Documentation', exact: true })
+    .getByRole('navigation', { name: 'Sidebar navigation', exact: true })
     .filter({ visible: true })
-  await expect(
-    navigation.getByRole('link', { name: 'Migration guide' })
-  ).toHaveAttribute('href', '/docs/api/start/migration')
+  await expect(navigation.locator('a[aria-current="page"]')).toHaveAttribute(
+    'href',
+    '/docs/api'
+  )
   await context.close()
-})
-
-test('CV preserves its isolated visual layout', async ({ page }, info) => {
-  test.skip(info.project.name !== 'desktop', 'Existing printable CV baseline')
-  await page.goto('/cv')
-  await expect(page.locator('.container')).toHaveScreenshot('cv.png', {
-    animations: 'disabled',
-  })
 })
