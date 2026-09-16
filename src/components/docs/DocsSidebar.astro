@@ -14,12 +14,12 @@ import Tabs from '@/components/tabs/tabs.astro'
 import TabsList from '@/components/tabs/tabs-list.astro'
 import TabsTrigger from '@/components/tabs/tabs-trigger.astro'
 import TabsContent from '@/components/tabs/tabs-content.astro'
-import Badge from '@/components/badge/badge.astro'
 import PackageIcon from '@/components/site/PackageIcon.astro'
 import {
   BookOpen,
   Braces,
   Cable,
+  Check,
   ChevronDown,
   CloudCog,
   Layers,
@@ -38,9 +38,22 @@ const packages = [
     name: '@hulla/api',
     href: '/docs/api',
     status: 'Beta',
+    description: 'Typed API contracts',
   },
-  { kind: 'ui', name: '@hulla/ui', href: '/docs/ui', status: undefined },
-  { kind: 'cli', name: 'hulla CLI', href: '/docs/cli', status: undefined },
+  {
+    kind: 'ui',
+    name: '@hulla/ui',
+    href: '/docs/ui',
+    status: undefined,
+    description: 'Interface primitives',
+  },
+  {
+    kind: 'cli',
+    name: 'hulla CLI',
+    href: '/docs/cli',
+    status: undefined,
+    description: 'Project tooling',
+  },
 ] as const
 
 const activePackage =
@@ -50,39 +63,58 @@ const activePackage =
 <Sidebar
   class="min-[96rem]:bg-transparent"
   aria-label="Package documentation navigation">
-  <SidebarHeader class="relative p-3">
-    <details class="group/package-selector relative">
-      <summary class="docs-package-selector flex min-h-11 list-none items-center gap-2.5 rounded-lg border border-border bg-surface-raised px-2.5 text-sm shadow-control transition-colors hover:border-foreground/25 hover:bg-hover-surface [&::-webkit-details-marker]:hidden">
-        <span class="flex size-7 shrink-0 items-center justify-center rounded-md bg-selected-surface text-primary-text">
-          <PackageIcon kind={activePackage.kind} size={16} />
+  <SidebarHeader class="docs-package-header relative">
+    <details class="docs-package-picker group/package-selector relative">
+      <summary
+        class="docs-package-selector"
+        aria-label={`Select package, current package ${activePackage.name}`}
+        data-package-kind={activePackage.kind}>
+        <span class="docs-package-selector-icon">
+          <PackageIcon kind={activePackage.kind} size={17} />
         </span>
-        <span class="min-w-0 flex-1 truncate font-semibold tracking-[-0.02em]">
-          {activePackage.name}
+        <span class="docs-package-selector-copy">
+          <span class="docs-package-selector-label">Package</span>
+          <span class="docs-package-selector-name">{activePackage.name}</span>
         </span>
         {activePackage.status && (
-          <Badge size="sm">{activePackage.status}</Badge>
+          <span class="docs-package-status">
+            <span aria-hidden="true"></span>
+            {activePackage.status}
+          </span>
         )}
-        <ChevronDown
-          size={14}
-          aria-hidden="true"
-          class="shrink-0 text-muted-foreground transition-transform duration-150 group-open/package-selector:rotate-180"
-        />
+        <span class="docs-package-chevron">
+          <ChevronDown size={14} aria-hidden="true" />
+        </span>
       </summary>
-      <div class="absolute top-[calc(100%+0.375rem)] right-0 left-0 z-20 rounded-lg border border-border bg-surface-raised p-1.5 shadow-floating">
-        <p class="px-2 py-1.5 font-mono text-[0.625rem] tracking-[0.09em] text-muted-foreground uppercase">
-          Switch package
-        </p>
+      <div class="docs-package-menu">
+        <div class="docs-package-menu-heading">
+          <span>Switch package</span>
+          <span>{packages.length} packages</span>
+        </div>
         {packages.map((pkg) => (
           <a
             href={pkg.href}
+            aria-label={`${pkg.name}: ${pkg.description}${pkg.status ? `, ${pkg.status}` : ''}`}
             aria-current={pkg.href === activePackage.href ? 'page' : undefined}
-            class="flex min-h-9 items-center gap-2.5 rounded-md px-2 text-sm no-underline hover:bg-hover-surface aria-[current=page]:bg-selected-surface aria-[current=page]:text-primary-text">
-            <PackageIcon kind={pkg.kind} size={15} />
-            <span class="flex-1">{pkg.name}</span>
-            {pkg.status && (
-              <span class="text-[0.65rem] text-muted-foreground">
-                {pkg.status}
+            class="docs-package-option"
+            data-package-kind={pkg.kind}>
+            <span class="docs-package-option-icon">
+              <PackageIcon kind={pkg.kind} size={16} />
+            </span>
+            <span class="docs-package-option-copy">
+              <span class="docs-package-option-name">{pkg.name}</span>
+              <span class="docs-package-option-description">
+                {pkg.description}
               </span>
+            </span>
+            {pkg.status && <span class="docs-package-option-status">Beta</span>}
+            {pkg.href === activePackage.href && (
+              <Check
+                class="docs-package-option-check"
+                size={14}
+                stroke-width={2}
+                aria-hidden="true"
+              />
             )}
           </a>
         ))}
@@ -269,4 +301,292 @@ const activePackage =
   import { connectDocsSidebarState } from '@/lib/docs-sidebar-state'
 
   connectDocsSidebarState()
+
+  for (const picker of document.querySelectorAll<HTMLDetailsElement>(
+    '.docs-package-picker'
+  )) {
+    document.addEventListener('pointerdown', (event) => {
+      if (event.target instanceof Node && !picker.contains(event.target)) {
+        picker.open = false
+      }
+    })
+
+    picker.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        picker.open = false
+        picker.querySelector<HTMLElement>('summary')?.focus()
+      }
+    })
+  }
 </script>
+
+<style>
+  .docs-package-header {
+    padding: 0.5rem 0.625rem;
+  }
+
+  .docs-package-picker {
+    --package-accent: var(--color-primary-text);
+    --package-tint: var(--color-selected-surface);
+  }
+
+  .docs-package-selector,
+  .docs-package-option {
+    &[data-package-kind='ui'] {
+      --package-accent: var(--color-success);
+      --package-tint: color-mix(
+        in oklab,
+        var(--color-success) 11%,
+        transparent
+      );
+    }
+
+    &[data-package-kind='cli'] {
+      --package-accent: color-mix(
+        in oklab,
+        var(--color-warning) 78%,
+        var(--color-foreground)
+      );
+      --package-tint: color-mix(
+        in oklab,
+        var(--color-warning) 14%,
+        transparent
+      );
+    }
+  }
+
+  .docs-package-selector {
+    display: grid;
+    min-height: 3.25rem;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0.625rem;
+    margin: 0;
+    padding: 0.375rem 0.375rem 0.375rem 0.5rem;
+    border: 1px solid transparent;
+    border-radius: 0.75rem;
+    cursor: pointer;
+    list-style: none;
+    transition:
+      background-color 160ms ease,
+      border-color 160ms ease;
+  }
+
+  .docs-package-selector::-webkit-details-marker {
+    display: none;
+  }
+
+  .docs-package-selector:hover {
+    border-color: color-mix(in oklab, var(--color-border) 70%, transparent);
+    background: color-mix(
+      in oklab,
+      var(--color-surface-raised) 58%,
+      transparent
+    );
+  }
+
+  .docs-package-picker[open] .docs-package-selector {
+    border-color: var(--color-border);
+    background: color-mix(
+      in oklab,
+      var(--color-surface-raised) 68%,
+      transparent
+    );
+  }
+
+  .docs-package-selector-icon,
+  .docs-package-option-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    color: var(--package-accent);
+    background: var(--package-tint);
+  }
+
+  .docs-package-selector-icon {
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid
+      color-mix(in oklab, var(--package-accent) 14%, transparent);
+    border-radius: 0.55rem;
+    box-shadow: inset 0 1px 0 color-mix(in oklab, white 55%, transparent);
+  }
+
+  .docs-package-selector-copy,
+  .docs-package-option-copy {
+    display: grid;
+    min-width: 0;
+  }
+
+  .docs-package-selector-label,
+  .docs-package-menu-heading {
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.11em;
+    line-height: 1.25;
+    text-transform: uppercase;
+  }
+
+  .docs-package-selector-label {
+    color: var(--color-muted-foreground);
+  }
+
+  .docs-package-selector-name {
+    overflow: hidden;
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: -0.035em;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .docs-package-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: var(--color-muted-foreground);
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .docs-package-status > span {
+    width: 0.3125rem;
+    height: 0.3125rem;
+    border-radius: 999px;
+    background: var(--package-accent);
+    box-shadow: 0 0 0 0.1875rem var(--package-tint);
+  }
+
+  .docs-package-chevron {
+    display: grid;
+    width: 1.625rem;
+    height: 1.625rem;
+    place-items: center;
+    border-radius: 999px;
+    color: var(--color-muted-foreground);
+    transition:
+      color 160ms ease,
+      transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+      background-color 160ms ease;
+  }
+
+  .docs-package-selector:hover .docs-package-chevron,
+  .docs-package-picker[open] .docs-package-chevron {
+    color: var(--package-accent);
+    background: color-mix(in oklab, var(--package-accent) 9%, transparent);
+  }
+
+  .docs-package-picker[open] .docs-package-chevron {
+    color: var(--color-foreground);
+    background: var(--color-hover-surface);
+    transform: rotate(180deg);
+  }
+
+  .docs-package-menu {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 0.375rem);
+    right: 0;
+    left: 0;
+    padding: 0.375rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.875rem;
+    background: var(--color-surface-raised);
+    box-shadow: var(--shadow-floating);
+    transform-origin: top center;
+  }
+
+  .docs-package-picker[open] .docs-package-menu {
+    animation: package-menu-in 150ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .docs-package-menu-heading {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.45rem 0.5rem 0.4rem;
+    color: var(--color-muted-foreground);
+  }
+
+  .docs-package-menu-heading span:last-child {
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .docs-package-option {
+    --package-accent: var(--color-primary-text);
+    --package-tint: var(--color-selected-surface);
+    display: grid;
+    min-height: 3rem;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.375rem 0.5rem;
+    border-radius: 0.625rem;
+    color: var(--color-foreground);
+    text-decoration: none;
+  }
+
+  .docs-package-option:hover {
+    background: var(--color-hover-surface);
+  }
+
+  .docs-package-option[aria-current='page'] {
+    background: var(--package-tint);
+  }
+
+  .docs-package-option-icon {
+    width: 1.875rem;
+    height: 1.875rem;
+    border-radius: 0.5rem;
+  }
+
+  .docs-package-option-name {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    letter-spacing: -0.035em;
+  }
+
+  .docs-package-option-description {
+    overflow: hidden;
+    color: var(--color-muted-foreground);
+    font-size: 0.625rem;
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .docs-package-option-status {
+    color: var(--color-muted-foreground);
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .docs-package-option-check {
+    grid-column: 4;
+    color: var(--package-accent);
+  }
+
+  @keyframes package-menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(-0.25rem) scale(0.98);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .docs-package-menu {
+      animation: none !important;
+    }
+
+    .docs-package-chevron {
+      transition: none;
+    }
+  }
+</style>
