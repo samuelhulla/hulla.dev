@@ -9,6 +9,8 @@ import DocsInlineText from '@/components/docs/DocsInlineText.astro'
 import Breadcrumbs from '@/components/breadcrumbs/breadcrumbs.astro'
 import BreadcrumbItem from '@/components/breadcrumbs/breadcrumb-item.astro'
 import TableOfContents from '@/components/table-of-contents/table-of-contents.astro'
+import GitHubIcon from '@/components/site/GitHubIcon.astro'
+import { SquarePen } from '@lucide/astro'
 import {
   adjacentDocs,
   flatApiDocs,
@@ -25,6 +27,7 @@ const pathname = Astro.url.pathname.replace(/\/$/, '')
 const { previous, next } = adjacentDocs(pathname)
 const group = findDocGroup(pathname) ?? findDocGroupPage(pathname)
 const current = findDoc(pathname)
+const groupPage = findDocGroupPage(pathname)
 const packageMeta = pathname.startsWith('/docs/ui')
   ? { title: '@hulla/ui', href: '/docs/ui' }
   : pathname.startsWith('/docs/cli')
@@ -43,6 +46,17 @@ const fallback = [
     description: 'Command-line tooling for the @hulla/* package ecosystem.',
   },
 ]
+const contentPath =
+  pathname === '/docs/api'
+    ? 'src/content/docs/api/index.mdx'
+    : pathname === '/docs/ui'
+      ? 'src/content/docs/ui.mdx'
+      : pathname === '/docs/cli'
+        ? 'src/content/docs/cli/index.mdx'
+        : groupPage
+          ? 'src/data/docs.ts'
+          : `src/content/docs/${pathname.slice('/docs/'.length)}.mdx`
+const editUrl = `https://github.com/samuelhulla/hulla.dev/edit/master/${contentPath}`
 ---
 
 <BaseLayout
@@ -87,6 +101,15 @@ const fallback = [
             </p>
           </header>
           <noscript>
+            <style is:inline>
+              hulla-tabs [data-slot='tabs-list'] {
+                display: none;
+              }
+              hulla-tabs
+                [data-slot='tabs-content'][data-value='documentation'] {
+                display: block !important;
+              }
+            </style>
             <div class="mb-6 lg:hidden">
               <details>
                 <summary>Browse documentation</summary>
@@ -120,6 +143,21 @@ const fallback = [
           <TableOfContents for="docs-content">
             <p class="eyebrow">On this page</p>
           </TableOfContents>
+          <a
+            class="docs-edit-link"
+            href={editUrl}
+            target="_blank"
+            rel="noreferrer">
+            <span class="docs-edit-icon">
+              <SquarePen size={15} aria-hidden="true" />
+            </span>
+            <span>
+              <strong>Edit this page</strong>
+              <small>
+                on GitHub <GitHubIcon size={12} />
+              </small>
+            </span>
+          </a>
         </aside>
       </div>
     </main>

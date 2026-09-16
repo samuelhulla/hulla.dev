@@ -1,14 +1,16 @@
 ---
 import Button from '@/components/button/button.astro'
-import { SunMoon } from '@lucide/astro'
+import { Moon, Sun } from '@lucide/astro'
 ---
 
 <Button
   variant="ghost"
-  size="sm"
+  size="md"
   aria-label="Toggle color theme"
+  title="Toggle color theme"
   data-theme-toggle>
-  <SunMoon size={16} aria-hidden="true" />
+  <Moon size={17} aria-hidden="true" class="dark:hidden" />
+  <Sun size={17} aria-hidden="true" class="hidden dark:block" />
 </Button>
 <script>
   document.querySelectorAll('[data-theme-toggle]').forEach((button) =>

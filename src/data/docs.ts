@@ -284,7 +284,7 @@ export const apiDocs: readonly DocGroup[] = [
     ],
   },
   {
-    title: 'Reference',
+    title: 'Architecture & exports',
     href: '/docs/api/reference',
     description:
       'Inspect architecture, host ownership, conformance guarantees, and public package boundaries.',

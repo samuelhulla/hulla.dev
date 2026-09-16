@@ -165,13 +165,14 @@ export default function SearchCommand(props: Props) {
         ref={(element) => {
           triggerElement = element
         }}
-        size="sm"
-        variant="outline"
+        size="md"
+        variant="secondary"
+        class="site-search-trigger sm:min-w-36 sm:justify-start"
         aria-label="Search documentation"
         onClick={openSearch}>
         <SearchIcon class="size-4" aria-hidden="true" />
-        <span class="hidden sm:inline">Search</span>
-        <span class="hidden md:inline">
+        <span class="hidden sm:inline">Search docs</span>
+        <span class="ml-auto hidden lg:inline">
           <Kbd>⌘K</Kbd>
         </span>
       </Button>
