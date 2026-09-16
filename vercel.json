@@ -1,6 +1,36 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "astro",
+  "rewrites": [
+    {
+      "source": "/docs",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "(.*)text/markdown(.*)"
+        }
+      ],
+      "destination": "/docs.md"
+    },
+    {
+      "source": "/docs/:path*",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "(.*)text/markdown(.*)"
+        }
+      ],
+      "destination": "/docs/:path*.md"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/docs/:path*",
+      "headers": [{ "key": "Vary", "value": "Accept" }]
+    }
+  ],
   "redirects": [
     {
       "source": "/docs",

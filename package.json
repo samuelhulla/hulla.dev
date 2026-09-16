@@ -40,10 +40,15 @@
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.3.2",
     "pagefind": "^1.5.2",
+    "remark-gfm": "^4.0.1",
+    "remark-mdx": "^3.1.1",
+    "remark-parse": "^11.0.0",
+    "remark-stringify": "^11.0.0",
     "shiki": "^4.4.3",
     "solid-js": "^1.9.15",
     "cn": "0.3.0",
-    "tailwindcss": "^4.3.3"
+    "tailwindcss": "^4.3.3",
+    "unified": "^11.0.5"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",

@@ -4,6 +4,10 @@ import { join } from 'node:path'
 import { apiCoverage } from '../src/data/api-coverage'
 import { apiDocs, flatApiDocs } from '../src/data/docs'
 import { remarkDocsCode } from '../src/lib/remark-docs-code'
+import {
+  cleanMdxForAgents,
+  renderMarkdownDocument,
+} from '../src/lib/docs-markdown'
 import { stripInlineCode, tokenizeInlineCode } from '../src/lib/inline-code'
 const root = join(import.meta.dir, '..')
 describe('documentation integrity', () => {
@@ -83,6 +87,29 @@ describe('documentation integrity', () => {
     const before = structuredClone(tree)
     remarkDocsCode()(tree)
     expect(tree).toEqual(before)
+  })
+  test('AI Markdown removes presentation-only MDX and targets Markdown siblings', () => {
+    const output = renderMarkdownDocument({
+      title: 'Example',
+      description: 'Machine-readable documentation.',
+      usefulFor: ['Testing AI navigation.'],
+      body: `import DocsPackageManagerCommand from '@/component.astro'
+
+Read the [guide](/docs/api/quick-start).
+
+<DocsPackageManagerCommand commands={{ bun: 'bun add example' }} />`,
+    })
+
+    expect(output).toContain('# Example')
+    expect(output).toContain('https://hulla.dev/docs/api/quick-start.md')
+    expect(output).toContain('```sh\nbun add example\n```')
+    expect(output).not.toContain('import DocsPackageManagerCommand')
+    expect(output).not.toContain('<DocsPackageManagerCommand')
+  })
+  test('AI Markdown fails loudly when a visual component lacks a fallback', () => {
+    expect(() => cleanMdxForAgents('<NewDiagram />')).toThrow(
+      'Add an AI Markdown fallback for the NewDiagram MDX component.'
+    )
   })
   test('site styles do not target shared component parts or descendants of prose containers', async () => {
     const css = await readFile(join(root, 'src/styles/site.css'), 'utf8')

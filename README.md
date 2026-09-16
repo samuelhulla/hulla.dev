@@ -23,6 +23,8 @@ Dependencies use current stable releases and are locked in `bun.lock`. TypeScrip
 
 Write MDX in `src/content/docs`. The shared route renderer applies `src/components/mdx/components.ts` to every document. Use ordinary fenced code with a language and optional `filename="example.ts"` metadata; the build renders it through the shared code-block composition. Markdown tables and inline code also use installed UI components.
 
+The same content collection automatically produces a Markdown sibling for every docs route, `/llms.txt`, and `/llms-full.txt`. Internal docs links are rewritten to the Markdown siblings in those outputs. When adding a presentation-only MDX component, add its text fallback in `src/lib/docs-markdown.ts`; the build fails rather than silently publishing incomplete AI documentation.
+
 Keep page layout and Markdown classes in `src/styles/site.css`. The CLI owns `src/styles.css` and the generated components. Do not add prose-container descendant selectors or overrides targeting shared component parts.
 
 The current API content still targets `2.0.0-beta.1`. The API coverage and example checks require that matching API revision; they intentionally fail against the redesigned 2.0.0 API until the content is migrated.

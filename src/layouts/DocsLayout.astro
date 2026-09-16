@@ -61,7 +61,8 @@ const editUrl = `https://github.com/samuelhulla/hulla.dev/edit/master/${contentP
 
 <BaseLayout
   title={frontmatter.title}
-  description={stripInlineCode(frontmatter.description)}>
+  description={stripInlineCode(frontmatter.description)}
+  markdownUrl={`${pathname}.md`}>
   <SiteHeader>
     <SearchCommand {fallback} client:load />
     <MobileDocsNav {pathname} />

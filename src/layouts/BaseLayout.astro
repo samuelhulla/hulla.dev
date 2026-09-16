@@ -1,8 +1,13 @@
 ---
 import '../styles.css'
 import '@/styles/site.css'
-type Props = { title: string; description: string; noindex?: boolean }
-const { title, description, noindex = false } = Astro.props
+type Props = {
+  title: string
+  description: string
+  noindex?: boolean
+  markdownUrl?: string
+}
+const { title, description, noindex = false, markdownUrl } = Astro.props
 const canonical = new URL(Astro.url.pathname, Astro.site)
 const fullTitle = title === 'hulla.dev' ? title : `${title} · hulla.dev`
 ---
@@ -15,6 +20,12 @@ const fullTitle = title === 'hulla.dev' ? title : `${title} · hulla.dev`
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {markdownUrl && (
+      <>
+        <link rel="alternate" type="text/markdown" href={markdownUrl} />
+        <link rel="describedby" href="/llms.txt" />
+      </>
+    )}
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
