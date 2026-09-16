@@ -93,13 +93,50 @@ export function connectTableOfContents(nav: HTMLElement) {
     let active = visible[0]
     const rawOffset = Number(nav.dataset.tocOffset ?? 96)
     const offset = Number.isFinite(rawOffset) ? Math.max(0, rawOffset) : 96
+    let bestScore = -1
     for (const section of visible) {
       const scroller = scrollParent(section)
-      const top = scroller
-        ? scroller.getBoundingClientRect().top + scroller.clientTop
-        : 0
-      if (section.getBoundingClientRect().top <= top + offset + 1)
+      const viewportTop =
+        (scroller
+          ? scroller.getBoundingClientRect().top + scroller.clientTop
+          : 0) + offset
+      const viewportBottom = scroller
+        ? scroller.getBoundingClientRect().top +
+          scroller.clientTop +
+          scroller.clientHeight
+        : win.innerHeight
+      const viewportHeight = Math.max(1, viewportBottom - viewportTop)
+      const rect = section.getBoundingClientRect()
+      const intersection = Math.max(
+        0,
+        Math.min(rect.bottom, viewportBottom) - Math.max(rect.top, viewportTop)
+      )
+      if (!intersection) continue
+
+      // Visibility is the primary signal. A small leading-edge bias breaks close scores in favor
+      // of the section nearest the top of the reading viewport.
+      const visibleRatio = intersection / Math.max(1, rect.height)
+      const leadingEdgeBias =
+        rect.top < viewportTop
+          ? 0
+          : Math.max(0, 1 - (rect.top - viewportTop) / viewportHeight)
+      const score = visibleRatio + leadingEdgeBias / 10
+      if (score > bestScore) {
+        bestScore = score
         active = section
+      }
+    }
+    if (bestScore < 0) {
+      // Preserve the last section the reader passed while the gap before the next one is visible.
+      for (const section of visible) {
+        const scroller = scrollParent(section)
+        const viewportTop =
+          (scroller
+            ? scroller.getBoundingClientRect().top + scroller.clientTop
+            : 0) + offset
+        if (section.getBoundingClientRect().top <= viewportTop + 1)
+          active = section
+      }
     }
     const last = visible.at(-1)
     if (last) {

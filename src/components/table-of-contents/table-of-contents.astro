@@ -3,7 +3,7 @@ import { cn } from '@/lib/style'
 import type { HTMLAttributes } from 'astro/types'
 type Props = HTMLAttributes<'nav'> & {
   for: string
-  /** Active-section threshold in pixels. Match the sections' scroll-margin-top. */
+  /** Top viewport inset in pixels. Match the sections' scroll-margin-top. */
   offset?: number
 }
 const {
