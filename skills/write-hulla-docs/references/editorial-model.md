@@ -19,6 +19,10 @@ Use the smallest model that fits the page. These structures adapt the useful pat
 5. Show a success signal after each meaningful stage.
 6. Link to the next conceptual page once the result works.
 
+Commit to one architecture through the success signal. A quickstart must not replace its client,
+transport, host, or implementation strategy halfway through the guide. Keep the example domain
+familiar and move incidental validation or business rules to later concept pages.
+
 ## Concept
 
 1. Name the problem the concept resolves.
@@ -67,3 +71,12 @@ Every example must make these facts discoverable in nearby prose:
 - The later call or consumer that uses the declared value.
 
 Use two-space indentation. Keep the first example free of optional plugins, custom converters, opaque metadata, and advanced generic types unless those are the page topic.
+
+Establish a working example once. When a later section improves or changes it, prefer a small
+insert/delete diff over another complete copy. Name the consequence after the diff so the reader
+knows whether the change affects client input, handler input, runtime validation, wire data, or
+ownership.
+
+For a block longer than roughly 15 lines, split it or focus the few lines that prove the surrounding
+point. A long integration example may remain copy-ready, but the mount and first observable call
+must be visually discoverable. Do not use highlighting as decoration or mark most of a block.

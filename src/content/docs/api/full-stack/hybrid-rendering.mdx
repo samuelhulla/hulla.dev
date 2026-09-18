@@ -1,35 +1,51 @@
 ---
-title: 'Hybrid rendering'
-description: 'Keep server-only implementations out of browser bundles while choosing zero-hop or Fetch clients per render boundary.'
+title: 'Server and browser calls'
+description: 'Choose local, framework-native, or HTTP calls without leaking server implementations into browser bundles.'
 ---
 
-Choose the execution boundary once in application setup. Server-only code can call a colocated implementation through a local transport; browser code reaches the backend through Fetch or a framework server function. Dynamic server rendering can execute locally just like build-time rendering. A separately deployed backend still requires a network transport, even when its caller runs on a server.
+This guide is for applications that render in more than one place: a browser, a server-rendered
+page, a framework server function, or a separately deployed API. It explains where to construct an
+`@hulla/api` client and which transport to use at each boundary.
 
-Keep the framework in charge of rendering, hydration, caching, authentication, redirects and invalidation. The package owns contract processing and implementation middleware. A local call does not execute the HTTP endpoint's middleware or automatically copy its cookies and response headers onto the page response.
+After reading, you should be able to keep the implementation out of browser bundles, avoid an
+unnecessary network hop for colocated server code, and deliberately choose HTTP when the HTTP
+endpoint itself is part of the contract.
 
-## Recommended setups
+The most common mistake is treating every server-side call as equivalent. A call from a server
+process may be a direct in-process invocation, a framework RPC call, or an HTTP request to another
+service. Those boundaries have different routing, credential, caching, and serialization owners.
 
-The linked fixtures are small applications built by the integration tests against workspace package exports. Copy the relevant modules into an application and replace their fixture services. They are reference setups, not standalone generated projects: some inherit workspace configuration and dependencies. The Next `probe` module and route are test instrumentation and should not be copied.
+## The four call paths
 
-| Framework                   | Recommended application entry point                                                                                                                             | Working fixture                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Next.js                     | Server-only local client for Server Components/actions; separate Fetch client for Client Components                                                             | [Local client](https://github.com/hulladev/api/tree/main/packages/next/tests/fixtures/next-app/local-client.ts), [browser client](https://github.com/hulladev/api/tree/main/packages/next/tests/fixtures/next-app/browser-client.ts), [static page](https://github.com/hulladev/api/tree/main/packages/next/tests/fixtures/next-app/app/page.tsx), [request-rendered page](https://github.com/hulladev/api/tree/main/packages/next/tests/fixtures/next-app/app/account/page.tsx) |
-| Astro                       | `astroInProcessTransport(implementation, Astro)` in server components and deferred server islands; Fetch in browser islands                                     | [Server island](https://github.com/hulladev/api/tree/main/packages/astro/tests/fixtures/astro-app/src/components/Status.astro)                                                                                                                                                                                                                                                                                                                                                   |
-| SvelteKit                   | Local client under `$lib/server` for portable server loaders; `svelteKitRemoteTransport` inside remote callbacks; framework-supplied Fetch in universal loaders | [Local client](https://github.com/hulladev/api/tree/main/packages/sveltekit/tests/fixtures/sveltekit-app/src/lib/server/client.ts), [server loader](https://github.com/hulladev/api/tree/main/packages/sveltekit/tests/fixtures/sveltekit-app/src/routes/+page.server.ts), [remote functions](https://github.com/hulladev/api/tree/main/packages/sveltekit/tests/fixtures/sveltekit-app/src/routes/health.remote.ts)                                                             |
-| Nuxt                        | `useApi()` captures `event.fetch` on the server and `$fetch.raw` in the browser in the current setup context; `useAsyncData` owns page reads and hydration      | [Composable](https://github.com/hulladev/api/tree/main/packages/nuxt/tests/fixtures/nuxt-app/app/composables/useApi.ts), [page and mutation](https://github.com/hulladev/api/tree/main/packages/nuxt/tests/fixtures/nuxt-app/app/app.vue)                                                                                                                                                                                                                                        |
-| TanStack Start              | Isomorphic loader calls a server function; its handler imports the local client                                                                                 | [Server function](https://github.com/hulladev/api/tree/main/packages/tanstack-start/tests/fixtures/start-app/src/api/health.functions.ts), [loader](https://github.com/hulladev/api/tree/main/packages/tanstack-start/tests/fixtures/start-app/src/routes/index.tsx)                                                                                                                                                                                                             |
-| React Router framework mode | Server `loader`/`action` imports a `.server` client; client loaders/actions use Fetch or delegate to the server                                                 | [Local client](https://github.com/hulladev/api/tree/main/packages/react-router/tests/fixtures/react-router-app/app/api/client.server.ts), [loader](https://github.com/hulladev/api/tree/main/packages/react-router/tests/fixtures/react-router-app/app/routes/home.tsx)                                                                                                                                                                                                          |
-| SolidStart                  | A `query` calls a function with `use server`; that function imports the local client                                                                            | [Server query](https://github.com/hulladev/api/tree/main/packages/solid-start/tests/fixtures/solid-start-app/src/api/health.ts), [consumer](https://github.com/hulladev/api/tree/main/packages/solid-start/tests/fixtures/solid-start-app/src/routes/index.tsx)                                                                                                                                                                                                                  |
+The contract and implementation stay the same. The caller chooses the boundary through its client
+transport:
 
-Nuxt's request-aware fetcher and SvelteKit's supplied `fetch` can dispatch local endpoint requests internally. Keep those framework paths when request forwarding or universal execution is useful. A Fetch-shaped interface does not necessarily imply a network hop.
+| Caller and topology                              | Transport                                                                                                   | What crosses the boundary                                                       | Choose it when                                                                                |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Browser code to an API endpoint                  | `fetchTransport()`                                                                                          | A Web `Request` and `Response` over the endpoint URL                            | The caller is a browser, or the HTTP endpoint must be exercised                               |
+| Server code and implementation share one process | `inProcessTransport(implementation)`                                                                        | Encoded contract values by route key; no URL or Fetch request                   | Server rendering or application code can safely import the implementation                     |
+| Framework server function or remote function     | A local client inside the server callback, or a framework-specific helper when the integration provides one | The framework's invocation protocol, then local contract dispatch on the server | The operation is owned by a framework function and does not need to be a public HTTP endpoint |
+| Any caller to a separately deployed server       | `fetchTransport({ baseUrl })`                                                                               | An HTTP request to the server's origin                                          | The API runs in another process, service, or deployment                                       |
 
-## Next.js: two clients, enforced server imports
+> Keep the framework responsible for rendering, hydration, caching, and navigation; keep
+> `@hulla/api` responsible for the contract lifecycle; and choose a transport based on the
+> boundary the caller actually needs.
 
-Put the local client, implementation, and database access behind Next's server-only marker:
+An in-process call, or a framework transport configured to execute the implementation locally, does
+not enter the mounted HTTP endpoint. It does not run endpoint-specific HTTP middleware, match the
+endpoint's URL, receive the page request's cookies automatically, or copy contract response headers
+onto a page response. Use an HTTP client when those effects are part of the operation you want to
+exercise.
+
+## Create separate server and browser clients
+
+Keep the contract in a module that both sides can import. Keep the implementation and any client
+that imports it in a server-only module. The following examples assume that `contract` and
+`implementation` already exist in the files shown; see [contract authoring](/docs/api/core/contracts)
+and [server implementations](/docs/api/core/servers) for those values.
 
 ```ts
-// api/server.ts
-import 'server-only'
+// src/api/server-client.ts — server-only code
 import { createClient } from '@hulla/api/client'
 import { inProcessTransport } from '@hulla/api/in-process'
 import { contract } from './contract'
@@ -40,72 +56,105 @@ export const api = createClient(contract, {
 })
 ```
 
-Also put `import 'server-only'` in `implementation.ts`; protecting just the client leaves a direct implementation import unguarded. Install the marker package if required by the application's dependency tooling. Next recognizes it during compilation.
-
 ```ts
-// api/browser.ts
+// src/api/browser-client.ts — browser-safe code
 import { createClient } from '@hulla/api/client'
 import { fetchTransport } from '@hulla/api/fetch'
 import { contract } from './contract'
 
-export const api = createClient(contract, { transport: fetchTransport() })
+export const api = createClient(contract, {
+  transport: fetchTransport(),
+})
 ```
 
-Server Components import `api/server`; Client Components import `api/browser`. Both call the same contract-shaped methods. The Next fixture builds an interactive browser consumer and executes its browser-safe client module against the real HTTP endpoint. Deliberately importing either the local client or implementation from a Client Component fails the production build.
+Both clients expose the same contract-shaped calls. The first dispatches by contract route in the
+current process. The second sends a Web request to the endpoint mounted by the server integration.
+The filename is descriptive, not protective: use the framework's server-only convention, such as a
+guard import, `.server` module, or dedicated server directory. Do not combine these modules in a
+shared barrel; importing `implementation` makes the server-only dependency reachable from any
+browser import that consumes that barrel.
 
-A request-time page must establish its rendering mode outside the API error boundary. The fixture uses `export const dynamic = 'force-dynamic'` on the account page. With Cache Components or another rendering configuration, use that configuration's supported request-time boundary. Reading `cookies()` for the first time deep inside a contract handler during prerendering can throw framework control-flow exceptions that the API converts into a problem response. Likewise perform framework redirects and not-found handling after narrowing the API result, outside the handler.
-
-Plain context factories can use lazy, request-scoped services so public routes remain usable during prerendering. Never cache a resolved user in a module singleton. An implementation explicitly bound to `nextAdapter().context()` still cannot mount through generic in-process transport; do not cast away that restriction or synthesize a `NextRequest` to evade it.
-
-## SvelteKit: server modules and native remote functions
-
-Place the implementation and local client under `$lib/server`. A `+page.server.ts` loader can import that client; a component or universal `+page.ts` loader cannot. The negative production fixture verifies this restriction.
-
-Use the existing remote integration when a server implementation needs SvelteKit's current request event:
+For an API on another origin, configure an absolute origin in the Fetch transport:
 
 ```ts
-// routes/products.remote.ts
-import { query } from '$app/server'
-import { svelteKitRemoteTransport } from '@hulla/api-sveltekit/remote'
-import { createClient } from '@hulla/api/client'
-import { contract } from '$lib/api/contract'
-import { implementation } from '$lib/server/implementation'
-
 const api = createClient(contract, {
-  transport: svelteKitRemoteTransport(implementation),
-})
-
-export const products = query(async () => {
-  const result = await api.products.list()
-  if (result.status !== 200)
-    throw new Error(`Could not load products: ${result.status}`)
-  return result.body
+  transport: fetchTransport({ baseUrl: 'https://api.example.com' }),
 })
 ```
 
-This example assumes a `products.list` route in the application's contract. SvelteKit owns the generated endpoint and client protocol. The local transport supplies the current event at invocation time, rather than capturing one request when the module loads. Remote functions retain their framework version/configuration requirements; see the [SvelteKit guide](/docs/api/full-stack/sveltekit).
+In Node.js and server-rendering runtimes, a relative URL may not have an origin from which to build
+the native `Request`; provide an absolute `baseUrl` or use the framework's request-aware Fetch when
+the framework supplies one.
 
-## Start and SolidStart: let the compiler own the boundary
+## What changes at the boundary
 
-Keep the framework-recognized declaration in application source. For Start, a `createServerFn(...).handler(...)` imports the local client inside its handler. For SolidStart, the query's server function contains the `use server` directive and imports the local client there. The fixture links above show the complete authoring pattern.
+The transport choice changes who owns the work around the contract call:
 
-The framework compiler separates these functions into server implementations and browser references. A dynamic import by itself is not a server boundary. Do not move the implementation import into a shared barrel or assume `typeof window` protects it.
+- **Local calls** skip HTTP route matching and native Fetch objects. They still run the encoded
+  client/server boundary, server validation, middleware, handler, response decoding, and declared
+  statuses.
+- **Server-side Fetch** is still an HTTP request. It does not inherit the incoming browser
+  request's cookies or authorization headers unless the application or framework deliberately
+  forwards them.
+- **Framework server functions and remote functions** use the framework's own input, invocation,
+  and serialization rules, plus any caching or hydration around that function. A framework function
+  is not a replacement for a public HTTP endpoint when another process must call the API.
+- **Browser Fetch** reaches the mounted endpoint and therefore uses the endpoint's host routing,
+  middleware, response headers, and deployment behavior.
 
-Return the body or a small serializable result from these functions. Framework RPC has its own input validation, error, streaming and serialization rules; it does not automatically support every raw or streaming contract response. Use the HTTP endpoint for consumers that need the HTTP contract itself.
+If a server-rendered page needs the current user's identity, obtain it through the framework's
+request-aware APIs or explicitly forward the required credentials. Do not rely on the fact that the
+code happens to run on the server.
 
-## What the safeguards establish
+An implementation whose context is bound with a host adapter such as `nextAdapter().context()` can
+only run through that adapter. `inProcessTransport()` rejects the mismatch during setup. Keep the
+context portable when the same implementation must run locally and through HTTP, or use a
+framework-specific local transport that supplies the required native context.
 
-The test suite verifies:
+## Pick the framework guide
 
-- Next and SvelteKit production builds reject deliberate imports across server/browser boundaries.
-- Private implementation markers are present in server JavaScript and absent from browser JavaScript in Next, SvelteKit, Start and SolidStart builds.
-- Next prerenders a local read without a running API endpoint; concurrent request-rendered pages keep distinct session identities and do not invoke that endpoint. The browser-safe client does invoke it.
-- Astro server islands preserve their native island request context across concurrent fixture sessions.
-- Nuxt SSR retains request-specific session values through its request-aware client.
-- SvelteKit and React Router render pages through local server loaders, and Start/SolidStart render through server functions, while retaining their HTTP endpoints.
+The framework pages show the host entrypoint, the server/browser module boundary, and the
+framework-native way to consume the result. Start with the page for the framework that owns your
+rendering lifecycle:
 
-The shared-helper production build subprocesses explicitly clear Vitest's `TEST` and `VITEST` environment flags: SvelteKit disables its server-import guard under `TEST=true`. The tests use actual compiler diagnostics, not merely the presence of marker imports. The fixture sessions are test data, not an authentication implementation. These tests do not claim browser-click coverage or measure production throughput.
+| Framework                                             | Use the guide for                                                                                                                                                      |
+| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Next.js](/docs/api/full-stack/next)                  | App Router handlers and native context; [data and caching](/docs/api/full-stack/next-data) covers Server Components, Data Cache, Server Actions, and browser clients   |
+| [TanStack Start](/docs/api/full-stack/tanstack-start) | Wildcard server routes, loaders, server functions, and TanStack Query                                                                                                  |
+| [React Router](/docs/api/full-stack/react-router)     | Framework Mode resource routes, loaders, actions, and revalidation                                                                                                     |
+| [SolidStart](/docs/api/full-stack/solid-start)        | Catch-all API routes, Solid Router queries/actions, and native event context                                                                                           |
+| [SvelteKit](/docs/api/full-stack/sveltekit)           | Catch-all endpoints and enhanced Fetch; [remote functions](/docs/api/full-stack/sveltekit-remote-functions) cover application-local query, command, and form callbacks |
+| [Nuxt](/docs/api/full-stack/nuxt)                     | Nitro routes, request-aware Fetch, `useAsyncData`, and server handlers                                                                                                 |
+| [Astro](/docs/api/full-stack/astro)                   | Endpoints, in-process component calls, and deferred server islands                                                                                                     |
 
-The Nuxt implementation lives outside Nitro's auto-imported `server/utils` directory to avoid initialization cycles. The Nuxt setup also keeps core external during Vite SSR bundling so Nitro resolves a single copy of contract state; see the [Nuxt configuration](/docs/api/full-stack/nuxt#create-a-request-aware-client).
+Some frameworks provide a request-aware Fetch that can dispatch a relative request internally.
+That is still a framework-owned request path: use it when request forwarding or universal
+execution matters, and use `inProcessTransport()` when you want a direct call to a colocated
+implementation.
 
-Generic in-process execution remains available in any JavaScript environment, including legitimate browser-local implementations. Core does not infer deployment topology, ban server-side Fetch, or select a transport based on `window`. These setups add no runtime dependencies or per-call checks to core. The Nuxt transport selects its raw/native response reader once during setup and rejects parsed-only fetchers early. A single-import compiler plugin and scaffolding CLI remain deferred.
+## Common mistakes and next decisions
+
+- **The implementation is imported by browser code.** Create a browser client from the shared
+  contract only; keep the in-process client and implementation behind the framework's server-only
+  module boundary.
+- **A local call is expected to run endpoint middleware.** It does not. Use the framework adapter
+  and an HTTP client when endpoint routing or HTTP middleware must run.
+- **Server-side Fetch is expected to carry the browser session.** Forward only the credentials the
+  server call needs, or use the framework's request-aware Fetch when it explicitly provides that
+  behavior.
+- **A framework function is exposed to external clients.** Framework RPC is useful for
+  application-local operations. Mount and expose the HTTP contract when mobile clients, other
+  services, generated clients, or a separately deployed frontend need it.
+- **An ordinary function is wrapped only to avoid choosing a transport.** Use an ordinary
+  application function when contract validation, declared statuses, and middleware are not part of
+  the local boundary.
+
+Next steps:
+
+- Read [client authoring](/docs/api/core/clients) for response narrowing, client middleware, and
+  shared client setup.
+- Read [in-process transport](/docs/api/transports/in-process) when server and
+  implementation share a process.
+- Read the [Fetch transport guide](/docs/api/transports/fetch) when the HTTP
+  request itself is the boundary.
+- Choose the applicable framework guide above for the host-specific entrypoint and data lifecycle.

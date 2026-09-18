@@ -1,0 +1,20 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'span'> & { for: string }
+const { class: className, for: target, ...props } = Astro.props as Props
+---
+
+<span
+  {...props}
+  role="heading"
+  aria-level="2"
+  data-slot="docs-stepper-heading"
+  class={cn('block', className)}>
+  <a
+    href={`#${target}`}
+    class="text-foreground no-underline transition-colors hover:text-primary-text focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring motion-reduce:transition-none">
+    <slot />
+  </a>
+</span>

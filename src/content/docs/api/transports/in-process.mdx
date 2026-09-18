@@ -1,5 +1,5 @@
 ---
-title: In-process
+title: Same-process calls
 description: Call a completed server implementation without a URL match or network hop while preserving the contract lifecycle.
 usefulFor:
   - Server-rendered code and handlers share one JavaScript process.
@@ -8,21 +8,29 @@ usefulFor:
 
 Use `inProcessTransport()` when the caller can import a completed implementation safely. The transport dispatches by immutable contract key, passes encoded parameters directly, and executes the same server validation, context, middleware, handler, response, and declared-error lifecycle as other transports.
 
+The example continues the `contract` and `implementation` modules from the [quick start](/docs/api/quick-start).
+
 ```ts filename="src/api/local-client.ts"
 import { createClient } from '@hulla/api/client'
 import { inProcessTransport } from '@hulla/api/in-process'
 import { contract } from './contract'
 import { implementation } from './implementation'
 
-export const api = createClient(contract, {
+const api = createClient(contract, {
   transport: inProcessTransport(implementation),
 })
+
+const result = await api.createTask({
+  body: { title: 'Write the quick start' },
+})
+
+console.log(result.body.title) // Write the quick start
 ```
 
 This is a zero-network call, not an HTTP simulation. Native JSON values pass directly instead of being stringified and parsed, so keep type-only JSON declarations JSON-compatible if the same contract also uses HTTP. Codecs still encode and decode their application values.
 
 ## Keep it server-only
 
-Because the local client imports the implementation, place it behind a server-only module boundary. Browser code should build a separate client from the same contract with `fetchTransport()` or another remote transport. The [hybrid rendering guide](/docs/api/full-stack/hybrid-rendering) shows safe placements for full-stack frameworks.
+Because the local client imports the implementation, place it behind a server-only module boundary. Browser code should build a separate client from the same contract with `fetchTransport()` or another remote transport. [Server and browser calls](/docs/api/full-stack/hybrid-rendering) explains how to choose and place each client across full-stack frameworks.
 
 Use ordinary functions when no contract lifecycle is needed. In-process transport is useful when a local caller should observe the same validation, middleware, declared statuses, errors, and cancellation behavior as a remote caller.

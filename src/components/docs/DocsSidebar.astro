@@ -1,5 +1,5 @@
 ---
-import { apiDocs } from '@/data/docs'
+import { apiDocNavigation } from '@/data/docs'
 import Sidebar from '@/components/sidebar/sidebar.astro'
 import SidebarHeader from '@/components/sidebar/sidebar-header.astro'
 import SidebarContent from '@/components/sidebar/sidebar-content.astro'
@@ -8,6 +8,7 @@ import SidebarGroupTrigger from '@/components/sidebar/sidebar-group-trigger.astr
 import SidebarMenu from '@/components/sidebar/sidebar-menu.astro'
 import SidebarMenuItem from '@/components/sidebar/sidebar-menu-item.astro'
 import SidebarMenuLink from '@/components/sidebar/sidebar-menu-link.astro'
+import SidebarMenuTrigger from '@/components/sidebar/sidebar-menu-trigger.astro'
 import Collapsible from '@/components/collapsible/collapsible.astro'
 import CollapsibleContent from '@/components/collapsible/collapsible-content.astro'
 import Tabs from '@/components/tabs/tabs.astro'
@@ -21,7 +22,6 @@ import {
   Cable,
   Check,
   ChevronDown,
-  CloudCog,
   Layers,
   PanelsTopLeft,
   PlugZap,
@@ -58,6 +58,16 @@ const packages = [
 
 const activePackage =
   packages.find(({ href }) => pathname.startsWith(href)) ?? packages[0]
+
+const sectionIcons = {
+  'Start here': BookOpen,
+  Fundamentals: Layers,
+  Server,
+  Client: Cable,
+  Integrations: PlugZap,
+  'OpenAPI tooling': Braces,
+  Reference: SquareTerminal,
+} as const
 ---
 
 <Sidebar
@@ -139,78 +149,128 @@ const activePackage =
       <TabsContent value="documentation" class="pt-1" tabindex={0}>
         {activePackage.kind === 'api' && (
           <div class="grid gap-1">
-            {apiDocs.map((group) => {
-              const isActive =
-                pathname === group.href ||
-                group.entries.some((entry) => pathname === entry.href)
+            {apiDocNavigation.map((section) => {
+              const isCategory =
+                section.groups.length > 1 ||
+                section.groups[0]?.title !== section.title
+              const isSectionActive = section.groups.some(
+                (group) =>
+                  pathname === group.href ||
+                  group.entries.some((entry) => pathname === entry.href)
+              )
+              const SectionIcon =
+                sectionIcons[section.title as keyof typeof sectionIcons]
+
+              if (isCategory) {
+                return (
+                  <SidebarGroup class="py-0.5">
+                    <Collapsible
+                      open={isSectionActive}
+                      data-docs-sidebar-group={`section:${section.title.toLowerCase()}`}
+                      data-docs-sidebar-package={activePackage.kind}
+                      data-docs-sidebar-active={
+                        isSectionActive ? 'true' : undefined
+                      }>
+                      <SidebarGroupTrigger class="min-h-9 rounded-md px-2 text-[0.65rem]">
+                        <SectionIcon
+                          size={15}
+                          stroke-width={1.7}
+                          aria-hidden="true"
+                        />
+                        <span>{section.title}</span>
+                      </SidebarGroupTrigger>
+                      <CollapsibleContent>
+                        <SidebarMenu class="mt-0.5" lines="all">
+                          {section.groups.map((group) => {
+                            const isGroupActive =
+                              pathname === group.href ||
+                              group.entries.some(
+                                (entry) => pathname === entry.href
+                              )
+
+                            return (
+                              <SidebarMenuItem>
+                                <Collapsible
+                                  scope="nested"
+                                  open={isGroupActive}
+                                  data-docs-sidebar-group={group.href}
+                                  data-docs-sidebar-package={activePackage.kind}
+                                  data-docs-sidebar-active={
+                                    isGroupActive ? 'true' : undefined
+                                  }>
+                                  <SidebarMenuTrigger
+                                    scope="nested"
+                                    class="min-h-8 py-1 text-[0.8125rem] font-medium text-foreground">
+                                    {group.title}
+                                  </SidebarMenuTrigger>
+                                  <CollapsibleContent scope="nested">
+                                    <SidebarMenu>
+                                      <SidebarMenuItem>
+                                        <SidebarMenuLink
+                                          href={group.href}
+                                          aria-current={
+                                            pathname === group.href
+                                              ? 'page'
+                                              : undefined
+                                          }>
+                                          Overview
+                                        </SidebarMenuLink>
+                                      </SidebarMenuItem>
+                                      {group.entries.map((entry) => (
+                                        <SidebarMenuItem>
+                                          <SidebarMenuLink
+                                            href={entry.href}
+                                            aria-current={
+                                              pathname === entry.href
+                                                ? 'page'
+                                                : undefined
+                                            }>
+                                            {entry.title}
+                                          </SidebarMenuLink>
+                                        </SidebarMenuItem>
+                                      ))}
+                                    </SidebarMenu>
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              </SidebarMenuItem>
+                            )
+                          })}
+                        </SidebarMenu>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  </SidebarGroup>
+                )
+              }
+
+              const group = section.groups[0]!
               return (
                 <SidebarGroup class="py-0.5">
                   <Collapsible
-                    open={isActive}
+                    open={isSectionActive}
                     data-docs-sidebar-group={group.href}
                     data-docs-sidebar-package={activePackage.kind}
-                    data-docs-sidebar-active={isActive ? 'true' : undefined}>
+                    data-docs-sidebar-active={
+                      isSectionActive ? 'true' : undefined
+                    }>
                     <SidebarGroupTrigger class="min-h-9 rounded-md px-2 text-[0.65rem]">
-                      {group.title === 'Start here' && (
-                        <BookOpen
-                          size={15}
-                          stroke-width={1.7}
-                          aria-hidden="true"
-                        />
-                      )}
-                      {group.title === 'Core API' && (
-                        <Layers
-                          size={15}
-                          stroke-width={1.7}
-                          aria-hidden="true"
-                        />
-                      )}
-                      {group.title === 'Transports' && (
-                        <Cable
-                          size={15}
-                          stroke-width={1.7}
-                          aria-hidden="true"
-                        />
-                      )}
-                      {group.title === 'Server frameworks' && (
-                        <Server
-                          size={15}
-                          stroke-width={1.7}
-                          aria-hidden="true"
-                        />
-                      )}
-                      {group.title === 'Full-stack frameworks' && (
-                        <PanelsTopLeft
-                          size={15}
-                          stroke-width={1.7}
-                          aria-hidden="true"
-                        />
-                      )}
-                      {group.title === 'Serverless & runtimes' && (
-                        <CloudCog
-                          size={15}
-                          stroke-width={1.7}
-                          aria-hidden="true"
-                        />
-                      )}
-                      {group.title === 'Integrations' && (
-                        <PlugZap
-                          size={15}
-                          stroke-width={1.7}
-                          aria-hidden="true"
-                        />
-                      )}
-                      {group.title === 'Architecture & exports' && (
-                        <Braces
-                          size={15}
-                          stroke-width={1.7}
-                          aria-hidden="true"
-                        />
-                      )}
+                      <SectionIcon
+                        size={15}
+                        stroke-width={1.7}
+                        aria-hidden="true"
+                      />
                       <span>{group.title}</span>
                     </SidebarGroupTrigger>
                     <CollapsibleContent>
                       <SidebarMenu class="mt-0.5">
+                        <SidebarMenuItem>
+                          <SidebarMenuLink
+                            href={group.href}
+                            aria-current={
+                              pathname === group.href ? 'page' : undefined
+                            }>
+                            Overview
+                          </SidebarMenuLink>
+                        </SidebarMenuItem>
                         {group.entries.map((entry) => (
                           <SidebarMenuItem>
                             <SidebarMenuLink

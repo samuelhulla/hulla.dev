@@ -40,6 +40,7 @@ const astroComponents = [
   'table',
   'table-of-contents',
   'backdrop',
+  'stepper',
 ]
 const solidComponents = [
   'command',

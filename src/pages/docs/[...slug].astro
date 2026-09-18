@@ -7,6 +7,13 @@ import Card from '@/components/card/card.astro'
 import CardHeader from '@/components/card/card-header.astro'
 import CardTitle from '@/components/card/card-title.astro'
 import CardDescription from '@/components/card/card-description.astro'
+import Table from '@/components/table/table.astro'
+import TableBody from '@/components/table/table-body.astro'
+import TableCell from '@/components/table/table-cell.astro'
+import TableContainer from '@/components/table/table-container.astro'
+import TableHead from '@/components/table/table-head.astro'
+import TableHeader from '@/components/table/table-header.astro'
+import TableRow from '@/components/table/table-row.astro'
 export async function getStaticPaths() {
   const entries = await getCollection('docs')
   return [
@@ -28,23 +35,64 @@ const frontmatter = entry?.data ?? {
   title: group!.title,
   description: group!.description,
 }
+const hasDecisionGuide =
+  group?.chooserTitle !== undefined &&
+  group.entries.every(
+    (item) =>
+      item.chooseWhen !== undefined && item.applicationOwns !== undefined
+  )
 ---
 
 <DocsLayout {frontmatter}>
   {Content ? (
     <Content components={components} />
   ) : (
-    <div class="grid gap-4">
-      {group!.entries.map((item) => (
-        <Card>
-          <CardHeader>
-            <CardTitle aria-level={2}>
-              <a href={item.href}>{item.title} ↗</a>
-            </CardTitle>
-            <CardDescription>{item.description}</CardDescription>
-          </CardHeader>
-        </Card>
-      ))}
-    </div>
+    <>
+      {hasDecisionGuide && (
+        <section aria-labelledby="choose-a-guide" class="mb-8">
+          <h2 id="choose-a-guide">{group!.chooserTitle}</h2>
+          <TableContainer
+            tabindex="0"
+            role="region"
+            aria-label={`${group!.title} comparison`}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{group!.chooserColumnTitle ?? 'Option'}</TableHead>
+                  <TableHead>Choose it when</TableHead>
+                  <TableHead>The application owns</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {group!.entries.map((item) => (
+                  <TableRow>
+                    <TableHead scope="row">
+                      <a href={item.href}>{item.title}</a>
+                    </TableHead>
+                    <TableCell>{item.chooseWhen}</TableCell>
+                    <TableCell>{item.applicationOwns}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </section>
+      )}
+      <section aria-labelledby="guides">
+        <h2 id="guides">Guides</h2>
+        <div class="grid gap-4">
+          {group!.entries.map((item) => (
+            <Card>
+              <CardHeader>
+                <CardTitle aria-level={3}>
+                  <a href={item.href}>{item.title}</a>
+                </CardTitle>
+                <CardDescription>{item.description}</CardDescription>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      </section>
+    </>
   )}
 </DocsLayout>

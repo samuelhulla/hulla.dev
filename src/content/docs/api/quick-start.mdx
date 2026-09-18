@@ -1,64 +1,108 @@
 ---
 title: Quick start
-description: Declare one route, implement it exhaustively, and call it through a typed in-process client before adding framework or network concerns.
+description: Build a small task API and make one typed call without choosing a framework or opening a port.
 usefulFor:
-  - You want the smallest complete example of the 2.0 contract lifecycle.
-  - You need to see which code is shared, server-only, and client-facing.
+  - You want the shortest complete contract → server → client path.
+  - You are creating your first route with @hulla/api.
 ---
 
-This example creates `GET /api/users/:id`. The client supplies a path parameter, the server validates it, the handler returns one of two declared statuses, and the client narrows the corresponding body type. The in-process transport keeps the first run self-contained while exercising the same contract encoding and decoding rules used by other transports.
+import DocsStepperHeading from '@/components/docs/DocsStepperHeading.astro'
+import Stepper from '@/components/stepper/stepper.astro'
+import StepperContent from '@/components/stepper/stepper-content.astro'
+import StepperDescription from '@/components/stepper/stepper-description.astro'
+import StepperIndicator from '@/components/stepper/stepper-indicator.astro'
+import StepperItem from '@/components/stepper/stepper-item.astro'
+import StepperPanel from '@/components/stepper/stepper-panel.astro'
 
-## 1. Declare the shared boundary
+You will build `POST /api/tasks`. It accepts a task title and returns the created task with an ID and its initial completion state.
 
-Put paths, schemas, and response declarations in a module that both the server and client may import.
+This quick start uses one same-process client from beginning to end. That keeps framework and deployment setup out of the first successful call.
 
-```ts filename="src/api/contract.ts"
-import { defineContract, response, route } from '@hulla/api'
+<Stepper variant="ordered" aria-label="Build a task API">
+  <StepperItem id="1-describe-the-route" data-toc-section data-toc-label="Describe the route" class="scroll-mt-24">
+    <StepperIndicator>1</StepperIndicator>
+    <StepperContent>
+      <DocsStepperHeading for="1-describe-the-route">Describe the route</DocsStepperHeading>
+      <StepperDescription>Define the request, response, and URL in shared code.</StepperDescription>
+    </StepperContent>
+    <StepperPanel>
+
+Put the contract in a module that both server and client code can import. It describes the request and response, but contains no database access or server startup.
+
+```ts filename="src/api/contract.ts" {4-13,18-23}
+import { defineContract, request, response, route } from '@hulla/api'
 import { z } from 'zod'
 
-const user = z.object({ id: z.string(), name: z.string() })
+const newTask = z.object({
+  title: z.string().min(1),
+})
+
+export const task = z.object({
+  id: z.string(),
+  title: z.string(),
+  completed: z.boolean(),
+})
 
 export const contract = defineContract({
   basePath: '/api',
   routes: {
-    user: route.get('/users/:id', {
-      params: z.object({ id: z.string().min(1) }),
+    createTask: route.post('/tasks', {
+      body: request.json(newTask),
       responses: {
-        200: response.json(user),
-        404: response.json(z.object({ message: z.string() })),
+        201: response.json(task),
       },
     }),
   },
 })
 ```
 
-`defineContract()` resolves the complete path and creates immutable selection metadata. It does not register a server or attach business logic.
+The only input rule is that the title cannot be empty. The route key `createTask` becomes the method you will call from application code.
 
-## 2. Implement every selected route
+    </StepperPanel>
 
-The handler tree mirrors the contract tree. For this single-route contract, `implement()` requires exactly one `user` handler.
+  </StepperItem>
 
-```ts filename="src/api/implementation.ts"
+  <StepperItem id="2-add-the-server-behavior" data-toc-section data-toc-label="Add the server behavior" class="scroll-mt-24">
+    <StepperIndicator>2</StepperIndicator>
+    <StepperContent>
+      <DocsStepperHeading for="2-add-the-server-behavior">Add the server behavior</DocsStepperHeading>
+      <StepperDescription>Connect the declared route to server-only behavior.</StepperDescription>
+    </StepperContent>
+    <StepperPanel>
+
+Keep the implementation in server-only code. The handler receives the validated body and returns the response declared by the contract.
+
+```ts filename="src/api/implementation.ts" {4-12}
 import { defineServer } from '@hulla/api/server'
 import { contract } from './contract'
 
-const server = defineServer(contract)
-
-export const implementation = server.implement({
-  user: ({ params, response }) =>
-    params.id === 'ada'
-      ? response(200, { id: 'ada', name: 'Ada' })
-      : response(404, { message: 'User not found' }),
+export const implementation = defineServer(contract).implement({
+  createTask: ({ body, response }) =>
+    response(201, {
+      id: crypto.randomUUID(),
+      title: body.title,
+      completed: false,
+    }),
 })
 ```
 
-The `response()` helper accepts only statuses and bodies declared by this route. Input parsing and response validation run around the handler; the handler receives decoded values, not raw transport objects.
+This contract currently contains one route, so this implementation contains one handler. Larger applications can implement and compose smaller contract fragments; the quick start keeps one route together so the request flow stays visible.
 
-## 3. Create and call a client
+    </StepperPanel>
 
-Use `inProcessTransport()` when the client and implementation share a JavaScript process. It performs no URL match or network request, but it keeps request/response conversion, middleware, declared errors, and cancellation semantics intact.
+  </StepperItem>
 
-```ts filename="src/api/example.ts"
+  <StepperItem id="3-call-the-api" data-toc-section data-toc-label="Call the API" class="scroll-mt-24">
+    <StepperIndicator>3</StepperIndicator>
+    <StepperContent>
+      <DocsStepperHeading for="3-call-the-api">Call the API</DocsStepperHeading>
+      <StepperDescription>Exercise the complete contract, handler, and result path.</StepperDescription>
+    </StepperContent>
+    <StepperPanel>
+
+Create a client from the same contract. The same-process connection is useful here because it exercises validation, the handler, and the declared response without requiring a web framework or local server.
+
+```ts filename="src/api/example.ts" {6-8,10-14}
 import { createClient } from '@hulla/api/client'
 import { inProcessTransport } from '@hulla/api/in-process'
 import { contract } from './contract'
@@ -68,34 +112,35 @@ const api = createClient(contract, {
   transport: inProcessTransport(implementation),
 })
 
-const result = await api.user({ params: { id: 'ada' } })
+const result = await api.createTask({
+  body: { title: 'Write the quick start' },
+})
 
-if (result.status === 200) {
-  console.log(result.body.name)
-} else {
-  console.log(result.body.message)
+console.log(result.body)
+```
+
+The call prints a task shaped like this:
+
+```ts
+{
+  id: 'generated-id',
+  title: 'Write the quick start',
+  completed: false,
 }
 ```
 
-Every call returns a promise and a status-discriminated union. Declared `4xx` and `5xx` responses are values by default; transport, schema, and undeclared-response failures reject the promise.
+You now have the complete path: the contract describes the route, the server handles it, and application code calls `createTask()` from a client built from the same contract.
 
-## Move the same implementation to HTTP
+    </StepperPanel>
 
-Replace only the transport boundary. A Web-standard host mounts the implementation with `fetchAdapter()`, while a remote client uses `fetchTransport()`.
+  </StepperItem>
+</Stepper>
 
-```ts filename="src/api/http.ts"
-import { createClient } from '@hulla/api/client'
-import { fetchAdapter, fetchTransport } from '@hulla/api/fetch'
-import { contract } from './contract'
-import { implementation } from './implementation'
+## Choose the next boundary
 
-export const handler = fetchAdapter().mount(implementation)
+Keep this first example intact. Continue with the guide for the application you are actually building:
 
-export const api = createClient(contract, {
-  transport: fetchTransport({ baseUrl: 'https://api.example.com' }),
-})
-```
-
-A framework adapter replaces `fetchAdapter()` when the host should retain its native router, context, body parser, or response writer. The contract, implementation, and client call shape stay the same.
-
-Next, read the [mental model](/docs/api/mental-model), then choose [Fetch](/docs/api/transports/fetch) or a native server adapter.
+- Use [HTTP calls with Fetch](/docs/api/transports/fetch) for browsers, services, and Web-standard handlers.
+- Choose a [server adapter](/docs/api/servers) when Express, Fastify, Hono, or another framework owns the server.
+- Read [Organizing server code](/docs/api/core/server-composition) when the contract grows beyond one module.
+- Read [Calling the API](/docs/api/core/clients) for response handling, selections, and client middleware.

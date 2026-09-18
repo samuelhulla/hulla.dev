@@ -1,57 +1,149 @@
 ---
 title: Installation
-description: Install the 2.0 core, one Standard Schema validator, and only the transport or host packages your deployment needs.
+description: Install the validated core, then choose the server host and client transport independently.
 usefulFor:
-  - You are starting a new TypeScript API or upgrading from the procedure-based package.
-  - You need to choose between core subpaths and separately installed integrations.
+  - You are starting a new TypeScript API.
+  - You need to know which adapter or transport package belongs in each application.
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
+import DocsStepperHeading from '@/components/docs/DocsStepperHeading.astro'
+import Alert from '@/components/alert/alert.astro'
+import AlertDescription from '@/components/alert/alert-description.astro'
+import AlertIcon from '@/components/alert/alert-icon.astro'
+import AlertTitle from '@/components/alert/alert-title.astro'
+import Stepper from '@/components/stepper/stepper.astro'
+import StepperContent from '@/components/stepper/stepper-content.astro'
+import StepperDescription from '@/components/stepper/stepper-description.astro'
+import StepperIndicator from '@/components/stepper/stepper-indicator.astro'
+import StepperItem from '@/components/stepper/stepper-item.astro'
+import StepperPanel from '@/components/stepper/stepper-panel.astro'
+import { Lightbulb } from '@lucide/astro'
 
-Install `@hulla/api` with a Standard Schema-compatible validator. The examples use Zod, but the core package does not depend on or peer-depend on a validator.
+Install the shared contract first. Then make two separate choices: where the server receives requests, and how the client reaches it.
 
-<DocsPackageManagerCommand
-  commands={{
-    bun: 'bun add @hulla/api@2.0.0 zod',
-    npm: 'npm install @hulla/api@2.0.0 zod',
-    pnpm: 'pnpm add @hulla/api@2.0.0 zod',
-    yarn: 'yarn add @hulla/api@2.0.0 zod',
-  }}
-/>
+<Stepper variant="ordered" aria-label="Install @hulla/api">
+  <StepperItem id="install-the-validated-core" data-toc-section data-toc-label="Install the validated core" class="scroll-mt-24">
+    <StepperIndicator>1</StepperIndicator>
+    <StepperContent>
+      <DocsStepperHeading for="install-the-validated-core">Install the validated core</DocsStepperHeading>
+      <StepperDescription>Start with @hulla/api and a runtime schema library.</StepperDescription>
+    </StepperContent>
+    <StepperPanel>
+      <p>
+        Run this in the workspace package that owns the shared contract. The examples use Zod, so installing it now
+        gives you the recommended runtime-validated path through the quick start.
+      </p>
+      <DocsPackageManagerCommand
+        commands={{
+          bun: 'bun add @hulla/api@2.0.0 zod',
+          npm: 'npm install @hulla/api@2.0.0 zod',
+          pnpm: 'pnpm add @hulla/api@2.0.0 zod',
+          yarn: 'yarn add @hulla/api@2.0.0 zod',
+        }}
+      />
+      <Alert variant="important">
+        <AlertIcon>
+          <Lightbulb />
+        </AlertIcon>
+        <AlertTitle>Tip: bring your preferred validator</AlertTitle>
+        <AlertDescription>
+          <code>@hulla/api</code> accepts any{' '}
+          <a href="https://standardschema.dev/">Standard Schema</a>-compatible
+          library. Replace Zod with Valibot, ArkType, Effect Schema, or another
+          compatible implementation; the API contract does not change.
+        </AlertDescription>
+      </Alert>
+      <small class="block text-xs leading-5 text-muted-foreground">
+        Type-only declarations are also available for already-trusted values.
+        They preserve compile-time types but do not validate real input or
+        output. See{' '}
+        <a href="/docs/api/core/contracts">contract declarations</a> when that
+        tradeoff is intentional.
+      </small>
+    </StepperPanel>
+  </StepperItem>
 
-Use Node.js 22 or newer for Node-hosted integrations. Some full-stack packages have stricter framework or runtime requirements; each integration guide lists its peer versions and host-specific setup.
+  <StepperItem id="connect-the-server-boundary" data-toc-section data-toc-label="Connect the server boundary" class="scroll-mt-24">
+    <StepperIndicator>2</StepperIndicator>
+    <StepperContent>
+      <DocsStepperHeading for="connect-the-server-boundary">Connect the server boundary</DocsStepperHeading>
+      <StepperDescription>Mount the implementation into the host that receives requests.</StepperDescription>
+    </StepperContent>
+    <StepperPanel>
+      <p>
+        A server adapter translates the host's native request into a contract call, provides request context, and
+        turns the declared result back into the host's response. Only server code imports this adapter.
+      </p>
 
-## Core entrypoints
+      - **Web-standard hosts:** use the built-in [`@hulla/api/fetch`](/docs/api/transports/fetch) entrypoint. Follow the [runtime guides](/docs/api/runtimes) for Bun, Deno, Vercel, and other Fetch-compatible hosts.
+      - **Native servers:** [`@hulla/api-node`](/docs/api/servers/node-http), [`@hulla/api-express`](/docs/api/servers/express), [`@hulla/api-fastify`](/docs/api/servers/fastify), [`@hulla/api-hono`](/docs/api/servers/hono), [`@hulla/api-h3`](/docs/api/servers/h3), [`@hulla/api-elysia`](/docs/api/servers/elysia), [`@hulla/api-koa`](/docs/api/servers/koa), or [`@hulla/api-nestjs`](/docs/api/servers/nestjs).
+      - **Full-stack frameworks:** [`@hulla/api-next`](/docs/api/full-stack/next), [`@hulla/api-tanstack-start`](/docs/api/full-stack/tanstack-start), [`@hulla/api-react-router`](/docs/api/full-stack/react-router), [`@hulla/api-solid-start`](/docs/api/full-stack/solid-start), [`@hulla/api-sveltekit`](/docs/api/full-stack/sveltekit), [`@hulla/api-nuxt`](/docs/api/full-stack/nuxt), or [`@hulla/api-astro`](/docs/api/full-stack/astro).
 
-These entrypoints ship in `@hulla/api`; they are not separate packages.
+      <p>
+        Install one server adapter in the application that owns the listener or framework route. The shared contract
+        package should not depend on Express, Next.js, Node.js, or another host.
+      </p>
+    </StepperPanel>
 
-| Entrypoint              | Use it for                                                       |
-| ----------------------- | ---------------------------------------------------------------- |
-| `@hulla/api`            | Contracts, routes, request/response declarations, codecs, errors |
-| `@hulla/api/client`     | Typed clients, middleware, transports, response results          |
-| `@hulla/api/server`     | Server definitions, handlers, middleware, context, composition   |
-| `@hulla/api/fetch`      | Fetch transport and Fetch-compatible server adapter              |
-| `@hulla/api/in-process` | Zero-network calls through a completed implementation            |
-| `@hulla/api/stream`     | NDJSON, SSE JSON, and custom stream formats                      |
-| `@hulla/api/errors`     | Operational error guards and protocol problem conversion         |
-| `@hulla/api/validation` | Standard Schema execution and codec helpers                      |
-| `@hulla/api/adapters`   | Advanced adapter-authoring boundary                              |
-| `@hulla/api/compiler`   | Immutable compiled route manifest for tooling                    |
+  </StepperItem>
 
-## Optional packages
+  <StepperItem id="connect-the-client-boundary" data-toc-section data-toc-label="Connect the client boundary" class="scroll-mt-24">
+    <StepperIndicator>3</StepperIndicator>
+    <StepperContent>
+      <DocsStepperHeading for="connect-the-client-boundary">Connect the client boundary</DocsStepperHeading>
+      <StepperDescription>Choose how typed calls travel from the caller to the server.</StepperDescription>
+    </StepperContent>
+    <StepperPanel>
+      <p>
+        A client transport carries a contract-shaped call. It does not mount routes or own server middleware. Most
+        applications begin with one of the two transports already included in <code>@hulla/api</code>.
+      </p>
 
-Install an adapter only in the application that mounts or consumes that boundary.
+      - **Same process:** use [`@hulla/api/in-process`](/docs/api/transports/in-process) in server-rendered code, tests, or another trusted process that can import the implementation.
+      - **HTTP:** use [`@hulla/api/fetch`](/docs/api/transports/fetch) in browsers, mobile clients, services, and server-side HTTP calls.
+      - **Workers or desktop IPC:** install [`@hulla/api-message-port`](/docs/api/transports/message-port).
+      - **Dedicated socket:** install [`@hulla/api-websocket`](/docs/api/transports/websocket).
 
-| Boundary              | Packages                                                                                                                                                           |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Node servers          | `@hulla/api-node`, `@hulla/api-express`, `@hulla/api-fastify`, `@hulla/api-koa`, `@hulla/api-nestjs`                                                               |
-| Web-native servers    | `@hulla/api-hono`, `@hulla/api-h3`, `@hulla/api-elysia`                                                                                                            |
-| Full-stack frameworks | `@hulla/api-next`, `@hulla/api-tanstack-start`, `@hulla/api-react-router`, `@hulla/api-solid-start`, `@hulla/api-sveltekit`, `@hulla/api-nuxt`, `@hulla/api-astro` |
-| Serverless hosts      | `@hulla/api-cloudflare`, `@hulla/api-aws-lambda`, `@hulla/api-azure-functions`, `@hulla/api-google-cloud-functions`, `@hulla/api-netlify-functions`                |
-| Other transports      | `@hulla/api-message-port`, `@hulla/api-websocket`                                                                                                                  |
-| Client helpers        | `@hulla/api-tanstack-query`, `@hulla/api-swr`                                                                                                                      |
-| Contract tooling      | `@hulla/api-openapi`                                                                                                                                               |
+      <p>
+        The client imports the contract and its chosen transport. It imports the implementation only for an
+        in-process call—never for Fetch, MessagePort, or WebSocket.
+      </p>
 
-The package files are ESM and side-effect free. Keep server-only implementation and adapter imports behind explicit server module boundaries so a browser bundle retains only the contract, client, and selected transport.
+      <p>
+        Once direct calls work, optionally add [`@hulla/api-control`](/docs/api/integrations/control),
+        [`@hulla/api-tanstack-query`](/docs/api/integrations/tanstack-query), or
+        [`@hulla/api-swr`](/docs/api/integrations/swr). These wrap an existing client; they do not replace its
+        transport.
+      </p>
+    </StepperPanel>
 
-Continue with the [quick start](/docs/api/quick-start) to exercise the full contract lifecycle in one process before choosing a deployment adapter.
+  </StepperItem>
+
+  <StepperItem id="verify-one-vertical-slice" data-toc-section data-toc-label="Verify one vertical slice" class="scroll-mt-24">
+    <StepperIndicator>4</StepperIndicator>
+    <StepperContent>
+      <DocsStepperHeading for="verify-one-vertical-slice">Verify one vertical slice</DocsStepperHeading>
+      <StepperDescription>Prove the contract, implementation, and client before adding framework setup.</StepperDescription>
+    </StepperContent>
+    <StepperPanel>
+      <p>
+        Build the first route in process so a listener, proxy, or framework cannot hide contract mistakes. The quick
+        start gives you three small modules:
+      </p>
+
+      1. `contract.ts` declares and validates what crosses the boundary.
+      2. `implementation.ts` contains server-only behavior.
+      3. `example.ts` creates a typed client, calls the route, and prints the created task.
+
+      <p>
+        When that call works, the core setup is complete. Keep the in-process transport when the caller stays beside
+        the server. For a browser or remote caller, move on to the client transport from step 3 and mount the same
+        implementation with the server adapter from step 2.
+      </p>
+
+      [Build the task API quick start →](/docs/api/quick-start)
+    </StepperPanel>
+
+  </StepperItem>
+</Stepper>

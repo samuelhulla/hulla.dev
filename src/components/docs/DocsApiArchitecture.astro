@@ -1,0 +1,103 @@
+---
+import Badge from '@/components/badge/badge.astro'
+import Card from '@/components/card/card.astro'
+import {
+  ArrowDown,
+  ArrowRight,
+  Braces,
+  Cable,
+  FileCheck,
+  ServerCog,
+} from '@lucide/astro'
+
+const stages = [
+  {
+    icon: Braces,
+    owner: 'Caller',
+    title: 'Typed client',
+    code: 'createClient()',
+    detail: 'Builds the call and narrows the returned status.',
+  },
+  {
+    icon: Cable,
+    owner: 'Boundary',
+    title: 'Transport',
+    code: 'transport(request)',
+    detail: 'Carries one portable invocation to the server side.',
+  },
+  {
+    icon: ServerCog,
+    owner: 'Host',
+    title: 'Adapter',
+    code: 'adapter.mount()',
+    detail: 'Connects native routing, context, reads, and writes.',
+  },
+  {
+    icon: FileCheck,
+    owner: 'Server',
+    title: 'Implementation',
+    code: 'implement()',
+    detail: 'Runs middleware and the exhaustive route handler.',
+  },
+] as const
+---
+
+<section
+  class="docs-example"
+  aria-label="@hulla/api architecture"
+  data-component-boundary>
+  <Card class="overflow-hidden p-0">
+    <div class="flex flex-wrap items-start justify-between gap-4 border-b border-border bg-foreground/[0.025] p-5">
+      <div class="grid gap-1.5">
+        <span class="eyebrow">Shared module</span>
+        <strong class="text-lg tracking-[-0.025em]">Contract</strong>
+        <span class="max-w-xl text-sm leading-6 text-muted-foreground">
+          Methods, paths, request fields, statuses, representations, errors, and
+          optional schemas.
+        </span>
+      </div>
+      <Badge size="sm">types every stage below</Badge>
+    </div>
+
+    <ol class="m-0 grid list-none p-0 md:grid-cols-4">
+      {stages.map(({ icon: Icon, owner, title, code, detail }, index) => (
+        <li class="relative min-w-0 border-b border-border p-5 last:border-b-0 md:border-r md:border-b-0 md:last:border-r-0">
+          <div class="mb-5 flex items-center justify-between gap-3">
+            <Icon class="size-4 text-primary-text" aria-hidden="true" />
+            <span class="font-mono text-[0.6875rem] uppercase tracking-[0.08em] text-muted-foreground">
+              {owner}
+            </span>
+          </div>
+          <strong class="block text-sm">{title}</strong>
+          <code class="mt-2 block overflow-hidden text-ellipsis whitespace-nowrap font-mono text-xs text-primary-text">
+            {code}
+          </code>
+          <p class="mt-3 text-xs leading-5 text-muted-foreground">{detail}</p>
+          {index < stages.length - 1 && (
+            <>
+              <ArrowRight
+                class="absolute top-1/2 -right-2.5 z-10 hidden size-5 -translate-y-1/2 rounded-full bg-background p-1 text-muted-foreground md:block"
+                aria-hidden="true"
+              />
+              <ArrowDown
+                class="absolute -bottom-2.5 left-1/2 z-10 size-5 -translate-x-1/2 rounded-full bg-background p-1 text-muted-foreground md:hidden"
+                aria-hidden="true"
+              />
+            </>
+          )}
+        </li>
+      ))}
+    </ol>
+
+    <div class="grid border-t border-border text-xs leading-5 text-muted-foreground md:grid-cols-2">
+      <p class="p-4 md:border-r md:border-border">
+        <strong class="text-foreground">Your application owns:</strong> business
+        logic, persistence, authentication policy, caching, and deployment.
+      </p>
+      <p class="border-t border-border p-4 md:border-t-0">
+        <strong class="text-foreground">@hulla/api owns:</strong> contract
+        execution, declared conversion, typed results, and boundary consistency.
+      </p>
+    </div>
+  </Card>
+</section>

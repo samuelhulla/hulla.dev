@@ -1,0 +1,29 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'ol'> & {
+  orientation?: 'horizontal' | 'vertical'
+  variant?: 'progress' | 'ordered'
+}
+const {
+  class: className,
+  orientation = 'horizontal',
+  variant = 'progress',
+  ...props
+} = Astro.props as Props
+const resolvedOrientation = variant === 'ordered' ? 'vertical' : orientation
+---
+
+<ol
+  {...props}
+  data-orientation={resolvedOrientation}
+  data-variant={variant}
+  role="list"
+  data-slot="stepper"
+  class={cn(
+    'group/stepper m-0 flex w-full min-w-0 list-none gap-5 p-0 data-[orientation=vertical]:flex-col data-[orientation=vertical]:gap-4 data-[variant=ordered]:gap-0',
+    className
+  )}>
+  <slot />
+</ol>

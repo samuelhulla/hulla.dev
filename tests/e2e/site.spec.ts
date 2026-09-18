@@ -76,15 +76,26 @@ test('search opens, finds indexed content, and restores focus', async ({
   await expect(trigger).toBeFocused()
 })
 
-test('boundary tree and package preferences remain functional', async ({
+test('architecture overview and package preferences remain functional', async ({
   page,
 }) => {
-  await page.goto('/docs/api')
-  await page.getByRole('treeitem', { name: /implementation\.ts/ }).click()
-  await expect(page.locator('[data-boundary-title]')).toHaveText(
-    'implementation.ts'
-  )
-  await expect(page.locator('[data-boundary-scope]')).toHaveText('Server only')
+  await page.goto('/docs/api/mental-model')
+  const architecture = page.getByRole('region', {
+    name: '@hulla/api architecture',
+  })
+  await expect(architecture).toBeVisible()
+  await expect(
+    architecture.getByText('Typed client', { exact: true })
+  ).toBeVisible()
+  await expect(
+    architecture.getByText('Implementation', { exact: true })
+  ).toBeVisible()
+  await expect(
+    architecture.getByText('Your application owns:', { exact: true })
+  ).toBeVisible()
+  await expect(
+    architecture.getByText('@hulla/api owns:', { exact: true })
+  ).toBeVisible()
   await page.goto('/docs/api/installation')
   const commands = page.locator('[data-package-manager-tabs]')
   await commands.first().getByRole('tab', { name: 'Use pnpm' }).click()

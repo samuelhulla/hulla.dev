@@ -1,0 +1,17 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'span'>
+const { class: className, ...props } = Astro.props as Props
+---
+
+<span
+  {...props}
+  data-slot="stepper-content"
+  class={cn(
+    'grid min-w-0 gap-1 group-data-[variant=ordered]/stepper:self-center group-data-[variant=ordered]/stepper:text-base group-data-[variant=ordered]/stepper:leading-6 group-data-[variant=ordered]/stepper:font-semibold',
+    className
+  )}>
+  <slot />
+</span>

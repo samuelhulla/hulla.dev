@@ -103,7 +103,7 @@ export const apiCoverage = [
   {
     entrypoint: '@hulla/api-next/client',
     exports: all,
-    page: '/docs/api/full-stack/next',
+    page: '/docs/api/full-stack/next-data',
   },
   {
     entrypoint: '@hulla/api-next/server',
@@ -133,7 +133,7 @@ export const apiCoverage = [
   {
     entrypoint: '@hulla/api-sveltekit/remote',
     exports: all,
-    page: '/docs/api/full-stack/sveltekit',
+    page: '/docs/api/full-stack/sveltekit-remote-functions',
   },
   {
     entrypoint: '@hulla/api-nuxt/client',
@@ -158,7 +158,7 @@ export const apiCoverage = [
   {
     entrypoint: '@hulla/api-cloudflare/pages',
     exports: all,
-    page: '/docs/api/runtimes/cloudflare',
+    page: '/docs/api/runtimes/cloudflare-pages',
   },
   {
     entrypoint: '@hulla/api-aws-lambda',
@@ -213,12 +213,12 @@ export const apiCoverage = [
   {
     entrypoint: '@hulla/api-tanstack-query',
     exports: all,
-    page: '/docs/api/integrations/query-libraries',
+    page: '/docs/api/integrations/tanstack-query',
   },
   {
     entrypoint: '@hulla/api-swr',
     exports: all,
-    page: '/docs/api/integrations/query-libraries',
+    page: '/docs/api/integrations/swr',
   },
   {
     entrypoint: '@hulla/api-openapi',
@@ -237,6 +237,6 @@ export const apiCoverage = [
       'HTTPFailure',
       'RequestFailure',
     ],
-    page: '/docs/api/reference/exports',
+    page: '/docs/api/integrations/control',
   },
 ] as const satisfies readonly CoverageEntry[]

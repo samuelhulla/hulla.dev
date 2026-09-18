@@ -1,0 +1,127 @@
+---
+title: '2.0 migration reference'
+description: 'Look up stable 1.x package moves, API replacements, and runtime behavior changes in @hulla/api 2.0.'
+---
+
+Use this page while migrating a stable `@hulla/api` 1.x application. For the guided first route, start with [Migrate from @hulla/api 1.x](/docs/api/start/migration).
+
+## Authoring model
+
+Stable 1.x joined a procedure declaration and its behavior. Version 2 splits the work into four explicit values:
+
+1. `defineContract()` declares the shared HTTP boundary.
+2. `defineServer(contract).implement(...)` supplies server-only behavior.
+3. An adapter mounts that implementation in a host.
+4. `createClient(contract, { transport })` builds typed calls for a caller.
+
+Use ordinary functions when no API boundary is needed. Use `inProcessTransport()` when local code should still pass through contract validation, middleware, statuses, errors, and cancellation.
+
+## Request and response calls
+
+### Move input to its HTTP location
+
+Procedure input becomes a structured object with only the fields declared by the route:
+
+```ts
+await api.projects.rename({
+  params: { id: 'project-1' },
+  body: { name: 'New name' },
+})
+```
+
+`params`, `query`, `headers`, and `body` are contract fields. Request-scoped options such as `{ signal }` are a separate second argument.
+
+### Return explicit statuses
+
+Handlers no longer rely on an implicit `200` or an untyped direct return:
+
+```ts
+return response(200, project)
+return response(404, { message: 'Project not found' })
+```
+
+Declare both responses in the contract. The client receives a status-discriminated union and must narrow `result.status` before using the body.
+
+### Keep expected failures in the result
+
+Model expected `4xx` and `5xx` outcomes as route responses or named `defineErrors()` declarations. They resolve as values by default.
+
+Transport failures, malformed representations, unexpected statuses, schema failures, and unhandled server failures still reject. Set `errorMode: 'throw'` only when named declared errors should also use exception control flow.
+
+## Package moves
+
+### Fetch
+
+Replace `@hulla/api-fetch` with the core Fetch entrypoint:
+
+```ts
+import { fetchAdapter, fetchTransport } from '@hulla/api/fetch'
+```
+
+`fetchTransport()` belongs to the client. `fetchAdapter().mount(implementation)` belongs to the server and returns a handler; it does not open a port.
+
+### Query libraries
+
+The old `@hulla/api-query` helpers do not have a single replacement. Pick the state owner first:
+
+- `@hulla/api-tanstack-query` produces typed query keys and options for TanStack Query.
+- `@hulla/api-swr` produces typed keys and fetchers for SWR.
+- A plain client is enough when the application already owns loading and cache state.
+
+Current integrations derive a parallel view from an existing typed client. They do not inject methods into the client tree.
+
+### Framework and runtime adapters
+
+Server integrations now live in focused packages such as `@hulla/api-express`, `@hulla/api-hono`, `@hulla/api-next`, and `@hulla/api-cloudflare`. Install only the adapter mounted by that application.
+
+See [Installation](/docs/api/installation) and the relevant host guide for exact packages and peer versions.
+
+## Validation and values
+
+### Choose type-only, schema, or codec deliberately
+
+```ts
+response.json<Project>() // static type; no application-shape validation
+response.json(projectSchema) // validate/transform on the server
+response.json(projectCodec) // encode and decode across the boundary
+```
+
+Ordinary response schemas run on the server. The client receives their serialized output without rerunning the schema.
+
+Use a codec when both sides should work with an application value such as `Date` while the transport carries an ISO string. The old client-wide `responseValidation` switch is gone; validation is declared at the value boundary that needs it.
+
+### Async schemas need no marker
+
+Remove `validation.async()`, `asyncSchema()`, and their marker types. A Standard Schema validator may return a promise directly, and HTTP client calls are already asynchronous.
+
+## Host behavior to audit
+
+### Request bodies
+
+Fetch, H3, Hono, and Elysia adapters do not preserve a native request body implicitly. Set `preserveRequestBody: true` only when native context or middleware must read it after contract decoding.
+
+Owned readers have no byte cap by default. Set `maxBodyBytes` when the adapter should enforce one; a host parser may still impose its own limit.
+
+### Headers
+
+Response header values are `string | readonly string[]`, and names normalize to lowercase. Arrays preserve repeated headers such as cookies.
+
+If old code assumed every header was a scalar, update that branch before mounting the new adapter.
+
+### Streams and cancellation
+
+NDJSON and SSE JSON decoders default to a 1 MiB record limit. Configure `maxRecordBytes` when the protocol needs another budget.
+
+Forward the portable request `signal` to downstream work. Successful raw and streaming responses transfer ownership to the caller, which must consume or close them.
+
+## Completion checklist
+
+- Move one stable 1.x procedure into a shared contract with explicit input locations and statuses.
+- Implement the selected contract with `defineServer().implement(...)`.
+- Mount it through the host adapter and verify one real request.
+- Construct the client with an explicit transport.
+- Replace old Fetch and query package imports.
+- Audit validation direction, codecs, headers, body limits, stream ownership, and cancellation.
+- Keep implementation and adapter imports out of browser-reachable modules.
+
+Continue with [API contracts](/docs/api/core/contracts), [Implementing the server](/docs/api/core/servers), [Calling the API](/docs/api/core/clients), and [Validation and serialization](/docs/api/core/value-round-trips).

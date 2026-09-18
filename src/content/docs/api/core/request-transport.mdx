@@ -1,72 +1,74 @@
 ---
-title: 'Request representations'
+title: 'Request and response data'
 description: 'Understand how parameters, query values, headers, bodies, and native JSON cross a transport boundary.'
 ---
 
-@hulla/api treats an ordinary request schema directionally: its input is supplied to the client and its validated output is exposed to server code. Use an explicit codec when client and server should instead share one application representation.
+Request data does not have the same shape everywhere. HTTP carries path parameters, query values, and headers as text; JSON bodies can also carry numbers, booleans, arrays, and objects.
+
+The contract decides where those wire values become application values. An ordinary schema can validate or transform data for the server. A codec adds the reverse direction so the client and server can share a richer type.
 
 ## URL and header values
 
-Client path parameters cannot encode to `.` or `..`: URL normalization would change the target endpoint. These values are rejected before sending the request.
+Path parameters, query fields, and headers cross HTTP as text. Their wire schemas must accept strings; query arrays and tuples accept repeated strings.
 
-Path parameters, query fields, and headers cross HTTP as text. Their wire schemas must therefore accept strings; query arrays and tuples accept repeated strings. A one-way schema transform keeps the client textual while giving the handler a richer value:
+Start with a one-way transform when only the server needs a richer value:
 
-```ts
+```ts filename="src/api/contract.ts" focus={4-5,8-9}
+import { response, route } from '@hulla/api'
 import { z } from 'zod'
 
-const oneWayQuery = z.object({
+const serverQuery = z.object({
   page: z.string().regex(/^\d+$/).transform(Number),
 })
-```
 
-With this declaration the client supplies `{ page: string }` and the handler receives `{ page: number }`.
-
-Use `codec()` when both applications should use the richer representation:
-
-```ts
-import { codec, defineContract, response, route } from '@hulla/api'
-import { z } from 'zod'
-
-const sharedQuery = codec(
-  z.object({
-    page: z.string().regex(/^\d+$/),
-    active: z.enum(['true', 'false']),
-    tags: z.array(z.string()).optional(),
-  }),
-  z.object({
-    page: z.number().int(),
-    active: z.boolean(),
-    tags: z.array(z.string()).optional(),
-  }),
-  {
-    decode: ({ page, active, tags }) => ({
-      page: Number(page),
-      active: active === 'true',
-      tags,
-    }),
-    encode: ({ page, active, tags }) => ({
-      page: String(page),
-      active: active ? 'true' : 'false',
-      tags,
-    }),
-  }
-)
-
-const contract = defineContract({
-  routes: {
-    search: route.get('/search', {
-      query: sharedQuery,
-      responses: { 200: response.empty() },
-    }),
-  },
+const search = route.get('/search', {
+  query: serverQuery,
+  responses: { 200: response.empty() },
 })
 ```
 
-Here the client and handler both use `{ page: number; active: boolean; tags?: string[] }`. The codec alone converts that application value to and from the textual HTTP representation.
+The client supplies `{ page: string }`; the handler receives `{ page: number }`. That is often exactly the boundary you want for an HTTP-facing client.
+
+If callers should also use a number, describe the reverse conversion with `codec()`:
+
+```ts filename="src/api/search-query.ts" focus={5-6,8-9}
+import { codec } from '@hulla/api'
+import { z } from 'zod'
+
+export const searchQuery = codec(
+  z.object({ page: z.string().regex(/^\d+$/) }),
+  z.object({ page: z.number().int() }),
+  {
+    decode: ({ page }) => ({ page: Number(page) }),
+    encode: ({ page }) => ({ page: String(page) }),
+  }
+)
+```
+
+Then swap the server-only schema for the codec:
+
+```diff filename="src/api/contract.ts"
+-import { z } from 'zod'
++import { searchQuery } from './search-query'
+
+-const serverQuery = z.object({
+-  page: z.string().regex(/^\d+$/).transform(Number),
+-})
+-
+ const search = route.get('/search', {
+-  query: serverQuery,
++  query: searchQuery,
+   responses: { 200: response.empty() },
+ })
+```
+
+Now the client and handler both use `{ page: number }`. HTTP still receives and sends `?page=2`; the codec owns the conversion in both directions.
 
 Plain `z.number()` and `z.boolean()` are invalid query, path, and header wire schemas because HTTP delivers those values as text. Values are not implicitly stringified. Use a textual one-way transform when the client should remain wire-shaped, or a codec when both applications should use the richer type.
 
 Codec endpoint schemas describe stable representations. Type-changing transforms and coercions belong in `decode` and `encode`; same-type normalization such as trimming remains valid when it is safe to apply repeatedly.
+
+Client path parameters cannot encode to `.` or `..`: URL normalization would change the target endpoint. They are rejected before the request is sent.
 
 ## Query values
 
@@ -84,17 +86,30 @@ Nested objects and nested arrays are rejected. There is no built-in bracket pars
 
 A naked body schema is JSON shorthand. JSON bodies retain their natural JSON types:
 
-```ts
-body: z.object({
-  title: z.string(),
-  count: z.number().int(),
-  active: z.boolean(),
+```ts filename="src/api/contract.ts" focus={6-12}
+import { defineContract, response, route } from '@hulla/api'
+import { z } from 'zod'
+
+const jsonBodyContract = defineContract({
+  routes: {
+    createArticle: route.post('/articles', {
+      body: z.object({
+        title: z.string(),
+        count: z.number().int(),
+        active: z.boolean(),
+      }),
+      responses: { 201: response.empty() },
+    }),
+  },
 })
 ```
 
 A codec is needed when JSON cannot directly represent the application value, or when client and server should share a transformed value:
 
-```ts
+```ts filename="src/api/contract.ts" focus={4-11,16}
+import { codec, defineContract, request, response, route } from '@hulla/api'
+import { z } from 'zod'
+
 const datedBody = codec(
   z.object({ createdAt: z.iso.datetime() }),
   z.object({ createdAt: z.date() }),
@@ -103,15 +118,42 @@ const datedBody = codec(
     encode: ({ createdAt }) => ({ createdAt: createdAt.toISOString() }),
   }
 )
+
+const datedBodyContract = defineContract({
+  routes: {
+    createArticle: route.post('/articles', {
+      body: request.json(datedBody),
+      responses: { 201: response.empty() },
+    }),
+  },
+})
 ```
 
 Explicit representations use the request namespace:
 
-```ts
-body: request.json(schema)
-body: request.text(schema)
-body: request.bytes(schema)
-body: request.formData(schema)
+```ts filename="src/api/contract.ts" focus={6,10,14,18}
+import { defineContract, request, response, route } from '@hulla/api'
+
+const representationContract = defineContract({
+  routes: {
+    json: route.post('/json', {
+      body: request.json(),
+      responses: { 204: response.empty() },
+    }),
+    text: route.post('/text', {
+      body: request.text(),
+      responses: { 204: response.empty() },
+    }),
+    bytes: route.post('/bytes', {
+      body: request.bytes(),
+      responses: { 204: response.empty() },
+    }),
+    formData: route.post('/form-data', {
+      body: request.formData(),
+      responses: { 204: response.empty() },
+    }),
+  },
+})
 ```
 
 Each helper also has a representation-appropriate identity schema when the schema is omitted. Content types match by MIME essence, so parameters such as JSON charsets and multipart boundaries do not change the selected representation.
@@ -122,9 +164,19 @@ Adapters provide already-extracted native path strings, flat query values, heade
 
 ## Typed native JSON
 
-```ts
-body: request.json<{ name: string }>()
-responses: { 200: response.json<{ id: string; name: string }>() }
+```ts filename="src/api/contract.ts" focus={6,8}
+import { defineContract, request, response, route } from '@hulla/api'
+
+const nativeJsonContract = defineContract({
+  routes: {
+    rename: route.post('/rename', {
+      body: request.json<{ name: string }>(),
+      responses: {
+        200: response.json<{ id: string; name: string }>(),
+      },
+    }),
+  },
+})
 ```
 
 A type argument adds compile-time types only. No recursive shape validation or coercion runs. JSON serialization and parsing follow the native transport, including omission of undefined object fields; malformed JSON still fails parsing. In-process calls pass values directly and do not simulate JSON serialization. Use JSON-compatible values across transports.

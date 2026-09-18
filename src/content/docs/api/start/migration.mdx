@@ -1,99 +1,110 @@
 ---
-title: 'Migration guide'
-description: 'Move from procedure and builder APIs to contract selections, direct clients, exhaustive servers, and explicit transports.'
+title: 'Migrate from @hulla/api 1.x'
+description: 'Move a stable procedure API to an HTTP contract, exhaustive server implementation, direct client, and explicit transport.'
 ---
 
 import DocsCodeDiff from '@/components/docs/DocsCodeDiff.astro'
 
-Version 2.0 replaces callable procedure builders with an HTTP-first contract and explicit bindings. Move route shape into a shared contract, move behavior into an exhaustive server implementation, and construct clients directly from the contract node they need.
+Version 2 is an architectural change, not a chain of renamed methods. Migrate one vertical slice at a time: declare the HTTP boundary, move behavior into a server implementation, mount it, then update the client call.
+
+This guide starts from the stable 1.2 procedure API. If your application already uses `defineContract()`, `defineServer()`, and `createClient()`, it is on the current model.
+
+## See the shape of the change
+
+In 1.x, the procedure carried its output and implementation together. In 2.x, the shared contract stops before server behavior begins.
 
 <DocsCodeDiff
-  filename="src/api/users.ts"
-  caption="The contract and handler are now separate values; transport choice is no longer embedded in procedure construction."
-  diff={`-import { createApi } from '@hulla/api'
+  filename="src/api/health.ts"
+  caption="The HTTP declaration can now be imported without pulling server behavior into the client."
+  diff={`-import { api } from '@hulla/api'
+-import { z } from 'zod'
 -
--const api = createApi()
--export const users = api.router('users').define(({ route }) => ({
--  byId: route('GET', '/:id')
--    .input(z.string())
--    .output(userSchema)
--    .handler(({ input }) => repository.find(input)),
--}))
+-const a = api()
+-export const health = a
+-  .procedure('health', 'get')
+-  .output(z.object({ ok: z.literal(true) }))
+-  .define(() => ({ ok: true }))
 +import { defineContract, response, route } from '@hulla/api'
-+import { defineServer } from '@hulla/api/server'
 +
 +export const contract = defineContract({
 +  routes: {
-+    byId: route.get('/users/:id', {
-+      params: z.object({ id: z.string() }),
-+      responses: { 200: response.json(userSchema) },
++    health: route.get('/health', {
++      responses: { 200: response.json<{ ok: true }>() },
 +    }),
 +  },
-+})
-+
-+export const implementation = defineServer(contract).implement({
-+  byId: ({ params, response }) => response(200, repository.find(params.id)),
 +})`}
 />
 
-The rest of this guide covers later 2.0 builder-to-selection changes and runtime details. If you are migrating directly from the procedure API, treat the [contract](/docs/api/core/contracts), [server](/docs/api/core/servers), and [client](/docs/api/core/clients) guides as the authoritative replacement rather than translating builder methods one by one.
+The contract is intentionally incomplete on its own. That is what makes it safe to share.
 
-Construct clients directly from a root contract, router, or route:
+## 1. Implement the contract on the server
 
-```ts
-const client = createClient(contract, { transport })
-const users = createClient(contract.routes.users, {
-  transport,
-  middleware: [authenticate],
+Create a server-only module and cover every selected route:
+
+```ts filename="src/api/implementation.ts" {4-6}
+import { defineServer } from '@hulla/api/server'
+import { contract } from './contract'
+
+export const implementation = defineServer(contract).implement({
+  health: ({ response }) => response(200, { ok: true }),
 })
-const health = createClient(contract.routes.health, { transport })
-await users.byId({ params: { id: 'user-1' } })
-await health()
 ```
 
-Replace `defineClient()` with `createClient()`. Move client `.use()` registrations into the `middleware` array and pass the node previously supplied to `.select()` as the first constructor argument. Remove terminal `.create()` or `.build()` calls. Replace client `.middleware()` with inline middleware or the standalone `clientMiddleware(contract, handler)` helper. Client composition and ownership checks are gone; group selected calls with ordinary objects. Use `ClientFor<typeof selection>` for a selected client type.
+Direct handler returns and implicit success statuses are gone. `response(200, body)` connects the runtime value to the exact contract branch it fulfills.
 
-All client properties are endpoints. Former control names such as `use`, `select`, and `compose` are available. Query integration views still reserve `queryKey`. The selected tree is prepared at construction; use module boundaries for code splitting.
+## 2. Mount the implementation
 
-Contracts expose an immutable `$contract` selection manifest containing keys, compiled routes, and errors. Mounted nodes are contextual copies of declarations, so compare structural keys rather than raw declaration identity. The same declaration can be mounted at different paths. Server implementations expose their handler `bindings`; adapters consume that public boundary.
+The portable implementation does not start a server. Mount it in the host that already owns routing and deployment.
 
-Server binding remains `.implement(handlers)` or `.implement(node, handlers)`. Server `.compose(...fragments)` checks coverage, duplicates, and middleware scope compatibility.
+```ts filename="src/api/handler.ts" {4}
+import { fetchAdapter } from '@hulla/api/fetch'
+import { implementation } from './implementation'
 
-HTTP calls return promises, but synchronous validation, encoding, and handlers do not incur an await at each step. One executor handles each selected server route. In-process transport dispatches by contract key and encoded parameters instead of matching the URL. Client middleware cannot retarget an invocation; customize URLs in the transport.
-
-Ordinary response schemas now run only on the server and send their output, including transforms and stripped fields. The client consumes that wire output without repeating validation. Response headers, formatted stream items, and declared error data follow the same rule. A response transform producing a Date must become an explicit codec or produce an ISO string. Request schemas still run on the server after parsing. Explicit codecs support bidirectional conversion. The client `responseValidation` setting has been removed. Use `request.json<T>()` and `response.json<T>()` for typed native JSON without runtime shape validation; supply a schema to explicitly validate and transform. Native JSON parsing still rejects malformed JSON. Static client headers are captured at construction; use a function for changing headers.
-
-Request fields process in parameter, query, header, and body order and stop on failure. Server response headers validate before the body. When client header decoding is asynchronous, body decoding runs concurrently with cancellation on failure. Error phases, cancellation, and stream ownership remain part of the lifecycle.
-
-Handlers may return a subset of declared statuses. Missing routes, undeclared statuses and invalid response bodies remain errors. Client response unions still reflect the contract, so callers continue to narrow by status.
-
-Native context no longer implicitly preserves a Fetch request body. Set `preserveRequestBody: true` on Fetch/H3/Hono/Elysia mounts when needed. Owned request readers impose no byte cap by default. Set `maxBodyBytes` explicitly to opt into a limit. Host parsers retain their own limits. NDJSON/SSE decoders default to a 1 MiB record limit; use `createNdjsonFormat({ maxRecordBytes })` or `createSseJsonFormat({ maxRecordBytes })`, including `Infinity` for an explicitly unbounded decoder.
-
-Response headers now support `string | readonly string[]` and normalize names to lowercase. Arrays preserve repeated cookies. Update code that assumed every response header was a scalar. Explicit header schemas still determine their decoded application types.
-
-Custom transports can implement `dispose(reason)`. Core calls it when response decoding fails before handing the response to the application. Successful raw and stream responses transfer ownership to the caller: consume them or close/cancel them. Forward the portable request `signal` to downstream work and close iterators in `finally`.
-
-TanStack Query and SWR accept `{ prefix: ['service', tenantId, sessionVersion] }`. Include the API and authentication scope when clients share a cache; clear sensitive cache entries on logout.
-
-## MessagePort package
-
-Install `@hulla/api-message-port` alongside core and change imports from the removed `@hulla/api/message-port` subpath:
-
-```ts
-import {
-  messagePortAdapter,
-  messagePortTransport,
-} from '@hulla/api-message-port'
+export const handler = fetchAdapter().mount(implementation)
 ```
 
-The same package exports `messagePortEndpoint`, protocol types, and custom IPC endpoint support. Call signatures, the default channel, protocol version, cancellation and stream flow control are unchanged. Fetch and in-process transport remain at `@hulla/api/fetch` and `@hulla/api/in-process`.
+`handler` is a `(Request) => Promise<Response>` function. Use a native adapter instead when Express, Fastify, Hono, or another framework should keep its own router and context.
 
-## Node package boundary
+## 3. Construct the client directly
 
-Install `@hulla/api-node` in place of `@hulla/api-node-http` and import the standalone
-`nodeHttpAdapter` from `@hulla/api-node/http`. Shared helpers previously exported by
-`@hulla/api/adapters/node` now come from `@hulla/api-node`. Express, Fastify, Koa, and
-NestJS install the shared Node package automatically. Fetch remains available at
-`@hulla/api/fetch`.
+The v2 client starts from a contract node and an explicit transport. There is no generated runtime and no terminal builder step.
 
-Standalone procedures and `@hulla/api/procedure` have been removed. Use ordinary application functions, or a selected in-process client when the contract lifecycle is required. `validation.async()` / `asyncSchema()` and their marker types have also been removed: Standard Schema validators can return promises directly, and HTTP client calls always return promises. No replacement package or async mode is needed.
+```ts filename="src/api/client.ts" {5-7,9-13}
+import { createClient } from '@hulla/api/client'
+import { fetchTransport } from '@hulla/api/fetch'
+import { contract } from './contract'
+
+const health = createClient(contract.routes.health, {
+  transport: fetchTransport({ baseUrl: 'https://api.example.com' }),
+})
+
+const result = await health()
+
+if (result.status === 200) {
+  console.log(result.body.ok) // true
+}
+```
+
+Build a client from the root contract for the whole call tree, or from a router/route selection when a module needs only part of it.
+
+## Update the old habits
+
+- **Positional input becomes named HTTP input.** Pass `{ params, query, headers, body }` so the call mirrors the declared boundary.
+- **Expected failures become status values.** Declare a `404` or `409`, then narrow `result.status` on the client.
+- **Client middleware moves to construction.** Pass `middleware: [...]` to `createClient()`.
+- **Framework state stays at the adapter.** Expose only the request context handlers actually need.
+- **Local calls use a transport.** Reach the same implementation with `inProcessTransport()` when caller and server share a process.
+
+## Revisit runtime behavior, not just types
+
+The compiler will catch missing routes and wrong response shapes. It cannot decide your boundary policy.
+
+Before finishing the migration, review:
+
+- whether each JSON declaration should be type-only, schema-validated, or a codec;
+- which non-`2xx` outcomes are expected contract responses;
+- request-body limits and preservation required by the host;
+- repeated response headers, stream ownership, and cancellation;
+- browser/server module boundaries for clients and implementations.
+
+The [migration reference](/docs/api/reference/migration) is the old-to-new lookup for package moves and removed 1.x behavior. For the new model in context, continue with [API contracts](/docs/api/core/contracts), [Implementing the server](/docs/api/core/servers), and [Calling the API](/docs/api/core/clients).

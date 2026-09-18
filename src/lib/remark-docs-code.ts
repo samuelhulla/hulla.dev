@@ -19,6 +19,21 @@ export function remarkDocsCode() {
         }
         hasCode = true
         const filename = child.meta?.match(/filename="([^"]+)"/)?.[1]
+        const highlighted = child.meta?.match(/(?:^|\s)\{([\d,\s-]+)\}/)?.[1]
+        const range = (name: string) =>
+          child.meta?.match(
+            new RegExp(`(?:^|\\s)${name}=\\{([\\d,\\s-]+)\\}`)
+          )?.[1]
+        const stringAttribute = (name: string, value?: string) =>
+          value
+            ? [
+                {
+                  type: 'mdxJsxAttribute',
+                  name,
+                  value: value.replace(/\s/g, ''),
+                },
+              ]
+            : []
         return {
           type: 'mdxJsxFlowElement',
           name: 'MarkdownCodeBlock',
@@ -31,6 +46,15 @@ export function remarkDocsCode() {
             },
             ...(filename
               ? [{ type: 'mdxJsxAttribute', name: 'filename', value: filename }]
+              : []),
+            ...stringAttribute('highlighted', highlighted),
+            ...stringAttribute('focused', range('focus')),
+            ...stringAttribute('inserted', range('ins')),
+            ...stringAttribute('deleted', range('del')),
+            ...stringAttribute('error', range('error')),
+            ...stringAttribute('warning', range('warning')),
+            ...(child.meta?.match(/(?:^|\s)lineNumbers(?:\s|$)/)
+              ? [{ type: 'mdxJsxAttribute', name: 'lineNumbers', value: null }]
               : []),
           ],
           children: [],

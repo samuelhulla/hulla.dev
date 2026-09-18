@@ -19,7 +19,12 @@ const { commands } = Astro.props
     </TabsList>
     {Object.entries(commands).map(([manager, command]) => (
       <TabsContent value={manager}>
-        <DocsCodeBlock code={command} language="sh" filename="Terminal" />
+        <DocsCodeBlock
+          class="my-0"
+          code={command}
+          language="sh"
+          filename="Terminal"
+        />
       </TabsContent>
     ))}
   </Tabs>

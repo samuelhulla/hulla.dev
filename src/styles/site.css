@@ -412,16 +412,17 @@
     min-width: 0;
   }
   .docs-page-heading {
-    margin: 2rem 0 3rem;
+    margin: 2rem 0 2rem;
   }
   .docs-title {
-    margin: 0.75rem 0 1rem;
+    margin: 0.75rem 0 0.75rem;
     font-size: clamp(2.25rem, 4vw, 3.25rem);
     line-height: 1.1;
     font-weight: 550;
     letter-spacing: -0.055em;
   }
   .docs-description {
+    margin: 0;
     color: var(--color-muted-foreground);
     font-size: 1.0625rem;
     line-height: 1.75;
@@ -523,6 +524,9 @@
     line-height: 1.8;
     color: var(--color-muted-foreground);
     text-wrap: pretty;
+  }
+  #docs-content > .md-p:first-child {
+    margin-top: 0;
   }
   .md-a {
     color: var(--color-primary-text);

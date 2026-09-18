@@ -1,44 +1,97 @@
 ---
 title: '@hulla/api'
-description: Declare an HTTP contract once, then bind typed clients and exhaustive server implementations to the transports and frameworks your application already uses.
+description: Keep an HTTP API honest from the first route declaration to the last client call—without making one framework, validator, or transport your architecture.
 usefulFor:
-  - Client and server code must agree on paths, inputs, statuses, and response shapes.
-  - You want runtime validation without coupling the contract to one schema library.
-  - The same API must work through HTTP, in process, IPC, or WebSocket.
+  - You want HTTP paths, inputs, statuses, and bodies to stay typed together.
+  - Frontend and backend work should share a contract without sharing server code.
+  - One API must fit several frameworks, runtimes, or process boundaries.
 ---
 
-import DocsContractPath from '@/components/docs/DocsContractPath.astro'
-import DocsProjectBoundary from '@/components/docs/DocsProjectBoundary.astro'
+`@hulla/api` is for TypeScript teams that want the ergonomics of a typed RPC client without hiding HTTP.
 
-`@hulla/api` is a typed HTTP contract library, not a backend framework. A contract declares the observable boundary—methods, paths, request representations, response statuses, and errors—while application code keeps ownership of business logic, framework state, caching, and deployment.
+Declare the API once. The server must implement every selected route, the client can call only what the contract exposes, and every declared status arrives with the right body type.
 
-From that contract, `@hulla/api/client` creates a typed call tree and `@hulla/api/server` requires an exhaustive handler tree. An adapter then connects the server to Express, Fastify, Hono, a full-stack framework, a serverless host, or the Web Fetch API.
+```ts filename="src/api/projects.ts" {5-12,16-18,24}
+import { defineContract, request, response, route } from '@hulla/api'
+import { createClient } from '@hulla/api/client'
+import { inProcessTransport } from '@hulla/api/in-process'
+import { defineServer } from '@hulla/api/server'
 
-<DocsContractPath />
+const contract = defineContract({
+  routes: {
+    createProject: route.post('/projects', {
+      body: request.json<{ name: string }>(),
+      responses: { 201: response.json<{ id: string; name: string }>() },
+    }),
+  },
+})
 
-## Keep the contract shared and the implementation private
+const implementation = defineServer(contract).implement({
+  createProject: ({ body, response }) =>
+    response(201, { id: crypto.randomUUID(), name: body.name }),
+})
 
-The contract module is safe to import from browser and server code. It contains schemas and transport declarations, but no database clients, secrets, or native framework objects. The server implementation imports the contract; the client imports only the contract and its chosen transport.
+const api = createClient(contract, {
+  transport: inProcessTransport(implementation),
+})
 
-<DocsProjectBoundary />
+const result = await api.createProject({ body: { name: 'Documentation' } })
+```
 
-That split makes accidental server code in a browser bundle visible at the module boundary. It also lets one consumer use Fetch while another uses an in-process, MessagePort, or WebSocket transport without changing endpoint call signatures.
+That small example already contains the whole model: a shared contract, a server implementation, a client, and one replaceable transport.
 
-## Choose only the boundary you need
+## Why use it?
 
-| Need                          | Import                         | Owns                                                              |
-| ----------------------------- | ------------------------------ | ----------------------------------------------------------------- |
-| Declare the shared HTTP shape | `@hulla/api`                   | Routes, request/response representations, codecs, declared errors |
-| Build typed calls             | `@hulla/api/client`            | Contract selection, client middleware, response decoding          |
-| Implement handlers            | `@hulla/api/server`            | Exhaustive handlers, server middleware, request context           |
-| Use Web-standard HTTP         | `@hulla/api/fetch`             | Fetch transport and Fetch server adapter                          |
-| Avoid a network hop           | `@hulla/api/in-process`        | Direct transport through the same contract lifecycle              |
-| Mount a host framework        | `@hulla/api-*` adapter package | Native routing, context, request reads, and response writes       |
+### HTTP remains visible
 
-Core depends only on the Standard Schema specification. Zod, Valibot, and other compatible validators remain application dependencies, and a schema is used only where the contract explicitly supplies one.
+Routes declare real methods, paths, request representations, response statuses, headers, and bodies. A `404` is not an exception-shaped afterthought—it is a response the client must handle.
 
-## What changed in 2.0
+This makes the contract useful beyond one UI. You can serve it to a browser, another service, an OpenAPI consumer, a worker, or a desktop bridge without redesigning the API around a procedure protocol.
 
-The previous procedure builder, plugin hooks, generated client runtime, and `createApi()` entrypoint are gone. Contracts now describe HTTP directly; clients are constructed directly from a contract or selection; server implementations are exhaustive; cache integrations are explicit parallel views; transports and native adapters are separate boundaries.
+### Your stack stays yours
 
-If you are upgrading, read the [migration guide](/docs/api/start/migration). For a new project, install the package and complete the [quick start](/docs/api/quick-start), then use the [mental model](/docs/api/mental-model) to choose a transport and host adapter.
+Use native adapters for Express, Fastify, Hono, H3, Elysia, Koa, NestJS, Next.js, SvelteKit, Nuxt, Astro, serverless hosts, and more. The host keeps the things it is good at: routing, middleware, request context, streaming, and deployment.
+
+On the calling side, choose Fetch, an in-process call, MessagePort, or WebSocket. Changing that boundary does not change `api.createProject(...)`.
+
+### Runtime work is opt-in
+
+Type-only declarations add no application-shape validation. When a boundary needs runtime checks, pass any [Standard Schema](https://standardschema.dev/) validator—Zod is one option, not a dependency or a requirement.
+
+For values such as `Date` that look different in memory and on the wire, explicit codecs keep both directions visible.
+
+### Drift fails early
+
+Server implementations are exhaustive for the contract selection they implement. Rename a route, remove a handler, return an undeclared status, or send the wrong body and TypeScript points at the broken edge before a client discovers it in production.
+
+## How it compares
+
+These tools overlap, but they start from different sources of truth:
+
+| Tool                                         | The source of truth               | It feels most natural when                                                         |
+| -------------------------------------------- | --------------------------------- | ---------------------------------------------------------------------------------- |
+| `@hulla/api`                                 | A standalone HTTP contract        | HTTP details matter and the same contract must cross different hosts or transports |
+| [tRPC](https://trpc.io/)                     | A server procedure router         | One TypeScript application wants inference directly from its server implementation |
+| [oRPC](https://orpc.dev/)                    | Procedures or a separate contract | You want its RPC/OpenAPI builders and broad procedure ecosystem                    |
+| [ts-rest](https://ts-rest.com/)              | A standalone REST contract        | You want a contract-first REST client with its supported server integrations       |
+| [Hono RPC](https://hono.dev/docs/guides/rpc) | A typed Hono route chain          | The server already belongs to Hono and clients should infer from that app          |
+
+Choose `@hulla/api` when the boundary should outlive any one framework and when transport choice should remain explicit. If the API is only an internal function call, use an ordinary function. If a framework-owned typed client already matches every consumer, adding a separate contract may not buy you enough.
+
+## One contract, a wider ecosystem
+
+The core package covers contracts, clients, servers, Fetch, in-process calls, validation helpers, errors, and streams. Optional packages add only the boundary you need:
+
+- native server and full-stack framework adapters;
+- MessagePort and WebSocket transports;
+- TanStack Query, SWR, and result-returning clients;
+- OpenAPI import, export, and drift checks;
+- serverless and edge runtime integrations.
+
+No plugin registry sits in the middle. Each integration is an explicit package and an explicit import.
+
+## Start with one working route
+
+New project? [Install the core package](/docs/api/installation), then build a small but complete API in the [quick start](/docs/api/quick-start).
+
+Evaluating the architecture first? The [mental model](/docs/api/mental-model) shows where every part lives and how one call moves through the system. Upgrading from 1.x? Go straight to the [migration guide](/docs/api/start/migration).

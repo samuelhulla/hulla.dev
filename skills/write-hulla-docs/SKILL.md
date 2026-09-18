@@ -7,6 +7,11 @@ description: Create or refactor @hulla/* package documentation so readers unders
 
 Write for a developer evaluating a tool, not an implementer proving API coverage.
 
+For `@hulla/api` work, also read
+[`docs/api-documentation-style-guide.md`](../../docs/api-documentation-style-guide.md). It records
+the current API-doc audit, component-use rules, adversarial review checklist, and incremental rewrite
+priorities.
+
 ## Workflow
 
 1. Read the public implementation, types, tests, and existing examples that govern the page. Never infer behavior from names alone.
@@ -27,13 +32,24 @@ Write for a developer evaluating a tool, not an implementer proving API coverage
 - Prefer “Use X when…” and concrete outcomes over adjectives such as powerful, seamless, robust, frozen, or advanced.
 - Make headings answer a reader question or mark a real stage in a workflow. Do not promote disconnected bullet points into sections.
 - Explain one new idea per section. Connect it to the previous section with cause and effect.
+- Keep most explanatory paragraphs to one point and two or three sentences. A longer paragraph needs one continuous causal argument; do not use paragraph length to hide a list of rules.
+- Vary the page's rhythm. Follow abstract prose with a concrete call, response, diff, focused line, alert, or short list before introducing another abstraction.
+- Write like a maintainer helping another developer make a decision. Use direct transitions, name tradeoffs, and say when the package is not the right tool; avoid catalog voice and repeated “X provides Y” constructions.
 - Keep the first screen beginner-safe. Move plugin hooks, converter internals, metadata, and edge cases below the primary path unless the page is specifically about them.
+- Give a quickstart one architecture and one boundary from start to success. Do not switch transports, clients, hosts, or composition strategies mid-guide; put alternatives in next steps after the result works.
+- Remove incidental domain difficulty from introductory examples. Prefer familiar data and obvious validation such as a required title; identifiers, regexes, persistence conflicts, codecs, and multi-status branching belong only when they prove the page's main lesson.
+- Scope completeness language to the example. Say “this contract has one route, so this implementation has one handler” instead of implying that one root implementation is the only application structure. Link fragments and composition as the growth path.
 - Separate responsibilities explicitly: server code, generated code, client code, build configuration, and framework integration.
 - Show the lifecycle of an API, not only its declaration. Pair definitions with the call, rendered result, generated artifact, or later consumer that makes the example useful.
 - Prefer “show, then explain” for concepts with observable structure or state. Lead with a compact example, result, comparison, or interactive visual, then name the rule the reader just saw.
 - For APIs with meaningful variants, teach them as a progression: simplest valid form, common form, composed form, then constraints.
 - Say why an abstraction exists and when not to use it.
 - Prefer a short table for choices, a numbered list for a sequence, and bullets for independent constraints.
+- Reject a table when any cell needs a paragraph. Turn that row into a subsection, or compare fewer dimensions.
+- Treat a code block longer than roughly 15 lines as a reading problem. Split it, replace repeated versions with a `diff`, or add a focused range that matches the paragraph's exact lesson.
+- When evolving an example, show the complete baseline once. Teach each later improvement with inserted and deleted lines, followed by the type, runtime, or ownership consequence of that change.
+- Use code focus, inserted/deleted lines, warnings, errors, and comments to direct attention. Do not repeat the entire snippet in prose when a line state can carry the comparison.
+- Never add decorative highlighting. A highlighted or focused line must answer the question introduced immediately before the block, and most of the block should not be marked.
 - Use exact package names, imports, routes, file paths, and expected results.
 - Avoid release-process narration, private dogfood notes, source hashes, and internal verification language in reader-facing pages.
 
@@ -45,6 +61,10 @@ Write for a developer evaluating a tool, not an implementer proving API coverage
 - If docs need behavior the installed component cannot express, verify the catalog and generated source before adding an override.
 - Keep code indentation at two spaces and preserve copy-ready source. Use the official language mark for known languages and Lucide for actions, files, or terminal commands.
 - Render package-manager-bound commands through the shared persisted package-manager command component. Do not hard-code one package manager when equivalent Bun, npm, pnpm, and Yarn commands exist. Keep package-independent `hulla` CLI commands as ordinary terminal blocks.
+- In canonical `@hulla/api` Markdown, put `<!-- docs:package-manager -->` immediately before one
+  `sh` fence containing `# Bun`, `# npm`, `# pnpm`, and `# Yarn` commands in that order. The
+  API docs sync preserves the readable Markdown fallback and renders the site copy with
+  `DocsPackageManagerCommand`.
 - Use real `@hulla/ui` components for compact lifecycle diagrams, comparisons, outcomes, and state changes when they teach a relationship more clearly than prose.
 - Use restrained motion to reveal sequence, causality, or state changes. Respect reduced-motion preferences and never animate decoration that does not teach.
 

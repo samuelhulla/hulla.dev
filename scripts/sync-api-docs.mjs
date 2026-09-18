@@ -11,21 +11,33 @@ const repositoryUrl = `https://github.com/hulladev/api/tree/${encodeURIComponent
 const pages = {
   'architecture.md': {
     destination: 'reference/architecture.mdx',
-    title: 'Architecture',
+    title: 'Contract compiler',
     description:
-      'Trace a contract from declaration through client transport, server execution, and response decoding.',
+      'Inspect the immutable route manifest used by adapters and tooling.',
   },
   'contract-authoring.md': {
     destination: 'core/contracts.mdx',
     title: 'Contracts',
     description:
-      'Declare paths, request representations, response statuses, and shared schemas without server implementation code.',
+      'Define the shared paths, inputs, and status-specific responses that type both servers and clients.',
   },
   'server-authoring.md': {
     destination: 'core/servers.mdx',
     title: 'Server implementations',
     description:
-      'Implement a contract exhaustively, scope middleware and context, then expose a complete server or deployable fragment.',
+      'Implement every contract route, mount the result, and inspect a real response.',
+  },
+  'server-context.md': {
+    destination: 'core/server-context.mdx',
+    title: 'Server context and middleware',
+    description:
+      'Create request-scoped context and apply middleware globally or to selected routes.',
+  },
+  'server-composition.md': {
+    destination: 'core/server-composition.mdx',
+    title: 'Server fragments and composition',
+    description:
+      'Split handlers into typed modules or independently mountable fragments, then compose a complete implementation.',
   },
   'client-authoring.md': {
     destination: 'core/clients.mdx',
@@ -51,19 +63,56 @@ const pages = {
     description:
       'Model declared application failures separately from validation, transport, implementation, and runtime failures.',
   },
-  // start/migration.mdx is intentionally curated in this site so it can pair
-  // the upstream migration reference with an interactive before/after diff.
+  'control.md': {
+    destination: 'integrations/control.mdx',
+    title: 'Result-returning clients',
+    description:
+      'Convert typed client outcomes into @hulla/control Result values without losing declared response types.',
+  },
+  'migration.md': {
+    destination: 'reference/migration.mdx',
+    title: '2.0 migration reference',
+    description:
+      'Look up removed APIs, package moves, client and server replacements, and runtime behavior changes in @hulla/api 2.0.',
+  },
+  // start/migration.mdx remains intentionally curated so it can provide a
+  // short migration journey with an interactive before/after diff. The
+  // canonical migration.md above supplies the exhaustive reference page.
   'plugins.md': {
     destination: 'integrations/query-libraries.mdx',
-    title: 'TanStack Query & SWR',
+    title: 'Query library integrations',
     description:
-      'Derive cache keys and executable query or mutation options from an existing typed client.',
+      'Choose who owns browser cache and query state around an existing typed client.',
+  },
+  'tanstack-query.md': {
+    destination: 'integrations/tanstack-query.mdx',
+    title: 'TanStack Query',
+    description:
+      'Create typed TanStack Query v5 keys and options, then invalidate the correct contract route.',
+  },
+  'swr.md': {
+    destination: 'integrations/swr.mdx',
+    title: 'SWR',
+    description:
+      'Create typed SWR keys and fetchers, run mutations, and revalidate the correct contract route.',
   },
   'openapi.md': {
     destination: 'integrations/openapi.mdx',
     title: 'OpenAPI',
     description:
-      'Export contracts to OpenAPI or generate a runtime contract and typed documentation sidecar from an existing document.',
+      'Choose whether a code-first contract or an existing OpenAPI document owns the API description.',
+  },
+  'openapi-export.md': {
+    destination: 'integrations/openapi/export.mdx',
+    title: 'Export a contract to OpenAPI',
+    description:
+      'Generate a JSON or YAML OpenAPI document from a runtime contract and typed documentation sidecar.',
+  },
+  'openapi-import.md': {
+    destination: 'integrations/openapi/import.mdx',
+    title: 'Import an OpenAPI document',
+    description:
+      'Generate a runtime contract and typed sidecar from a provider-owned OpenAPI document.',
   },
   'message-port.md': {
     destination: 'transports/message-port.mdx',
@@ -85,63 +134,81 @@ const pages = {
   },
   'hybrid-rendering.md': {
     destination: 'full-stack/hybrid-rendering.mdx',
-    title: 'Hybrid rendering',
+    title: 'Choose a transport for each render boundary',
     description:
-      'Keep server-only implementations out of browser bundles while choosing zero-hop or Fetch clients per render boundary.',
+      'Choose local, framework-native, or HTTP calls without leaking server implementations into browser bundles.',
   },
   'adapter-conformance.md': {
     destination: 'reference/adapter-conformance.mdx',
     title: 'Adapter behavior',
     description:
-      'Compare routing, parsing, streaming, context, and lifecycle ownership across every supported host adapter.',
+      'Compare how @hulla/api adapters handle routes, request bodies, responses, errors, and cancellation.',
   },
   'runtime-hosts.md': {
     destination: 'runtimes/runtime-hosts.mdx',
-    title: 'Bun, Deno & Vercel',
+    title: 'Web-native runtimes',
     description:
-      'Choose the Fetch or Node boundary that fits Bun, Deno, and Vercel runtime deployments.',
+      'Choose how Bun, Deno, or Vercel should expose the same Fetch-compatible contract handler.',
+  },
+  'bun.md': {
+    destination: 'runtimes/bun.mdx',
+    title: 'Bun',
+    description:
+      'Serve an @hulla/api contract directly from Bun with a Web-standard request handler.',
+  },
+  'deno.md': {
+    destination: 'runtimes/deno.mdx',
+    title: 'Deno',
+    description:
+      'Serve an @hulla/api contract through deno serve or an application-owned Deno listener.',
+  },
+  'vercel.md': {
+    destination: 'runtimes/vercel.mdx',
+    title: 'Vercel Functions',
+    description:
+      'Expose an @hulla/api contract from a standalone Vercel Function using the Web Handler API.',
   },
   'node-http.md': {
     destination: 'servers/node-http.mdx',
     title: 'Node.js HTTP',
     description:
-      'Mount a contract on the native Node HTTP server with streaming backpressure and native request context.',
+      'Turn a contract implementation into a Node HTTP listener with explicit body, stream, and server ownership.',
   },
   'express.md': {
     destination: 'servers/express.mdx',
     title: 'Express',
     description:
-      'Register compiled contract routes in Express while retaining Express request and response context.',
+      'Mount contract routes on an existing Express app or Router with host-owned middleware and body parsing.',
   },
   'fastify.md': {
     destination: 'servers/fastify.mdx',
     title: 'Fastify',
     description:
-      'Register native Fastify routes with typed request, reply, hooks, and plugin encapsulation.',
+      'Mount contract routes in the Fastify plugin scope that owns their hooks, parsers, decorators, and prefix.',
   },
   'hono.md': {
     destination: 'servers/hono.mdx',
     title: 'Hono',
     description:
-      'Mount native Hono routes and make bindings, variables, and context available to server handlers.',
+      "Mount contract routes in Hono's middleware flow with cached request bodies and typed native context.",
   },
   'h3.md': {
     destination: 'servers/h3.mdx',
     title: 'H3',
     description:
-      'Mount native H3 routes with event context and middleware across H3-supported runtimes.',
+      'Mount contract routes on an H3 v2 app with native middleware, event context, and explicit request-body ownership.',
   },
   'elysia.md': {
     destination: 'servers/elysia.mdx',
     title: 'Elysia',
     description:
-      'Register native Elysia routes while preserving lifecycle state, decorators, and stores.',
+      'Register contract routes on a caller-owned Elysia app with native lifecycle hooks and typed extensions.',
   },
   'koa.md': {
     destination: 'servers/koa.mdx',
     title: 'Koa',
     description:
-      'Mount an exhaustive implementation as Koa middleware with native context and streaming responses.',
+      'Mount contract routes as terminal Koa middleware with typed state, native context, and host-owned parsing.',
   },
   'nestjs.md': {
     destination: 'servers/nestjs.mdx',
@@ -153,7 +220,13 @@ const pages = {
     destination: 'full-stack/next.mdx',
     title: 'Next.js',
     description:
-      'Use App Router handlers, server-side clients, Data Cache policies, Server Actions, and browser Fetch clients.',
+      'Mount an @hulla/api implementation in an App Router Route Handler with native Next request context.',
+  },
+  'next-data.md': {
+    destination: 'full-stack/next-data.mdx',
+    title: 'Next.js data and caching',
+    description:
+      'Apply typed Next Data Cache policy and tags, invalidate server data, and keep browser caches separate.',
   },
   'tanstack-start.md': {
     destination: 'full-stack/tanstack-start.mdx',
@@ -165,7 +238,7 @@ const pages = {
     destination: 'full-stack/react-router.mdx',
     title: 'React Router',
     description:
-      'Serve a contract through Framework Mode resource routes and consume it from loaders and actions.',
+      'Mount a Framework Mode resource route and choose HTTP or colocated calls from loaders and actions.',
   },
   'solid-start.md': {
     destination: 'full-stack/solid-start.mdx',
@@ -177,13 +250,19 @@ const pages = {
     destination: 'full-stack/sveltekit.mdx',
     title: 'SvelteKit',
     description:
-      'Use catch-all endpoints, enhanced Fetch, or zero-hop remote functions with native RequestEvent context.',
+      'Mount catch-all endpoints, verify the HTTP boundary, and consume it with enhanced Fetch.',
+  },
+  'sveltekit-remote-functions.md': {
+    destination: 'full-stack/sveltekit-remote-functions.mdx',
+    title: 'SvelteKit remote functions',
+    description:
+      'Run contract calls inside SvelteKit query, command, or form callbacks without a second Fetch request.',
   },
   'nuxt.md': {
     destination: 'full-stack/nuxt.mdx',
     title: 'Nuxt',
     description:
-      'Mount a Nitro route and build a request-aware client for useAsyncData, events, and server handlers.',
+      'Mount a Nitro route and use a request-aware client with useAsyncData and browser events.',
   },
   'astro.md': {
     destination: 'full-stack/astro.mdx',
@@ -193,15 +272,21 @@ const pages = {
   },
   'cloudflare.md': {
     destination: 'runtimes/cloudflare.mdx',
-    title: 'Cloudflare',
+    title: 'Cloudflare Workers',
     description:
-      'Deploy to Module Workers or Pages Functions with native bindings, execution context, and asset fallback.',
+      'Mount contract routes in a Module Worker fetch handler with typed bindings and Web response ownership.',
+  },
+  'cloudflare-pages.md': {
+    destination: 'runtimes/cloudflare-pages.mdx',
+    title: 'Cloudflare Pages Functions',
+    description:
+      'Mount a contract beneath a Pages file route while keeping API misses separate from asset fallback.',
   },
   'aws-lambda.md': {
     destination: 'runtimes/aws-lambda.mdx',
     title: 'AWS Lambda',
     description:
-      'Serve a contract through API Gateway HTTP API v2 or a Lambda Function URL.',
+      'Mount a buffered Lambda proxy handler for API Gateway payload v2 or a Function URL.',
   },
   'azure-functions.md': {
     destination: 'runtimes/azure-functions.mdx',
@@ -213,13 +298,13 @@ const pages = {
     destination: 'runtimes/google-cloud-functions.mdx',
     title: 'Google Cloud Run functions',
     description:
-      'Register a Functions Framework HTTP function with native context and streaming response support.',
+      'Mount a Functions Framework HTTP entrypoint with raw-body decoding, native context, and response streaming.',
   },
   'netlify-functions.md': {
     destination: 'runtimes/netlify-functions.mdx',
     title: 'Netlify Functions',
     description:
-      'Expose a contract as a Web-native Netlify Function with platform context and deployment configuration.',
+      'Mount a contract under a Netlify function path with native context and Web responses.',
   },
 }
 
@@ -269,20 +354,94 @@ console.log(
 
 function transformMarkdown(markdown, source) {
   const withoutTitle = markdown.replace(/^# .+\n+/, '')
+  const packageManager = transformPackageManagerCommands(withoutTitle)
+  const alerts = transformAlerts(packageManager.body)
 
-  return withoutTitle.replace(/\]\((\.\.?\/[^)]+)\)/g, (match, target) => {
-    const [pathname, fragment = ''] = target.split('#')
-    const resolved = path.posix.normalize(
-      path.posix.join(path.posix.dirname(source), pathname)
-    )
-    const docsDestination = destinationForSource.get(resolved)
-    if (docsDestination) {
-      return `](/docs/api/${docsDestination}${fragment ? `#${fragment}` : ''})`
-    }
+  const transformed = alerts.body
+    .replace(/\]\((\.\.?\/[^)]+)\)/g, (match, target) => {
+      const [pathname, fragment = ''] = target.split('#')
+      const resolved = path.posix.normalize(
+        path.posix.join(path.posix.dirname(source), pathname)
+      )
+      const docsDestination = destinationForSource.get(resolved)
+      if (docsDestination) {
+        return `](/docs/api/${docsDestination}${fragment ? `#${fragment}` : ''})`
+      }
 
-    const repositoryPath = path.posix.normalize(
-      path.posix.join('docs', path.posix.dirname(source), pathname)
-    )
-    return `](${repositoryUrl}/${repositoryPath}${fragment ? `#${fragment}` : ''})`
+      const repositoryPath = path.posix.normalize(
+        path.posix.join('docs', path.posix.dirname(source), pathname)
+      )
+      return `](${repositoryUrl}/${repositoryPath}${fragment ? `#${fragment}` : ''})`
+    })
+    .replace(/\]\(https:\/\/hulla\.dev(\/docs\/api\/[^)]+)\)/g, ']($1)')
+
+  const imports = [packageManager.importStatement, ...alerts.imports].filter(
+    Boolean
+  )
+  return imports.length > 0
+    ? `${imports.join('\n')}\n\n${transformed}`
+    : transformed
+}
+
+function transformPackageManagerCommands(markdown) {
+  // Canonical Markdown keeps all four commands readable; the site renders the
+  // marked block through the shared, persisted package-manager tabs.
+  const pattern =
+    /<!-- docs:package-manager -->\n+```sh\n# Bun\n([^\n]+)\n\n# npm\n([^\n]+)\n\n# pnpm\n([^\n]+)\n\n# Yarn\n([^\n]+)\n```/
+  let found = false
+  const body = markdown.replace(pattern, (_match, bun, npm, pnpm, yarn) => {
+    found = true
+    return [
+      '<DocsPackageManagerCommand',
+      '  commands={{',
+      `    bun: ${JSON.stringify(bun)},`,
+      `    npm: ${JSON.stringify(npm)},`,
+      `    pnpm: ${JSON.stringify(pnpm)},`,
+      `    yarn: ${JSON.stringify(yarn)},`,
+      '  }}',
+      '/>',
+    ].join('\n')
   })
+
+  return {
+    body,
+    importStatement: found
+      ? `import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'`
+      : '',
+  }
+}
+
+function transformAlerts(markdown) {
+  const warningPattern = /^> \[!WARNING\]\n> \*\*(.+)\*\*\n>\n> (.+)$/gm
+  let foundWarning = false
+  const body = markdown.replace(
+    warningPattern,
+    (_match, title, description) => {
+      foundWarning = true
+      const alertDescription = description.replace(
+        /`([^`]+)`/g,
+        '<code>$1</code>'
+      )
+      return [
+        '<Alert variant="warning" role="alert">',
+        '  <AlertIcon><TriangleAlert /></AlertIcon>',
+        `  <AlertTitle>${title}</AlertTitle>`,
+        `  <AlertDescription>${alertDescription}</AlertDescription>`,
+        '</Alert>',
+      ].join('\n')
+    }
+  )
+
+  return {
+    body,
+    imports: foundWarning
+      ? [
+          `import Alert from '@/components/alert/alert.astro'`,
+          `import AlertDescription from '@/components/alert/alert-description.astro'`,
+          `import AlertIcon from '@/components/alert/alert-icon.astro'`,
+          `import AlertTitle from '@/components/alert/alert-title.astro'`,
+          `import { TriangleAlert } from '@lucide/astro'`,
+        ]
+      : [],
+  }
 }

@@ -1,5 +1,5 @@
 ---
-title: Fetch
+title: HTTP calls with Fetch
 description: Use Web-standard Request, Response, Headers, AbortSignal, and fetch as either a client transport or server adapter.
 usefulFor:
   - Your runtime or framework already exposes a Fetch-compatible request handler.
@@ -7,6 +7,8 @@ usefulFor:
 ---
 
 `@hulla/api/fetch` contains two independent boundaries. `fetchTransport()` turns typed client requests into Fetch calls. `fetchAdapter().mount()` turns a completed server implementation into a function from `Request` to `Promise<Response>`.
+
+The examples below continue the `contract` and `implementation` modules from the [quick start](/docs/api/quick-start).
 
 ## Mount a Fetch handler
 
@@ -23,16 +25,32 @@ Set `maxBodyBytes` when the adapter should impose a byte budget. The default is 
 
 ## Create a Fetch client
 
-```ts filename="src/api/client.ts"
+For a local verification, use the mounted handler as the transport's custom `fetch` function. The absolute test origin gives Node.js a valid `Request` URL; no server needs to listen on it.
+
+```ts filename="src/api/client.ts" focus={6-10}
 import { createClient } from '@hulla/api/client'
 import { fetchTransport } from '@hulla/api/fetch'
 import { contract } from './contract'
+import { handler } from './handler'
 
-export const api = createClient(contract, {
-  transport: fetchTransport({ baseUrl: 'https://api.example.com' }),
+const api = createClient(contract, {
+  transport: fetchTransport({
+    baseUrl: 'https://api.test',
+    fetch: handler,
+  }),
 })
 ```
 
-An omitted or relative `baseUrl` resolves against the document URL when the runtime supports relative `Request` objects. Node.js and most SSR modules should pass an absolute origin. Supply a custom `fetch` when the framework provides request-local dispatch or caching behavior.
+The generated client is unchanged by the custom `fetch`. Call it exactly as the application will:
+
+```ts filename="src/api/client.ts"
+const result = await api.createTask({
+  body: { title: 'Write the quick start' },
+})
+
+console.log(result.body.title) // Write the quick start
+```
+
+An omitted or relative `baseUrl` resolves against the document URL when the runtime supports relative `Request` objects. Node.js and most SSR modules should pass an absolute origin. Supply a custom `fetch` when the framework provides request-local dispatch or caching behavior. In a deployed application, replace the handler-backed `fetch` with the runtime's normal `fetch`; the client call and contract stay the same.
 
 Fetch is one adapter, not the universal internal representation. Use a native adapter when the host framework should own routing, parsed bodies, hooks, streaming, or native context without translating through a second Fetch request.

@@ -1,36 +1,45 @@
-import { defineContract, response, route } from '@hulla/api'
+import { defineContract, request, response, route } from '@hulla/api'
 import { createClient } from '@hulla/api/client'
 import { inProcessTransport } from '@hulla/api/in-process'
 import { defineServer } from '@hulla/api/server'
 import { z } from 'zod'
 
-const user = z.object({ id: z.string(), name: z.string() })
+const newTask = z.object({
+  title: z.string().min(1),
+})
+
+export const task = z.object({
+  id: z.string(),
+  title: z.string(),
+  completed: z.boolean(),
+})
 
 export const contract = defineContract({
   basePath: '/api',
   routes: {
-    user: route.get('/users/:id', {
-      params: z.object({ id: z.string().min(1) }),
+    createTask: route.post('/tasks', {
+      body: request.json(newTask),
       responses: {
-        200: response.json(user),
-        404: response.json(z.object({ message: z.string() })),
+        201: response.json(task),
       },
     }),
   },
 })
 
 export const implementation = defineServer(contract).implement({
-  user: ({ params, response }) =>
-    params.id === 'ada'
-      ? response(200, { id: 'ada', name: 'Ada' })
-      : response(404, { message: 'User not found' }),
+  createTask: ({ body, response }) =>
+    response(201, {
+      id: crypto.randomUUID(),
+      title: body.title,
+      completed: false,
+    }),
 })
 
 export const api = createClient(contract, {
   transport: inProcessTransport(implementation),
 })
 
-export async function readUser(id: string) {
-  const result = await api.user({ params: { id } })
-  return result.status === 200 ? result.body.name : result.body.message
+export async function createTask(title: string) {
+  const result = await api.createTask({ body: { title } })
+  return result.body
 }

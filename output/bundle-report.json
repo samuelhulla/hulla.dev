@@ -1,353 +1,428 @@
 {
-  "generatedAt": "2026-09-16T13:05:16.803Z",
+  "generatedAt": "2026-09-18T16:22:58.148Z",
   "summary": {
-    "routes": 56,
+    "routes": 71,
     "javascriptAssets": 15,
     "javascriptBytes": 530665,
-    "javascriptGzipBytes": 141601
+    "javascriptGzipBytes": 142389
   },
   "routes": [
     {
       "path": "cv/index.html",
       "bytes": 17390,
-      "gzipBytes": 3043
+      "gzipBytes": 3009
     },
     {
       "path": "docs/api/core/clients/index.html",
-      "bytes": 474648,
-      "gzipBytes": 32465
+      "bytes": 647259,
+      "gzipBytes": 37601
     },
     {
       "path": "docs/api/core/contracts/index.html",
-      "bytes": 404523,
-      "gzipBytes": 29254
+      "bytes": 596709,
+      "gzipBytes": 36236
     },
     {
       "path": "docs/api/core/errors/index.html",
-      "bytes": 461496,
-      "gzipBytes": 30789
+      "bytes": 627669,
+      "gzipBytes": 35808
     },
     {
       "path": "docs/api/core/index.html",
-      "bytes": 349992,
-      "gzipBytes": 24701
+      "bytes": 492364,
+      "gzipBytes": 29098
     },
     {
       "path": "docs/api/core/request-transport/index.html",
-      "bytes": 449716,
-      "gzipBytes": 31953
+      "bytes": 633745,
+      "gzipBytes": 35868
+    },
+    {
+      "path": "docs/api/core/server-composition/index.html",
+      "bytes": 597521,
+      "gzipBytes": 34499
+    },
+    {
+      "path": "docs/api/core/server-context/index.html",
+      "bytes": 562796,
+      "gzipBytes": 33749
     },
     {
       "path": "docs/api/core/servers/index.html",
-      "bytes": 598756,
-      "gzipBytes": 38717
+      "bytes": 536609,
+      "gzipBytes": 33012
     },
     {
       "path": "docs/api/core/value-round-trips/index.html",
-      "bytes": 475535,
-      "gzipBytes": 32817
+      "bytes": 592547,
+      "gzipBytes": 34825
     },
     {
       "path": "docs/api/full-stack/astro/index.html",
-      "bytes": 458980,
-      "gzipBytes": 31421
+      "bytes": 785445,
+      "gzipBytes": 42904
     },
     {
       "path": "docs/api/full-stack/hybrid-rendering/index.html",
-      "bytes": 415156,
-      "gzipBytes": 31623
+      "bytes": 542079,
+      "gzipBytes": 35274
     },
     {
       "path": "docs/api/full-stack/index.html",
-      "bytes": 351161,
-      "gzipBytes": 24761
+      "bytes": 493548,
+      "gzipBytes": 29126
+    },
+    {
+      "path": "docs/api/full-stack/next-data/index.html",
+      "bytes": 635115,
+      "gzipBytes": 37706
     },
     {
       "path": "docs/api/full-stack/next/index.html",
-      "bytes": 546350,
-      "gzipBytes": 35133
+      "bytes": 657776,
+      "gzipBytes": 37935
     },
     {
       "path": "docs/api/full-stack/nuxt/index.html",
-      "bytes": 556553,
-      "gzipBytes": 35469
+      "bytes": 809622,
+      "gzipBytes": 47840
     },
     {
       "path": "docs/api/full-stack/react-router/index.html",
-      "bytes": 499541,
-      "gzipBytes": 32806
+      "bytes": 733160,
+      "gzipBytes": 41114
     },
     {
       "path": "docs/api/full-stack/solid-start/index.html",
-      "bytes": 540863,
-      "gzipBytes": 36060
+      "bytes": 769398,
+      "gzipBytes": 43249
+    },
+    {
+      "path": "docs/api/full-stack/sveltekit-remote-functions/index.html",
+      "bytes": 660142,
+      "gzipBytes": 38433
     },
     {
       "path": "docs/api/full-stack/sveltekit/index.html",
-      "bytes": 531526,
-      "gzipBytes": 35475
+      "bytes": 698569,
+      "gzipBytes": 39120
     },
     {
       "path": "docs/api/full-stack/tanstack-start/index.html",
-      "bytes": 512813,
-      "gzipBytes": 34074
+      "bytes": 756865,
+      "gzipBytes": 40994
     },
     {
       "path": "docs/api/index.html",
-      "bytes": 383317,
-      "gzipBytes": 30109
+      "bytes": 526764,
+      "gzipBytes": 33631
     },
     {
       "path": "docs/api/installation/index.html",
-      "bytes": 398195,
-      "gzipBytes": 28463
+      "bytes": 549076,
+      "gzipBytes": 34773
+    },
+    {
+      "path": "docs/api/integrations/control/index.html",
+      "bytes": 610711,
+      "gzipBytes": 35567
     },
     {
       "path": "docs/api/integrations/index.html",
-      "bytes": 347835,
-      "gzipBytes": 24453
+      "bytes": 490053,
+      "gzipBytes": 28739
+    },
+    {
+      "path": "docs/api/integrations/openapi/export/index.html",
+      "bytes": 643635,
+      "gzipBytes": 38165
+    },
+    {
+      "path": "docs/api/integrations/openapi/import/index.html",
+      "bytes": 696647,
+      "gzipBytes": 40741
     },
     {
       "path": "docs/api/integrations/openapi/index.html",
-      "bytes": 456047,
-      "gzipBytes": 30335
+      "bytes": 496789,
+      "gzipBytes": 30219
     },
     {
       "path": "docs/api/integrations/query-libraries/index.html",
-      "bytes": 408939,
-      "gzipBytes": 28624
+      "bytes": 517659,
+      "gzipBytes": 32224
+    },
+    {
+      "path": "docs/api/integrations/swr/index.html",
+      "bytes": 693525,
+      "gzipBytes": 41634
+    },
+    {
+      "path": "docs/api/integrations/tanstack-query/index.html",
+      "bytes": 644154,
+      "gzipBytes": 39122
     },
     {
       "path": "docs/api/mental-model/index.html",
-      "bytes": 427927,
-      "gzipBytes": 31865
+      "bytes": 520814,
+      "gzipBytes": 34313
     },
     {
       "path": "docs/api/quick-start/index.html",
-      "bytes": 425189,
-      "gzipBytes": 29118
+      "bytes": 571216,
+      "gzipBytes": 33913
     },
     {
       "path": "docs/api/reference/adapter-conformance/index.html",
-      "bytes": 396576,
-      "gzipBytes": 32429
+      "bytes": 519446,
+      "gzipBytes": 34076
     },
     {
       "path": "docs/api/reference/architecture/index.html",
-      "bytes": 386993,
-      "gzipBytes": 30213
+      "bytes": 522258,
+      "gzipBytes": 32862
     },
     {
       "path": "docs/api/reference/exports/index.html",
-      "bytes": 363438,
-      "gzipBytes": 26020
+      "bytes": 501931,
+      "gzipBytes": 30011
     },
     {
       "path": "docs/api/reference/index.html",
-      "bytes": 348466,
-      "gzipBytes": 24490
+      "bytes": 490108,
+      "gzipBytes": 28794
+    },
+    {
+      "path": "docs/api/reference/migration/index.html",
+      "bytes": 533003,
+      "gzipBytes": 33647
     },
     {
       "path": "docs/api/runtimes/aws-lambda/index.html",
-      "bytes": 437905,
-      "gzipBytes": 29993
+      "bytes": 667443,
+      "gzipBytes": 40904
     },
     {
       "path": "docs/api/runtimes/azure-functions/index.html",
-      "bytes": 440443,
-      "gzipBytes": 30085
+      "bytes": 671637,
+      "gzipBytes": 41080
+    },
+    {
+      "path": "docs/api/runtimes/bun/index.html",
+      "bytes": 603089,
+      "gzipBytes": 34734
+    },
+    {
+      "path": "docs/api/runtimes/cloudflare-pages/index.html",
+      "bytes": 665623,
+      "gzipBytes": 39798
     },
     {
       "path": "docs/api/runtimes/cloudflare/index.html",
-      "bytes": 506675,
-      "gzipBytes": 33531
+      "bytes": 658244,
+      "gzipBytes": 39106
+    },
+    {
+      "path": "docs/api/runtimes/deno/index.html",
+      "bytes": 629345,
+      "gzipBytes": 36541
     },
     {
       "path": "docs/api/runtimes/google-cloud-functions/index.html",
-      "bytes": 438693,
-      "gzipBytes": 29954
+      "bytes": 674406,
+      "gzipBytes": 41650
     },
     {
       "path": "docs/api/runtimes/index.html",
-      "bytes": 350045,
-      "gzipBytes": 24601
+      "bytes": 493361,
+      "gzipBytes": 29120
     },
     {
       "path": "docs/api/runtimes/netlify-functions/index.html",
-      "bytes": 442623,
-      "gzipBytes": 30105
+      "bytes": 687181,
+      "gzipBytes": 42379
     },
     {
       "path": "docs/api/runtimes/runtime-hosts/index.html",
-      "bytes": 352241,
-      "gzipBytes": 25382
+      "bytes": 509402,
+      "gzipBytes": 32172
+    },
+    {
+      "path": "docs/api/runtimes/vercel/index.html",
+      "bytes": 643686,
+      "gzipBytes": 37555
     },
     {
       "path": "docs/api/servers/elysia/index.html",
-      "bytes": 459546,
-      "gzipBytes": 31339
+      "bytes": 670646,
+      "gzipBytes": 39795
     },
     {
       "path": "docs/api/servers/express/index.html",
-      "bytes": 500902,
-      "gzipBytes": 34480
+      "bytes": 676226,
+      "gzipBytes": 40347
     },
     {
       "path": "docs/api/servers/fastify/index.html",
-      "bytes": 466004,
-      "gzipBytes": 31226
+      "bytes": 678330,
+      "gzipBytes": 38943
     },
     {
       "path": "docs/api/servers/h3/index.html",
-      "bytes": 452280,
-      "gzipBytes": 31079
+      "bytes": 684558,
+      "gzipBytes": 40801
     },
     {
       "path": "docs/api/servers/hono/index.html",
-      "bytes": 463578,
-      "gzipBytes": 31451
+      "bytes": 684786,
+      "gzipBytes": 40698
     },
     {
       "path": "docs/api/servers/index.html",
-      "bytes": 351005,
-      "gzipBytes": 24725
+      "bytes": 492290,
+      "gzipBytes": 28986
     },
     {
       "path": "docs/api/servers/koa/index.html",
-      "bytes": 377278,
-      "gzipBytes": 27746
+      "bytes": 626433,
+      "gzipBytes": 36968
     },
     {
       "path": "docs/api/servers/nestjs/index.html",
-      "bytes": 365300,
-      "gzipBytes": 27389
+      "bytes": 646640,
+      "gzipBytes": 38112
     },
     {
       "path": "docs/api/servers/node-http/index.html",
-      "bytes": 454445,
-      "gzipBytes": 30962
+      "bytes": 660148,
+      "gzipBytes": 38746
     },
     {
       "path": "docs/api/start-here/index.html",
-      "bytes": 349471,
-      "gzipBytes": 24662
+      "bytes": 490600,
+      "gzipBytes": 28888
     },
     {
       "path": "docs/api/start/migration/index.html",
-      "bytes": 407261,
-      "gzipBytes": 30536
+      "bytes": 552067,
+      "gzipBytes": 33792
+    },
+    {
+      "path": "docs/api/tooling/index.html",
+      "bytes": 489590,
+      "gzipBytes": 28700
     },
     {
       "path": "docs/api/transports/desktop-bridges/index.html",
-      "bytes": 407119,
-      "gzipBytes": 29455
+      "bytes": 688827,
+      "gzipBytes": 41196
     },
     {
       "path": "docs/api/transports/fetch/index.html",
-      "bytes": 372398,
-      "gzipBytes": 27039
+      "bytes": 527998,
+      "gzipBytes": 31953
     },
     {
       "path": "docs/api/transports/in-process/index.html",
-      "bytes": 362488,
-      "gzipBytes": 26745
+      "bytes": 509251,
+      "gzipBytes": 31292
     },
     {
       "path": "docs/api/transports/index.html",
-      "bytes": 349394,
-      "gzipBytes": 24627
+      "bytes": 495056,
+      "gzipBytes": 29676
     },
     {
       "path": "docs/api/transports/message-port/index.html",
-      "bytes": 412455,
-      "gzipBytes": 29457
+      "bytes": 633745,
+      "gzipBytes": 39258
     },
     {
       "path": "docs/api/transports/websocket/index.html",
-      "bytes": 366599,
-      "gzipBytes": 27360
+      "bytes": 613672,
+      "gzipBytes": 38577
     },
     {
       "path": "docs/cli/index.html",
-      "bytes": 91787,
-      "gzipBytes": 13996
+      "bytes": 96407,
+      "gzipBytes": 15092
     },
     {
       "path": "docs/index.html",
       "bytes": 8509,
-      "gzipBytes": 2772
+      "gzipBytes": 2775
     },
     {
       "path": "docs/ui/index.html",
-      "bytes": 122642,
-      "gzipBytes": 17242
+      "bytes": 127262,
+      "gzipBytes": 18348
     },
     {
       "path": "index.html",
       "bytes": 26517,
-      "gzipBytes": 5600
+      "gzipBytes": 5619
     }
   ],
   "javascript": [
     {
       "path": "pagefind/pagefind-component-ui.js",
       "bytes": 175488,
-      "gzipBytes": 39160
+      "gzipBytes": 39276
     },
     {
       "path": "pagefind/pagefind-ui.js",
       "bytes": 119987,
-      "gzipBytes": 29950
+      "gzipBytes": 30210
     },
     {
       "path": "_astro/SearchCommand.DLc6teUl.js",
       "bytes": 49652,
-      "gzipBytes": 17674
+      "gzipBytes": 17854
     },
     {
       "path": "pagefind/pagefind.js",
       "bytes": 45555,
-      "gzipBytes": 12859
+      "gzipBytes": 12961
     },
     {
       "path": "pagefind/pagefind-highlight.js",
       "bytes": 44352,
-      "gzipBytes": 9622
+      "gzipBytes": 9680
     },
     {
       "path": "pagefind/pagefind-worker.js",
       "bytes": 41255,
-      "gzipBytes": 11912
+      "gzipBytes": 12016
     },
     {
       "path": "_astro/web.cH3BUdii.js",
       "bytes": 23809,
-      "gzipBytes": 9107
+      "gzipBytes": 9094
     },
     {
       "path": "pagefind/pagefind-modular-ui.js",
       "bytes": 14634,
-      "gzipBytes": 4248
+      "gzipBytes": 4244
     },
     {
       "path": "_astro/client.BHmM2w5Y.js",
       "bytes": 6045,
-      "gzipBytes": 2510
+      "gzipBytes": 2506
     },
     {
       "path": "_astro/dialog.vCHqG-4n.js",
       "bytes": 3370,
-      "gzipBytes": 1466
+      "gzipBytes": 1457
     },
     {
       "path": "_astro/tabs.RI0F3sk0.js",
       "bytes": 2867,
-      "gzipBytes": 1214
+      "gzipBytes": 1211
     },
     {
       "path": "_astro/page.D6Rx8f8Z.js",
       "bytes": 2490,
-      "gzipBytes": 1123
+      "gzipBytes": 1121
     },
     {
       "path": "_astro/DocsPackageManagerCommand.astro_astro_type_script_index_0_lang.CuRUDZui.js",
@@ -362,7 +437,7 @@
     {
       "path": "_astro/dialog.astro_astro_type_script_index_0_lang.B35PgI2f.js",
       "bytes": 275,
-      "gzipBytes": 195
+      "gzipBytes": 198
     }
   ]
 }

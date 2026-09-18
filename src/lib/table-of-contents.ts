@@ -35,7 +35,7 @@ export function connectTableOfContents(nav: HTMLElement) {
     sections = target
       ? Array.from(
           target.querySelectorAll<HTMLElement>(
-            '[data-slot="table-of-contents-section"][id][data-toc-label]'
+            '[data-slot="table-of-contents-section"][id][data-toc-label], [data-toc-section][id][data-toc-label]'
           )
         )
       : []
@@ -177,6 +177,7 @@ export function connectTableOfContents(nav: HTMLElement) {
     attributeFilter: [
       'id',
       'data-toc-label',
+      'data-toc-section',
       'data-toc-for',
       'data-toc-offset',
       'hidden',

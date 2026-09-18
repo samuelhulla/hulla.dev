@@ -1,24 +1,31 @@
 ---
-title: 'Errors'
-description: 'Model declared application failures separately from validation, transport, implementation, and runtime failures.'
+title: 'Error handling'
+description: 'Keep expected application failures typed while giving validation, transport, and runtime failures one inspectable shape.'
 ---
 
-Application failures and operational failures are separate concepts in @hulla/api.
+import Alert from '@/components/alert/alert.astro'
+import AlertDescription from '@/components/alert/alert-description.astro'
+import AlertTitle from '@/components/alert/alert-title.astro'
 
-## Declared application errors
+Not every non-success result is an exception. `@hulla/api` separates failures a client is expected to handle from failures that mean the boundary itself broke.
 
-`defineErrors()` defines a named group without assigning transport status:
+- **Declared errors** are application outcomes such as `UNAUTHORIZED` or `PROJECT_NOT_FOUND`.
+- **Operational errors** cover invalid schemas, unexpected responses, incomplete implementations, and runtime failures.
 
-```ts
-import { defineContract, defineErrors } from '@hulla/api'
+## Declare expected application failures
+
+Define an error once, then assign it to a status in the contract:
+
+```ts filename="src/api/contract.ts" {4-12,15-18}
+import { defineContract, defineErrors, response, route } from '@hulla/api'
 import { z } from 'zod'
 
 export const errors = defineErrors({
   UNAUTHORIZED: {
     message: 'Authentication required',
   },
-  ITEM_NOT_FOUND: {
-    message: 'Item not found',
+  PROJECT_NOT_FOUND: {
+    message: 'Project not found',
     data: z.object({ id: z.string() }),
   },
 })
@@ -26,122 +33,162 @@ export const errors = defineErrors({
 export const contract = defineContract({
   errors: {
     401: errors.UNAUTHORIZED,
-    404: errors.ITEM_NOT_FOUND,
+    404: errors.PROJECT_NOT_FOUND,
   },
-  routes,
+  routes: {
+    project: route.get('/projects/:id', {
+      params: z.object({ id: z.string() }),
+      responses: {
+        200: response.json(z.object({ id: z.string(), name: z.string() })),
+      },
+    }),
+  },
 })
 ```
 
-Each member is an independent callable declaration. Calling it creates a fresh `DeclaredError`; its default message can be overridden per occurrence:
+The declaration key becomes the stable error `code`. `message` is the human-readable default, and `data` holds the typed details that vary per occurrence.
 
-```ts
-throw errors.UNAUTHORIZED({ message: 'Your session expired' })
-return errors.ITEM_NOT_FOUND({ data: { id } })
+<Alert variant="warning">
+  <AlertTitle>Error data crosses the boundary</AlertTitle>
+  <AlertDescription>
+    Messages and data may reach the client. Do not include secrets, raw database
+    errors, access tokens, or internal stack details.
+  </AlertDescription>
+</Alert>
+
+## Return the error from a handler
+
+The implementation receives only the errors available to that route:
+
+```ts filename="src/api/implementation.ts" {8-13}
+import { defineServer } from '@hulla/api/server'
+import { contract } from './contract'
+
+const projects = new Map([['docs', { id: 'docs', name: 'Documentation' }]])
+
+export const implementation = defineServer(contract).implement({
+  project: ({ params, errors, response }) => {
+    const project = projects.get(params.id)
+
+    if (!project) {
+      return errors.PROJECT_NOT_FOUND({ data: { id: params.id } })
+    }
+
+    return response(200, project)
+  },
+})
 ```
 
-`message` is optional in the declaration; when omitted, the error code is the default. There is no separate `title` field in the application-error wire shape.
+Returning and throwing a declared error are both supported. Return it for ordinary branching; throw it when the failure must escape nested application code.
 
-Both forms produce the same concise JSON body once the declaration crosses an HTTP contract boundary:
+On HTTP, the missing project becomes concise JSON:
 
 ```json
 {
-  "code": "ITEM_NOT_FOUND",
-  "message": "Item not found",
-  "data": { "id": "item-1" }
+  "code": "PROJECT_NOT_FOUND",
+  "message": "Project not found",
+  "data": { "id": "missing" }
 }
 ```
 
-The declaration key supplies the stable code, so users do not repeat it in a literal schema. Only variable `data` needs a Standard Schema. A status accepts a single declaration directly; use an array only when several distinct errors share that status:
+Several named errors may share one status. Put them in an array under that status, then narrow by both `status` and `body.code` on the client.
 
-```ts
-errors: {
-  404: [errors.ITEM_NOT_FOUND, errors.ORGANIZATION_NOT_FOUND],
+## Handle declared errors as values
+
+This is the default client behavior:
+
+```ts filename="src/features/project-page.ts" {3-9}
+const result = await api.project({ params: { id } })
+
+if (result.status === 200) {
+  renderProject(result.body)
+} else if (result.body.code === 'PROJECT_NOT_FOUND') {
+  showMissingProject(result.body.data.id)
+} else {
+  showSignIn()
 }
 ```
 
-One declaration cannot be assigned to several statuses in the same contract.
+The client can see only statuses and error codes declared by its contract selection. Ordinary application control flow stays in the resolved result.
 
-Clients return declared errors as typed response values by default. Applications that prefer exception control flow can opt in once when defining the client:
+## Opt into exception control flow
 
-```ts
-const client = createClient(contract, {
+Set `errorMode: 'throw'` when the application already centralizes expected failures in an error boundary or interceptor:
+
+```ts filename="src/api/client.ts" {3-6,12-15}
+import { isDeclaredError } from '@hulla/api'
+
+const api = createClient(contract, {
   transport,
   errorMode: 'throw',
 })
+
+try {
+  await api.project({ params: { id: 'missing' } })
+} catch (error) {
+  if (!isDeclaredError(error)) throw error
+
+  console.log(error.code, error.message, error.data)
+}
 ```
 
-In `throw` mode, a declared failure is reconstructed as a `DeclaredError`; successful route return types no longer include the declared error response union.
+In throw mode, the successful result union no longer includes declared errors. Transport and runtime failures still need their own handling.
 
-## Operational errors
+## Inspect operational failures
 
-@hulla/api operational errors use one structural interface:
+Operational errors share the structural `APIError` interface:
 
 ```ts
 type APIError = Error & {
   readonly code: string
   readonly issues: readonly APIErrorIssue[]
 }
-
-type APIErrorIssue = {
-  readonly message: string
-  readonly path?: readonly (PropertyKey | { readonly key: PropertyKey })[]
-  readonly code?: unknown // vendor-defined; @hulla/api-created issue codes are strings
-  readonly location?:
-    'body' | 'headers' | 'input' | 'output' | 'params' | 'query' | 'response'
-}
 ```
 
-`APIErrorIssue` extends the Standard Schema issue shape. Validator messages, paths, and vendor metadata therefore flow through @hulla/api without translation, with boundary metadata added when core knows where validation occurred. Applications do not need a separate validation-error representation.
+Each issue has a `message` and may include a path, vendor code, and boundary location such as `params`, `body`, `response`, or `output`.
 
-The error `code` identifies the broad failure. An issue `code` identifies a specific leaf failure and may come from the schema vendor. For example, a Zod response failure has the error code `schema-validation`, issue location `response`, and may retain an issue code such as `invalid_type`.
+Use `isAPIError()` instead of `instanceof`. A structural guard keeps working across duplicated packages and JavaScript realms.
 
-## Narrowing unknown failures
-
-Use the structural guard rather than relying on `instanceof` across package or JavaScript realm boundaries:
-
-```ts
+```ts filename="src/api/report-error.ts" {5-12}
 import { isAPIError } from '@hulla/api/errors'
 
-try {
-  await operation()
-} catch (error) {
+export function reportError(error: unknown) {
   if (!isAPIError(error)) throw error
 
   console.error(error.code)
+
   for (const issue of error.issues) {
     console.error(issue.location, issue.path, issue.message)
   }
 }
 ```
 
-Application and integration errors can participate in the same convention by exposing an error name, message, string code, and issue array. `annotateAPIErrorIssues()` copies and freezes Standard Schema-compatible issues while adding default code or location metadata.
+The main operational classes answer different questions:
 
-## Core errors
+- `SchemaValidationError`: which Standard Schema check failed?
+- `ContractError`: which HTTP contract location was invalid?
+- `ClientResponseError`: why could the client not accept the transport response?
+- `ServerImplementationError`: which handlers are missing or duplicated?
+- `ServerRuntimeError`: which request/runtime failure maps to an HTTP status?
+- `QueryTransportError`: which query value could not cross the URL boundary?
 
-| Error                       | Error codes                 | Additional navigation                                   |
-| --------------------------- | --------------------------- | ------------------------------------------------------- |
-| `SchemaValidationError`     | `schema-validation`         | optional boundary `location`; validator paths and codes |
-| `ContractError`             | `schema-validation`         | required HTTP contract `location`                       |
-| `QueryTransportError`       | query transport code        | `key` and a query-located issue                         |
-| `ClientResponseError`       | client response code        | original `Response` and a response-located issue        |
-| `ServerImplementationError` | server implementation code  | `handlerKeys` and one issue per affected handler        |
-| `ServerRuntimeError`        | server request/runtime code | HTTP `status` plus an optional boundary location        |
+Invalid authoring arguments remain ordinary `TypeError` values. The structured interface is for failures an integration or application policy may need to inspect.
 
-Invalid authoring arguments remain ordinary `TypeError` values. The structured interface is for failures that integrations and application error policies need to inspect programmatically.
+## Convert an operational error to a protocol problem
 
-## Protocol problems
+`toAPIProblem()` turns an `APIError` into JSON-safe data. It preserves codes and issue locations while normalizing paths and symbols.
 
-`toAPIProblem()` converts any `APIError` into the JSON-safe `APIProblem` representation. It normalizes Standard Schema path segments and symbols while preserving error codes, issue codes, and locations:
-
-```ts
+```ts filename="src/api/problem.ts" {5-9}
 import { isAPIError, toAPIProblem } from '@hulla/api/errors'
 
-if (isAPIError(error)) {
-  const problem = toAPIProblem(error, {
+export function toProblem(error: unknown) {
+  if (!isAPIError(error)) throw error
+
+  return toAPIProblem(error, {
     status: 400,
     title: 'Invalid request',
   })
 }
 ```
 
-Server execution and adapters can use this conversion without defining a second issue format.
+Use that conversion at an application-owned protocol boundary. Do not turn every declared application error into an operational problem; they already have a typed contract representation.

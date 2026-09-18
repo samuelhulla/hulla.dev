@@ -1,5 +1,6 @@
 import { getCollection, type CollectionEntry } from 'astro:content'
 import { apiDocs } from '@/data/docs'
+import { renderDocGroupMarkdown } from '@/lib/doc-group-markdown'
 import { renderMarkdownDocument } from '@/lib/docs-markdown'
 
 export const SITE_ORIGIN = 'https://hulla.dev'
@@ -33,12 +34,7 @@ export async function loadAiDocs(): Promise<AiDoc[]> {
       markdown: renderMarkdownDocument({
         title: group.title,
         description: group.description,
-        body: group.entries
-          .map(
-            (entry) =>
-              `- [${entry.title}](${SITE_ORIGIN}${entry.href}.md): ${entry.description}`
-          )
-          .join('\n'),
+        body: renderDocGroupMarkdown(group, SITE_ORIGIN),
       }),
     })
 

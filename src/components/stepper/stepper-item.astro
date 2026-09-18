@@ -1,0 +1,21 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = Omit<HTMLAttributes<'li'>, 'aria-current'> & {
+  state?: 'upcoming' | 'current' | 'complete'
+}
+const { class: className, state = 'upcoming', ...props } = Astro.props as Props
+---
+
+<li
+  {...props}
+  data-state={state}
+  aria-current={state === 'current' ? 'step' : undefined}
+  data-slot="stepper-item"
+  class={cn(
+    'group/step relative min-w-0 flex-1 border-t-2 border-foreground/15 pt-4 text-muted-foreground data-[state=current]:border-foreground data-[state=current]:text-foreground data-[state=complete]:border-foreground/40 data-[state=complete]:text-foreground group-data-[orientation=vertical]/stepper:flex-none group-data-[orientation=vertical]/stepper:border-t-0 group-data-[orientation=vertical]/stepper:border-l-2 group-data-[orientation=vertical]/stepper:py-1 group-data-[orientation=vertical]/stepper:pl-5 group-data-[variant=ordered]/stepper:grid group-data-[variant=ordered]/stepper:grid-cols-[2.25rem_minmax(0,1fr)] group-data-[variant=ordered]/stepper:gap-x-4 group-data-[variant=ordered]/stepper:border-0 group-data-[variant=ordered]/stepper:p-0 group-data-[variant=ordered]/stepper:text-foreground group-data-[variant=ordered]/stepper:after:absolute group-data-[variant=ordered]/stepper:after:top-10 group-data-[variant=ordered]/stepper:after:bottom-0 group-data-[variant=ordered]/stepper:after:left-[calc(1.125rem-0.0625rem)] group-data-[variant=ordered]/stepper:after:w-0.5 group-data-[variant=ordered]/stepper:after:bg-border group-data-[variant=ordered]/stepper:last:after:hidden',
+    className
+  )}>
+  <slot />
+</li>

@@ -7,5 +7,5 @@ export const query = createTanStackQuery(api, {
 })
 export const swr = createSWR(api, { prefix: ['example'] })
 
-export const userQuery = query.user.queryOptions({ params: { id: 'ada' } })
-export const userSWR = swr.user.queryOptions({ params: { id: 'ada' } })
+export const taskMutation = query.createTask.mutationOptions()
+export const taskSWRMutation = swr.createTask.mutationOptions()

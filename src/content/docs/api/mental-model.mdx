@@ -1,94 +1,86 @@
 ---
 title: Mental model
-description: Separate declarations, implementations, adapters, clients, and transports so each runtime owns only the work it can perform correctly.
+description: See how the contract, client, transport, adapter, and server implementation fit together—and which file owns each decision.
 usefulFor:
-  - You are deciding what belongs in a shared contract versus a server module.
-  - You need to choose between Fetch, a native adapter, and a zero-network transport.
+  - You are deciding what belongs in shared, client, server, or host code.
+  - You need to choose a transport or understand the request lifecycle.
 ---
 
-import DocsConceptFlow from '@/components/docs/DocsConceptFlow.astro'
-import DocsProjectBoundary from '@/components/docs/DocsProjectBoundary.astro'
+import DocsApiArchitecture from '@/components/docs/DocsApiArchitecture.astro'
 
-Start with a contract, not a server. The contract describes what crosses a boundary. A server implementation supplies behavior for the selected contract. An adapter translates between that portable implementation and a host. A client constructs typed calls, while its transport decides how those calls reach the server.
+`@hulla/api` has one shared description and two runtime halves. The contract types both halves, but it performs no I/O and contains no business logic.
 
-## Follow one call in each direction
+<DocsApiArchitecture />
 
-<DocsConceptFlow
-  label="Client request lifecycle"
-  steps={[
-    {
-      title: 'Select a route',
-      description:
-        'The client leaf already knows its contract key, method, path, and declared representations.',
-      example: 'api.users.byId({ params: { id } })',
-    },
-    {
-      title: 'Encode and enrich',
-      description:
-        'Codecs encode application values; client context and middleware may add headers or reject the call.',
-      example: 'codec.encode → middleware → transport',
-    },
-    {
-      title: 'Cross one transport',
-      description:
-        'Fetch, in-process, MessagePort, or WebSocket performs exactly one invocation.',
-      example: 'transport(request)',
-    },
-    {
-      title: 'Decode the response',
-      description:
-        'Declared headers and bodies become a status-discriminated result; unknown statuses reject.',
-      example: 'if (result.status === 200) result.body',
-    },
-  ]}
-/>
+The client side asks for a route. The server side implements it. A transport and adapter meet in the middle to carry that call across the boundary your application actually has.
 
-<DocsConceptFlow
-  label="Server request lifecycle"
-  steps={[
-    {
-      title: 'Route in the host',
-      description:
-        'Native adapters use the framework router; catch-all adapters use the shared route matcher.',
-      example: 'GET /api/users/:id',
-    },
-    {
-      title: 'Decode declared fields',
-      description:
-        'Parameters, query, headers, and body are processed in order and stop on failure.',
-      example: 'params → query → headers → body',
-    },
-    {
-      title: 'Create context and run',
-      description:
-        'Request context and scoped middleware wrap the selected exhaustive handler.',
-      example: 'context → middleware → handler',
-    },
-    {
-      title: 'Validate and write',
-      description:
-        'The declared status selects the response representation before the adapter writes it.',
-      example: 'response(200, body) → host response',
-    },
-  ]}
-/>
+## Put each decision in one place
 
-## Schemas have a direction
+| File                            | Runtime     | Put this here                                                   |
+| ------------------------------- | ----------- | --------------------------------------------------------------- |
+| `src/api/contract.ts`           | Shared      | Paths, inputs, statuses, bodies, errors, schemas, and codecs    |
+| `src/api/implementation.ts`     | Server only | Handlers, services, authorization, and server middleware        |
+| `src/api/client.ts`             | Caller      | `createClient()`, client middleware, and the selected transport |
+| Framework route or server entry | Host only   | Adapter mounting and native request context                     |
 
-An ordinary request schema accepts the client's wire-shaped value and exposes its validated output to the server handler. An ordinary response schema accepts the handler value, validates or transforms it on the server, and sends that output to the client. The client does not rerun the response schema.
+The contract is safe to publish as a package or import into browser code. The implementation is not: it can reach databases, secrets, queues, and framework state.
 
-Use `codec(wireSchema, applicationSchema, { encode, decode })` when client and server should both work with a richer application value such as `Date` while the transport carries a string. Use type-only `request.json<T>()` and `response.json<T>()` when native JSON parsing and static types are enough; a type argument does not add runtime validation.
+That split is deliberate. A frontend team can compile against the boundary without gaining access to the server module that fulfills it.
 
-## Selections are real contract nodes
+## Follow one call
 
-The root contract, every mounted router, and every route expose immutable `$contract` metadata. Pass any selection directly to `createClient()` or `server.implement(selection, handlers)`. Selections retain inherited paths, parameter schemas, errors, and structural keys.
+1. **The client selects a route.** The route already knows its method, path, accepted request fields, and possible responses.
+2. **Client middleware prepares the call.** It can add auth headers, tracing data, or cancellation without changing the contract.
+3. **One transport crosses the boundary.** Fetch serializes HTTP; in-process dispatches locally; MessagePort and WebSocket use their own protocols.
+4. **The adapter enters the host.** A native adapter lets Express, Hono, or another framework keep its router and native context. A Fetch adapter matches a Web `Request` itself.
+5. **The server validates and runs the handler.** Request fields are decoded before business logic. The handler can return only a declared response or error.
+6. **The client receives a typed result.** The status discriminates the body, so checking `result.status` narrows both together.
 
-There is no client builder or client composition lifecycle. Create clients from the selections a module needs, and use normal module boundaries for code splitting. Server composition remains explicit and exhaustive because every deployable implementation must cover its selected routes.
+```ts filename="src/features/projects.ts" focus={1-7}
+const result = await api.projects.byId({ params: { id } })
 
-## Native state stays at the adapter boundary
+if (result.status === 200) {
+  renderProject(result.body)
+} else {
+  showNotFound(result.body.message)
+}
+```
 
-Portable handlers do not receive a Fetch request, Express request, Hono context, or framework event. When a handler needs native state, create the server definition with that adapter's typed `context()` helper and expose only the application context your handlers need.
+There is no generated client and no hidden global router. The client is a typed view of the contract plus a transport.
 
-<DocsProjectBoundary />
+## Choose the middle boundary
 
-This keeps framework imports out of the contract and makes an incompatible mount fail during setup. Continue with [contracts](/docs/api/core/contracts), then [server implementations](/docs/api/core/servers) or [typed clients](/docs/api/core/clients).
+### Use in-process when both sides share a safe server runtime
+
+Server-rendered pages, background jobs, and tests can call the completed implementation without opening a socket. The call still runs validation, middleware, handlers, declared errors, and codecs.
+
+Do not import an in-process client into browser code: it imports the server implementation with it.
+
+### Use Fetch when HTTP is already the boundary
+
+Browsers, services, edge runtimes, and Web-standard routes fit `fetchTransport()` and `fetchAdapter()`. The host owns the origin and deployment; the adapter owns contract matching and conversion.
+
+### Use a native adapter when framework behavior should stay native
+
+Express, Fastify, Hono, H3, Elysia, Koa, NestJS, and full-stack frameworks can keep their router, hooks, parsed bodies, response writer, and request context. The adapter connects those native objects to the portable implementation.
+
+### Use MessagePort or WebSocket for a different process boundary
+
+Workers and desktop shells often already have a port. Long-lived remote clients may already have a socket. These transports preserve the same client call shape without pretending the boundary is Fetch.
+
+## Validation follows direction
+
+A request schema runs on the server after the transport decodes the request. A response schema runs on the server before the adapter sends the response.
+
+The client does not rerun those ordinary schemas. If both sides should work with a richer value than the wire can carry—`Date` in memory and an ISO string in transit—use a codec with explicit encode and decode directions.
+
+Type-only declarations skip application-shape validation altogether. They still use the selected representation, so malformed JSON remains malformed JSON; TypeScript alone does not make untrusted data safe.
+
+## Four rules prevent most mistakes
+
+- Keep framework imports, database clients, and secrets out of the contract module.
+- Use ordinary functions when no contract boundary is needed.
+- Treat declared non-`2xx` responses as expected values; reserve thrown failures for transport, schema, and unexpected runtime problems.
+- Select the smallest contract subtree a client or server module needs.
+
+From here, learn how to [author contracts](/docs/api/core/contracts), [implement servers](/docs/api/core/servers), or [build typed clients](/docs/api/core/clients). If you already know your boundary, jump directly to [transports](/docs/api/transports) or [server adapters](/docs/api/servers).

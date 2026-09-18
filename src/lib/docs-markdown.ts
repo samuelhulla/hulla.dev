@@ -81,7 +81,7 @@ export function cleanMdxForAgents(source: string): string {
 }
 
 function transformChildren(children: readonly LooseNode[]): LooseNode[] {
-  return children.flatMap((node) => {
+  return children.flatMap((node): LooseNode[] => {
     if (node.type === 'mdxjsEsm') return []
 
     if (node.type === 'mdxJsxFlowElement') {
@@ -89,6 +89,17 @@ function transformChildren(children: readonly LooseNode[]): LooseNode[] {
     }
 
     if (node.type === 'mdxJsxTextElement') {
+      if (node.name === 'code') {
+        return [inlineCode(componentText(node))]
+      }
+      if (node.name === 'StepperIndicator') return []
+      if (node.name === 'StepperDescription') {
+        return [text(componentText(node))]
+      }
+      if (node.name === 'DocsStepperHeading') {
+        return [strong([text(componentText(node))])]
+      }
+      if (node.name === 'StepperContent') return stepperContent(node)
       if (node.name && /^[A-Z]/.test(node.name)) {
         throw new Error(
           `Add an AI Markdown fallback for the ${node.name} MDX component.`
@@ -126,6 +137,8 @@ function renderFlowComponent(node: LooseNode): LooseNode[] {
   const name = node.name ?? ''
 
   switch (name) {
+    case 'Alert':
+      return alert(node)
     case 'DocsPackageManagerCommand':
       return packageManagerCommands(node)
     case 'DocsCodeDiff':
@@ -136,6 +149,24 @@ function renderFlowComponent(node: LooseNode): LooseNode[] {
       return contractPath()
     case 'DocsProjectBoundary':
       return projectBoundary()
+    case 'DocsApiArchitecture':
+      return apiArchitecture()
+    case 'Stepper':
+    case 'StepperItem':
+    case 'StepperPanel':
+      return transformChildren(node.children ?? [])
+    case 'StepperIndicator':
+      return []
+    case 'StepperContent':
+      return stepperContent(node)
+    case 'StepperDescription':
+      return [paragraph([text(componentText(node))])]
+    case 'DocsStepperHeading':
+      return [heading(2, componentText(node))]
+    case 'p': {
+      const children = transformChildren(node.children ?? [])
+      return children.length ? [paragraph(children as PhrasingContent[])] : []
+    }
     case 'ComponentPreview':
       return []
     default:
@@ -146,6 +177,47 @@ function renderFlowComponent(node: LooseNode): LooseNode[] {
       }
       return transformChildren(node.children ?? [])
   }
+}
+
+function alert(node: LooseNode): LooseNode[] {
+  const titleNode = findComponent(node, 'AlertTitle')
+  const descriptionNode = findComponent(node, 'AlertDescription')
+  const titleValue = titleNode ? componentText(titleNode) : ''
+  const description = descriptionNode
+    ? transformChildren(descriptionNode.children ?? [])
+    : []
+  const children: LooseNode[] = []
+
+  if (titleValue) children.push(paragraph([strong([text(titleValue)])]))
+  if (description.length > 0) {
+    if (description.some((child) => child.type === 'paragraph')) {
+      children.push(...description)
+    } else {
+      children.push(paragraph(description as PhrasingContent[]))
+    }
+  }
+
+  return children.length > 0 ? [{ type: 'blockquote', children }] : []
+}
+
+function findComponent(node: LooseNode, name: string): LooseNode | undefined {
+  for (const child of node.children ?? []) {
+    if (
+      (child.type === 'mdxJsxFlowElement' ||
+        child.type === 'mdxJsxTextElement') &&
+      child.name === name
+    ) {
+      return child
+    }
+    const nested = findComponent(child, name)
+    if (nested) return nested
+  }
+  return undefined
+}
+
+function componentText(node: LooseNode): string {
+  if (node.value) return node.value
+  return (node.children ?? []).map(componentText).join('')
 }
 
 function packageManagerCommands(node: LooseNode): LooseNode[] {
@@ -260,6 +332,53 @@ function projectBoundary(): LooseNode[] {
         'route.ts — Host boundary',
         'Mounts the implementation through the framework adapter.',
       ],
+    ]),
+  ]
+}
+
+function apiArchitecture(): LooseNode[] {
+  return [
+    heading(3, '@hulla/api architecture'),
+    orderedList([
+      [
+        'Typed client',
+        'Builds a call from the shared contract and narrows the returned status.',
+      ],
+      [
+        'Transport',
+        'Carries one invocation over Fetch, in process, MessagePort, or WebSocket.',
+      ],
+      [
+        'Adapter',
+        'Connects the portable call to host routing, context, request reads, and response writes.',
+      ],
+      [
+        'Implementation',
+        'Runs server middleware and the exhaustive route handler.',
+      ],
+    ]),
+  ]
+}
+
+function stepperContent(node: LooseNode): LooseNode[] {
+  const descriptionNode = findComponent(node, 'StepperDescription')
+  const description = descriptionNode
+    ? componentText(descriptionNode).trim()
+    : ''
+  const fullText = componentText(node).trim()
+  const titleValue = description
+    ? fullText
+        .slice(0, Math.max(0, fullText.length - description.length))
+        .trim()
+    : fullText
+
+  if (!titleValue && !description) return []
+
+  return [
+    paragraph([
+      ...(titleValue ? [strong([text(titleValue)])] : []),
+      ...(titleValue && description ? [text(' — ')] : []),
+      ...(description ? [text(description)] : []),
     ]),
   ]
 }

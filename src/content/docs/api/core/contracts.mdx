@@ -1,34 +1,26 @@
 ---
-title: 'Contracts'
-description: 'Declare paths, request representations, response statuses, and shared schemas without server implementation code.'
+title: 'API contracts'
+description: 'Describe the HTTP boundary once: paths, accepted inputs, concrete statuses, and the runtime work each value needs.'
 ---
 
-An `@hulla/api` contract declares the HTTP boundary shared by the server implementation and every typed client. Define
-it in a module that is safe to import from both server and client code: schemas, paths, request representations, and
-declared responses belong here; database access and framework state do not.
+A contract is the part of an API both sides are allowed to know. It contains no handlers, database access, framework state, or server startup.
 
-Install `@hulla/api` and one Standard Schema implementation. The examples use Zod, but Valibot and other Standard
-Schema libraries work without an adapter:
+Put it in a shared module. Server code implements it; client code turns it into callable routes.
 
-```sh
-bun add @hulla/api zod
-```
+## Declare a small API
 
-## Define a contract
+This contract has a health check, a project read, and a project rename:
 
-This contract is used by the framework adapter guides:
-
-```ts
-// src/api/contract.ts
+```ts filename="src/api/contract.ts" {13-35}
 import { defineContract, request, response, route, router } from '@hulla/api'
 import { z } from 'zod'
 
-const user = z.object({
+const project = z.object({
   id: z.string(),
   name: z.string(),
 })
 
-const userParams = z.object({ id: z.string() })
+const projectParams = z.object({ id: z.string() })
 const notFound = response.json(z.object({ message: z.string() }))
 
 export const contract = defineContract({
@@ -37,20 +29,20 @@ export const contract = defineContract({
     health: route.get('/health', {
       responses: { 200: response.text(z.literal('ok')) },
     }),
-    users: router('/users', {
+    projects: router('/projects', {
       routes: {
         byId: route.get('/:id', {
-          params: userParams,
+          params: projectParams,
           responses: {
-            200: response.json(user),
+            200: response.json(project),
             404: notFound,
           },
         }),
         rename: route.patch('/:id', {
-          params: userParams,
+          params: projectParams,
           body: request.json(z.object({ name: z.string().min(1) })),
           responses: {
-            200: response.json(user),
+            200: response.json(project),
             404: notFound,
           },
         }),
@@ -60,40 +52,114 @@ export const contract = defineContract({
 })
 ```
 
-The effective endpoints are `GET /api/health`, `GET /api/users/:id`, and `PATCH /api/users/:id`. `basePath`, router
-paths, and route paths compose structurally; object keys such as `users.byId` form the typed server and client call tree
-but do not add URL segments themselves.
+Nothing is listening yet. `defineContract()` records an immutable boundary that later clients, servers, adapters, and tooling can select.
 
-Declared base, router, and route paths cannot contain percent signs or control characters. Use path parameters for
-values containing literal percent signs or other characters requiring URL encoding; the client encodes those values
-and the server decodes them once. Pre-encoded path declarations, including encoded dot segments, are rejected at setup.
+## Keys name code; paths name HTTP
 
-## Requests and responses
+The object tree becomes the typed client and handler tree. The path pieces become the URL.
 
-Route inputs are opt-in. Declare `params`, `query`, `headers`, and `body` only when the endpoint accepts them. A request
-body also declares its HTTP representation through helpers such as `request.json()`, `request.text()`, or
-`request.bytes()`.
+| Contract key      | HTTP endpoint             |
+| ----------------- | ------------------------- |
+| `health`          | `GET /api/health`         |
+| `projects.byId`   | `GET /api/projects/:id`   |
+| `projects.rename` | `PATCH /api/projects/:id` |
 
-Every concrete response status must be declared. Its representation and schema determine both runtime validation and
-the status-discriminated server/client result type. A handler for `users.byId`, for example, can construct only its
-declared `200` and `404` responses, and a client can narrow `result.status` before reading the corresponding body.
+Renaming `byId` changes `api.projects.byId(...)`; it does not change the URL. Changing `/:id` changes the URL; it does not choose the TypeScript property name.
 
-For native JSON with compile-time types only, use `request.json<Input>()` and `response.json<Output>()`. Passing a schema explicitly adds runtime validation; passing a transforming schema or codec explicitly adds conversion. There is no client-wide validation switch. Type-only declarations do not verify application data at runtime.
+Every `:param` needs a matching key in an object-shaped `params` schema. Router parameters flow into child routes, and a route may add its own.
 
-Ordinary Standard Schemas validate one direction. Use an explicit `codec()` when the application value and HTTP wire
-value differ—for example, when a `Date` is encoded as an ISO string. The detailed representation and codec rules are in
-[request transport](/docs/api/core/request-transport).
+> Paths describe route structure, not pre-encoded URLs. Keep query strings and fragments out of them, and put dynamic values in parameters. The client handles encoding once.
 
-## Next steps
+## Request fields are opt-in
 
-The contract has no handlers and does not listen for requests. Continue with [server authoring](/docs/api/core/servers)
-to create an implementation with `defineServer()`, then choose a framework adapter to mount it. Client applications use
-the same contract with `createClient()` as described in [client authoring](/docs/api/core/clients).
+A route accepts only what it declares:
 
-## Validation direction
+```ts filename="src/api/contract.ts" {2-3}
+rename: route.patch('/:id', {
+  params: z.object({ id: z.string() }),
+  body: request.json(z.object({ name: z.string().min(1) })),
+  responses: {/* ... */},
+})
+```
 
-Use ordinary schemas as the default for checked HTTP contracts. Request schemas run on the server after parsing. Response schemas run on the server before serialization, and their output is sent to the client. This includes stripping unknown object fields, defaults, and transformations. Handler return types describe schema input; client response types describe schema output. Ordinary response outputs must match their representation: JSON-compatible values for JSON, strings for text and headers, and bytes for byte bodies.
+Use `params`, `query`, and `headers` for those HTTP fields. A body declaration also chooses its representation:
 
-Use `codec()` when both client and handler should work with a richer application value, such as `Date`. The codec encodes at the sending boundary and decodes at the receiving boundary. Native type-only declarations remain available when runtime shape checks are unnecessary. There is no validation mode setting.
+- `request.json()` for JSON;
+- `request.text()` for text;
+- `request.bytes()` for binary data;
+- `request.formData()` for forms and files.
 
-See [value round trips](/docs/api/core/value-round-trips) for numeric and date examples across these declarations.
+`GET` routes cannot declare a body. If a route does not declare a field, the typed client cannot pass it and the handler does not receive it.
+
+## Responses are concrete outcomes
+
+List every status the handler may intentionally return. A status is never inferred from the body.
+
+```ts filename="src/api/contract.ts" {2-3}
+responses: {
+  200: response.json(project),
+  404: response.json(z.object({ message: z.string() })),
+}
+```
+
+That declaration becomes a discriminated client result:
+
+```ts filename="src/features/project-page.ts" {3-7}
+const result = await api.projects.byId({ params: { id } })
+
+if (result.status === 200) {
+  renderProject(result.body)
+} else {
+  showNotFound(result.body.message)
+}
+```
+
+The `200` body and `404` body cannot be mixed accidentally. Reusable named application failures belong in `defineErrors()`; see [Errors](/docs/api/core/errors).
+
+## Choose how much happens at runtime
+
+You make this choice for each declared value—not once for the whole API.
+
+### Type-only: trust the producer
+
+```ts
+response.json<Project>()
+```
+
+This gives both sides a TypeScript type and uses native JSON conversion. It does not check that an application value matches `Project` at runtime.
+
+Use it for data already guaranteed by a trusted internal boundary, or when another layer owns validation.
+
+### Standard Schema: validate at the boundary
+
+```ts
+response.json(z.object({ id: z.string(), name: z.string() }))
+```
+
+Pass Zod, Valibot, ArkType, Effect Schema, or another Standard Schema directly. Request schemas validate the decoded value before the handler; response schemas validate or transform the handler value before it is sent.
+
+The client does not rerun ordinary response schemas. It consumes the server's validated output.
+
+### Codec: use different application and wire values
+
+```ts
+response.json(
+  codec(dateWireSchema, dateApplicationSchema, {
+    encode: (date) => date.toISOString(),
+    decode: (value) => new Date(value),
+  })
+)
+```
+
+Use a codec when both sides should receive a richer application value than the transport can carry directly. Dates, branded IDs, and binary encodings are common examples.
+
+Read [Validation and serialization](/docs/api/core/value-round-trips) for complete codec examples and [Request and response data](/docs/api/core/request-transport) for parsing rules.
+
+## Implement or call the contract
+
+The contract is now ready for two independent jobs:
+
+- [Implementing the server](/docs/api/core/servers) binds exhaustive handlers and mounts them in a host.
+- [Calling the API](/docs/api/core/clients) selects routes and crosses a client connection.
+
+Both import the contract. Neither needs to import the other.
