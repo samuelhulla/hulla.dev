@@ -13,7 +13,7 @@ Path parameters, query fields, and headers cross HTTP as text. Their wire schema
 
 Start with a one-way transform when only the server needs a richer value:
 
-```ts filename="src/api/contract.ts" focus={4-5,8-9}
+```ts filename="src/api/contract.ts"
 import { response, route } from '@hulla/api'
 import { z } from 'zod'
 
@@ -31,7 +31,7 @@ The client supplies `{ page: string }`; the handler receives `{ page: number }`.
 
 If callers should also use a number, describe the reverse conversion with `codec()`:
 
-```ts filename="src/api/search-query.ts" focus={5-6,8-9}
+```ts filename="src/api/search-query.ts"
 import { codec } from '@hulla/api'
 import { z } from 'zod'
 
@@ -86,7 +86,7 @@ Nested objects and nested arrays are rejected. There is no built-in bracket pars
 
 A naked body schema is JSON shorthand. JSON bodies retain their natural JSON types:
 
-```ts filename="src/api/contract.ts" focus={6-12}
+```ts filename="src/api/contract.ts"
 import { defineContract, response, route } from '@hulla/api'
 import { z } from 'zod'
 
@@ -106,7 +106,7 @@ const jsonBodyContract = defineContract({
 
 A codec is needed when JSON cannot directly represent the application value, or when client and server should share a transformed value:
 
-```ts filename="src/api/contract.ts" focus={4-11,16}
+```ts filename="src/api/contract.ts"
 import { codec, defineContract, request, response, route } from '@hulla/api'
 import { z } from 'zod'
 
@@ -131,7 +131,7 @@ const datedBodyContract = defineContract({
 
 Explicit representations use the request namespace:
 
-```ts filename="src/api/contract.ts" focus={6,10,14,18}
+```ts filename="src/api/contract.ts" {6,10,14,18}
 import { defineContract, request, response, route } from '@hulla/api'
 
 const representationContract = defineContract({
@@ -164,7 +164,7 @@ Adapters provide already-extracted native path strings, flat query values, heade
 
 ## Typed native JSON
 
-```ts filename="src/api/contract.ts" focus={6,8}
+```ts filename="src/api/contract.ts"
 import { defineContract, request, response, route } from '@hulla/api'
 
 const nativeJsonContract = defineContract({

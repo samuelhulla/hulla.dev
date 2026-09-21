@@ -29,7 +29,7 @@ This quick start uses one same-process client from beginning to end. That keeps 
 
 Put the contract in a module that both server and client code can import. It describes the request and response, but contains no database access or server startup.
 
-```ts filename="src/api/contract.ts" {4-13,18-23}
+```ts filename="src/api/contract.ts"
 import { defineContract, request, response, route } from '@hulla/api'
 import { z } from 'zod'
 
@@ -72,7 +72,7 @@ The only input rule is that the title cannot be empty. The route key `createTask
 
 Keep the implementation in server-only code. The handler receives the validated body and returns the response declared by the contract.
 
-```ts filename="src/api/implementation.ts" {4-12}
+```ts filename="src/api/implementation.ts"
 import { defineServer } from '@hulla/api/server'
 import { contract } from './contract'
 
@@ -102,7 +102,7 @@ This contract currently contains one route, so this implementation contains one 
 
 Create a client from the same contract. The same-process connection is useful here because it exercises validation, the handler, and the declared response without requiring a web framework or local server.
 
-```ts filename="src/api/example.ts" {6-8,10-14}
+```ts filename="src/api/example.ts"
 import { createClient } from '@hulla/api/client'
 import { inProcessTransport } from '@hulla/api/in-process'
 import { contract } from './contract'

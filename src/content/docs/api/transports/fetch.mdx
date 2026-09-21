@@ -27,7 +27,7 @@ Set `maxBodyBytes` when the adapter should impose a byte budget. The default is 
 
 For a local verification, use the mounted handler as the transport's custom `fetch` function. The absolute test origin gives Node.js a valid `Request` URL; no server needs to listen on it.
 
-```ts filename="src/api/client.ts" focus={6-10}
+```ts filename="src/api/client.ts"
 import { createClient } from '@hulla/api/client'
 import { fetchTransport } from '@hulla/api/fetch'
 import { contract } from './contract'

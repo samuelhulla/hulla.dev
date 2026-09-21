@@ -16,7 +16,7 @@ Not every non-success result is an exception. `@hulla/api` separates failures a 
 
 Define an error once, then assign it to a status in the contract:
 
-```ts filename="src/api/contract.ts" {4-12,15-18}
+```ts filename="src/api/contract.ts"
 import { defineContract, defineErrors, response, route } from '@hulla/api'
 import { z } from 'zod'
 
@@ -60,7 +60,7 @@ The declaration key becomes the stable error `code`. `message` is the human-read
 
 The implementation receives only the errors available to that route:
 
-```ts filename="src/api/implementation.ts" {8-13}
+```ts filename="src/api/implementation.ts"
 import { defineServer } from '@hulla/api/server'
 import { contract } from './contract'
 
@@ -97,7 +97,7 @@ Several named errors may share one status. Put them in an array under that statu
 
 This is the default client behavior:
 
-```ts filename="src/features/project-page.ts" {3-9}
+```ts filename="src/features/project-page.ts"
 const result = await api.project({ params: { id } })
 
 if (result.status === 200) {
@@ -115,7 +115,7 @@ The client can see only statuses and error codes declared by its contract select
 
 Set `errorMode: 'throw'` when the application already centralizes expected failures in an error boundary or interceptor:
 
-```ts filename="src/api/client.ts" {3-6,12-15}
+```ts filename="src/api/client.ts"
 import { isDeclaredError } from '@hulla/api'
 
 const api = createClient(contract, {
@@ -149,7 +149,7 @@ Each issue has a `message` and may include a path, vendor code, and boundary loc
 
 Use `isAPIError()` instead of `instanceof`. A structural guard keeps working across duplicated packages and JavaScript realms.
 
-```ts filename="src/api/report-error.ts" {5-12}
+```ts filename="src/api/report-error.ts"
 import { isAPIError } from '@hulla/api/errors'
 
 export function reportError(error: unknown) {
@@ -178,7 +178,7 @@ Invalid authoring arguments remain ordinary `TypeError` values. The structured i
 
 `toAPIProblem()` turns an `APIError` into JSON-safe data. It preserves codes and issue locations while normalizing paths and symbols.
 
-```ts filename="src/api/problem.ts" {5-9}
+```ts filename="src/api/problem.ts"
 import { isAPIError, toAPIProblem } from '@hulla/api/errors'
 
 export function toProblem(error: unknown) {

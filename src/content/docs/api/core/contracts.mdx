@@ -11,7 +11,7 @@ Put it in a shared module. Server code implements it; client code turns it into 
 
 This contract has a health check, a project read, and a project rename:
 
-```ts filename="src/api/contract.ts" {13-35}
+```ts filename="src/api/contract.ts"
 import { defineContract, request, response, route, router } from '@hulla/api'
 import { z } from 'zod'
 
@@ -74,7 +74,7 @@ Every `:param` needs a matching key in an object-shaped `params` schema. Router 
 
 A route accepts only what it declares:
 
-```ts filename="src/api/contract.ts" {2-3}
+```ts filename="src/api/contract.ts"
 rename: route.patch('/:id', {
   params: z.object({ id: z.string() }),
   body: request.json(z.object({ name: z.string().min(1) })),
@@ -95,7 +95,7 @@ Use `params`, `query`, and `headers` for those HTTP fields. A body declaration a
 
 List every status the handler may intentionally return. A status is never inferred from the body.
 
-```ts filename="src/api/contract.ts" {2-3}
+```ts filename="src/api/contract.ts"
 responses: {
   200: response.json(project),
   404: response.json(z.object({ message: z.string() })),
@@ -104,7 +104,7 @@ responses: {
 
 That declaration becomes a discriminated client result:
 
-```ts filename="src/features/project-page.ts" {3-7}
+```ts filename="src/features/project-page.ts"
 const result = await api.projects.byId({ params: { id } })
 
 if (result.status === 200) {

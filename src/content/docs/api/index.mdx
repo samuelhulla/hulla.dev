@@ -11,7 +11,7 @@ usefulFor:
 
 Declare the API once. The server must implement every selected route, the client can call only what the contract exposes, and every declared status arrives with the right body type.
 
-```ts filename="src/api/projects.ts" {5-12,16-18,24}
+```ts filename="src/api/projects.ts"
 import { defineContract, request, response, route } from '@hulla/api'
 import { createClient } from '@hulla/api/client'
 import { inProcessTransport } from '@hulla/api/in-process'

@@ -86,15 +86,39 @@ const deletedLines =
     : undefined)
 const errorLines = parseLineRange(errorRange)
 const warningLines = parseLineRange(warningRange)
-const known = language in bundledLanguages
+const languageAliases: Record<string, string> = {
+  cjs: 'js',
+  cts: 'ts',
+  htm: 'html',
+  mjs: 'js',
+  mts: 'ts',
+  shell: 'bash',
+  yml: 'yaml',
+}
+const languageFromFilename = (value?: string) => {
+  const extension = value?.match(/\.([^./]+)$/)?.[1]?.toLowerCase()
+  if (!extension) return undefined
+  const candidate = languageAliases[extension] ?? extension
+  return candidate in bundledLanguages
+    ? (candidate as BundledLanguage)
+    : undefined
+}
+const diffLanguage =
+  language === 'diff' ? languageFromFilename(filename) : undefined
+const syntaxLanguage = diffLanguage ?? language
+const known = syntaxLanguage in bundledLanguages
 const highlighter = known
   ? await createShikiCodeHighlighter({
-      languages: [language as BundledLanguage],
+      languages: [syntaxLanguage as BundledLanguage],
     })
   : undefined
-const highlighted = highlighter?.highlight(source, {
-  language: language as BundledLanguage,
-})
+const highlighted = highlighter
+  ? diffLanguage
+    ? highlighter.highlightDiff(source, { language: diffLanguage })
+    : highlighter.highlight(source, {
+        language: syntaxLanguage as BundledLanguage,
+      })
+  : undefined
 const label =
   filename ??
   (language === 'sh' || language === 'bash'

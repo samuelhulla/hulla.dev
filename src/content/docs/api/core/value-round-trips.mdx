@@ -16,7 +16,7 @@ This page evolves one route so you can see exactly what each choice changes.
 
 Suppose an endpoint accepts a date and returns the following day. The smallest contract uses ordinary TypeScript types:
 
-```ts filename="src/api/contract.ts" focus={2,4}
+```ts filename="src/api/contract.ts"
 const tomorrow = route.post('/tomorrow', {
   body: request.json<{ at: string }>(),
   responses: {
@@ -79,7 +79,7 @@ Validation can also transform a wire value for the handler. Change the request s
 
 Now the handler works with `Date` without doing manual parsing:
 
-```ts filename="src/api/server.ts" focus={2,5}
+```ts filename="src/api/server.ts"
 tomorrow: ({ body, response }) => {
   const at = new Date(body.at.getTime())
   at.setUTCDate(at.getUTCDate() + 1)
@@ -96,7 +96,7 @@ Use this when rich values belong inside the server but the client should stay cl
 
 If both the client and server should use `Date`, describe both directions with a codec:
 
-```ts filename="src/api/date-codec.ts" focus={5-6,8-9}
+```ts filename="src/api/date-codec.ts"
 import { codec } from '@hulla/api'
 import { z } from 'zod'
 
@@ -135,7 +135,7 @@ Then replace the directional transforms with the shared codec:
 
 The wire format remains JSON with an ISO string. The client and handler now both use `Date`:
 
-```ts filename="src/app.ts" focus={2,5}
+```ts filename="src/app.ts"
 const result = await api.tomorrow({
   body: { at: new Date('2030-01-01T12:00:00.000Z') },
 })

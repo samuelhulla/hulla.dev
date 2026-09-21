@@ -5,7 +5,7 @@ description: 'Turn the shared contract into callable functions, send requests, h
 
 `createClient(contractOrSelection, options)` returns a plain tree of endpoint functions, or a single function when given a route. Start with the shared contract from [contract authoring](/docs/api/core/contracts). Construction prepares the selected routes once; every call returns a promise. Middleware is supplied in the options.
 
-```ts filename="src/api/client.ts" focus={5-7,9-12,14-16}
+```ts filename="src/api/client.ts"
 import { createClient } from '@hulla/api/client'
 import { fetchTransport } from '@hulla/api/fetch'
 import { contract } from './contract'
@@ -78,7 +78,7 @@ changing the underlying client.
 
 A context factory runs once per call with the encoded request and route metadata. Middleware runs in array order and wraps transport execution and response decoding:
 
-```ts filename="src/api/client.ts" focus={5-8,10-12}
+```ts filename="src/api/client.ts"
 const session = { accessToken: 'example-token' }
 
 export const client = createClient(contract, {
@@ -104,7 +104,7 @@ Use the standalone `clientMiddleware(contract, handler)` typing helper for reusa
 
 Pass the required contract node directly to construction:
 
-```ts filename="src/api/clients.ts" focus={16-26}
+```ts filename="src/api/clients.ts"
 import { clientMiddleware, createClient } from '@hulla/api/client'
 import { inProcessTransport } from '@hulla/api/in-process'
 import { contract } from './contract'

@@ -3,6 +3,7 @@ import { access, readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { apiCoverage } from '../src/data/api-coverage'
 import { apiDocNavigation, apiDocs, flatApiDocs } from '../src/data/docs'
+import { createShikiCodeHighlighter } from '../src/components/code-highlighter-shiki/code-highlighter-shiki'
 import { remarkDocsCode } from '../src/lib/remark-docs-code'
 import {
   cleanMdxForAgents,
@@ -12,6 +13,30 @@ import { renderDocGroupMarkdown } from '../src/lib/doc-group-markdown'
 import { stripInlineCode, tokenizeInlineCode } from '../src/lib/inline-code'
 const root = join(import.meta.dir, '..')
 describe('documentation integrity', () => {
+  test('diff lines retain their source-language syntax highlighting', async () => {
+    const source =
+      "-import { api } from '@hulla/api'\n+import { defineContract } from '@hulla/api'"
+    const highlighter = await createShikiCodeHighlighter({ languages: ['ts'] })
+    const result = highlighter.highlightDiff(source, { language: 'ts' })
+
+    expect(
+      result.lines.map((line) =>
+        line.tokens.map((token) => token.content).join('')
+      )
+    ).toEqual(source.split('\n'))
+    expect(result.lines[0]?.tokens[0]).toMatchObject({
+      color: 'var(--color-danger)',
+      content: '-',
+    })
+    expect(result.lines[1]?.tokens[0]).toMatchObject({
+      color: 'var(--color-success)',
+      content: '+',
+    })
+    expect(
+      new Set(result.lines[1]?.tokens.slice(1).map((token) => token.color)).size
+    ).toBeGreaterThan(1)
+  })
+
   test('metadata strips Markdown while descriptions retain code semantics', () => {
     const source = 'Use the `hulla` CLI.'
     expect(stripInlineCode(source)).toBe('Use the hulla CLI.')
@@ -145,8 +170,8 @@ describe('documentation integrity', () => {
       { type: 'mdxJsxAttribute', name: 'lineNumbers', value: null },
     ])
   })
-  test('long learning-path examples provide a visual reading cue', async () => {
-    const violations: string[] = []
+  test('code emphasis stays sparse and limited to deliberate teaching moments', async () => {
+    const emphasizedFences: string[] = []
     const directories = ['start', 'core', 'transports']
 
     for (const directory of directories) {
@@ -159,20 +184,25 @@ describe('documentation integrity', () => {
 
         for (const fence of fences) {
           const metadata = fence[1] ?? ''
-          const code = fence[2] ?? ''
-          const lines = code.split('\n').length
-          const hasReadingCue =
-            /^(?:diff)(?:\s|$)/.test(metadata) ||
-            /(?:^|\s)(?:focus|ins|del|error|warning)=\{/.test(metadata) ||
+          const hasEmphasis =
+            /(?:^|\s)(?:focus|error|warning)=\{/.test(metadata) ||
             /(?:^|\s)\{[\d,\s-]+\}/.test(metadata)
 
-          if (lines >= 18 && !hasReadingCue)
-            violations.push(`${directory}/${filename} (${lines} lines)`)
+          if (hasEmphasis)
+            emphasizedFences.push(`${directory}/${filename}: ${metadata}`)
         }
       }
     }
 
-    expect(violations).toEqual([])
+    expect(emphasizedFences.sort()).toEqual([
+      'core/request-transport.mdx: ts filename="src/api/contract.ts" {6,10,14,18}',
+      'core/servers.mdx: ts filename="src/api/server.ts" {4,6}',
+      'transports/desktop-bridges.mdx: ts filename="src/api/desktop-relay.ts" focus={15-29,32,34-37}',
+      'transports/desktop-bridges.mdx: ts filename="src/api/dioxus-eval-script.ts" focus={6-10,13,15-18}',
+      'transports/desktop-bridges.mdx: ts filename="src/api/tauri-client.ts" focus={10-16,18,21,23-26}',
+      'transports/message-port.mdx: ts filename="src/api/message-port-demo.ts" focus={23-32}',
+      'transports/websocket.mdx: ts filename="src/api/websocket-demo.ts" focus={33-44}',
+    ])
   })
   test('AI Markdown removes presentation-only MDX and targets Markdown siblings', () => {
     const output = renderMarkdownDocument({

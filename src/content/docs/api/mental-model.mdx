@@ -36,7 +36,7 @@ That split is deliberate. A frontend team can compile against the boundary witho
 5. **The server validates and runs the handler.** Request fields are decoded before business logic. The handler can return only a declared response or error.
 6. **The client receives a typed result.** The status discriminates the body, so checking `result.status` narrows both together.
 
-```ts filename="src/features/projects.ts" focus={1-7}
+```ts filename="src/features/projects.ts"
 const result = await api.projects.byId({ params: { id } })
 
 if (result.status === 200) {

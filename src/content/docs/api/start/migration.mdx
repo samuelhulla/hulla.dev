@@ -41,7 +41,7 @@ The contract is intentionally incomplete on its own. That is what makes it safe 
 
 Create a server-only module and cover every selected route:
 
-```ts filename="src/api/implementation.ts" {4-6}
+```ts filename="src/api/implementation.ts"
 import { defineServer } from '@hulla/api/server'
 import { contract } from './contract'
 
@@ -56,7 +56,7 @@ Direct handler returns and implicit success statuses are gone. `response(200, bo
 
 The portable implementation does not start a server. Mount it in the host that already owns routing and deployment.
 
-```ts filename="src/api/handler.ts" {4}
+```ts filename="src/api/handler.ts"
 import { fetchAdapter } from '@hulla/api/fetch'
 import { implementation } from './implementation'
 
@@ -69,7 +69,7 @@ export const handler = fetchAdapter().mount(implementation)
 
 The v2 client starts from a contract node and an explicit transport. There is no generated runtime and no terminal builder step.
 
-```ts filename="src/api/client.ts" {5-7,9-13}
+```ts filename="src/api/client.ts"
 import { createClient } from '@hulla/api/client'
 import { fetchTransport } from '@hulla/api/fetch'
 import { contract } from './contract'
