@@ -1,0 +1,47 @@
+---
+title: Automation
+description: Run specified hulla CLI tasks without prompts in CI and project scripts.
+---
+
+Use `--yes` (or `-y`) when a script must run without an interactive terminal. The flag disables prompts and accepts confirmations; it does not choose an ambiguous component or framework for you. Pass the needed names and flags explicitly so a missing choice becomes a useful error instead of a guessed result.
+
+## Add known components in CI
+
+After the CLI is installed and `hulla ui init` has recorded the framework and output paths, a package script can add known components. Package scripts find the locally installed executable automatically; a direct CI shell command needs `node_modules/.bin` on its search path, as shown in the [quick start](/docs/cli/quick-start).
+
+```sh
+hulla ui add --yes --framework astro button dialog
+```
+
+If the component appears in more than one framework, `--framework` is required in non-interactive mode. Component names are required too; `hulla ui add --yes` with no names fails with a message asking for them.
+
+## Run initialization intentionally
+
+`hulla init --yes` can create project settings without asking to confirm. UI initialization may need framework, path, or registry choices; run it once interactively, review and commit `.hulla/ui.json`, then let repeatable add commands run in CI.
+
+Pin the CLI beta version in the project and use a pinned registry source. This makes CLI behavior and copied component inputs reviewable alongside the resulting source changes. See [Configuration](/docs/cli/configuration) for the files to commit.
+
+## Check the result
+
+The CLI does not run the consuming application's full test suite for you. After adding or updating files, run the application's own checks and inspect the Git diff. In CI, `git diff --exit-code` can detect when a supposedly repeatable command changed committed files.
+
+```sh
+hulla ui add --yes --framework astro button dialog
+git diff --exit-code
+bun run check
+```
+
+`bun run check` assumes the consuming app defines a check script; use your repository's own validation command.
+
+## Diagnose an incomplete install
+
+If a command fails, start with the missing input or file named in its message:
+
+| Symptom                           | What to check                                                                                                                                                                                                                                                                |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A choice is required with `--yes` | Pass explicit component names and `--framework`; initialize UI paths before running in CI.                                                                                                                                                                                   |
+| Registry cannot be loaded         | Check that the configured local path or pinned GitHub tree contains the generated `ui.config.ts` and manifests.                                                                                                                                                              |
+| Copied components have no styles  | Check the copied global stylesheet import and Tailwind host integration. In Astro, put the import in a shared layout.                                                                                                                                                        |
+| Old registry content appears      | Rerun `hulla ui init` to resolve the selected source again. If its record is still stale, delete only `<cli.cacheDir>/ui.cache.json` (default `.hulla/.cache/ui.cache.json`) and rerun `hulla ui add`; remote downloads are separately cached under `~/.cache/hulla/gittar`. |
+
+For interactive setup and component update behavior, see [UI components](/docs/cli/ui). The legacy `hulla api` generator commands are not part of the current `@hulla/api` 2.0 workflow; see [API commands](/docs/cli/api) for that compatibility boundary.

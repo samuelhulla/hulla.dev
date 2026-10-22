@@ -1,0 +1,63 @@
+---
+title: Quick start
+description: Install the pinned hulla CLI beta, initialize project settings, and add one UI component.
+---
+
+This path adds an editable button component to an existing Astro app. You need Bun installed and an Astro project with its dependencies installed.
+
+## 1. Install the pinned beta
+
+Install the CLI as a development dependency in the application. The exact beta pin keeps team members and CI on the same CLI release; the `hulla` CLI itself requires Bun at runtime.
+
+import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun add -D hulla@0.0.0-beta.1',
+    npm: 'npm install --save-dev hulla@0.0.0-beta.1',
+    pnpm: 'pnpm add -D hulla@0.0.0-beta.1',
+    yarn: 'yarn add -D hulla@0.0.0-beta.1',
+  }}
+/>
+
+Verify the installed executable before changing the project. These equivalent commands run the same pinned version through each package manager; Bun must be available even when the project uses npm, pnpm, or Yarn.
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bunx hulla@0.0.0-beta.1 --version',
+    npm: 'npx hulla@0.0.0-beta.1 --version',
+    pnpm: 'pnpm dlx hulla@0.0.0-beta.1 --version',
+    yarn: 'yarn dlx hulla@0.0.0-beta.1 --version',
+  }}
+/>
+
+The command prints `hulla v0.0.0-beta.1`. The beta channel is changing; keep the exact version in your project rather than installing an unqualified `latest` tag.
+
+Package scripts can find a locally installed `hulla` executable automatically. For the terminal commands below, add the project's executable directory to your current shell's search path. Run this from the project root:
+
+```sh
+export PATH="$PWD/node_modules/.bin:$PATH"
+```
+
+## 2. Initialize project settings
+
+From the project root, create `.hulla/hulla.json`. The `--yes` flag accepts confirmations and prevents prompts; for this initialization, the CLI detects the package manager and records its package scripts.
+
+```sh
+hulla init --yes
+```
+
+The success signal is a new `.hulla/hulla.json` containing the package scripts and references to subsystem configuration. Commit this file so local development and automation use the same choices.
+
+## 3. Configure and add a component
+
+Run UI setup from the same project to choose the registry, framework, component paths, and support files. Then add a component by its registry name; specify the framework whenever the registry contains that component in more than one target.
+
+```sh
+hulla ui init
+hulla ui add --framework astro button
+```
+
+The add command copies the Astro button's files and any declared dependencies or support files into the configured paths. Review the changed files and run the application's build or type checks so missing peer setup is visible in your own project. Use [UI components](/docs/cli/ui) for other framework targets.
+
+Continue with [UI components](/docs/cli/ui) for source pinning and update behavior, or [Automation](/docs/cli/automation) to make a fully specified command non-interactive.

@@ -1,0 +1,46 @@
+---
+title: '@hulla/style'
+description: Compose class names and define type-safe style choices without tying components to a framework or CSS system.
+usefulFor:
+  - You want one small API for conditional classes and named variants.
+  - Your components run in more than one framework or styling system.
+  - You need to decide whether class composition should deduplicate or merge utilities.
+---
+
+import DocsConceptFlow from '@/components/docs/DocsConceptFlow.astro'
+
+`@hulla/style` turns conditional classes and named variants into one class string. Your application chooses the CSS system and framework.
+
+<DocsConceptFlow
+  label="Class composition"
+  steps={[
+    {
+      title: 'Configure once',
+      description:
+        'Create a style() instance with the serializer and composer your application needs.',
+    },
+    {
+      title: 'Name your choices with vn',
+      description:
+        'Map finite options such as size or variant to classes, and infer their prop types.',
+    },
+    {
+      title: 'Combine with cn',
+      description:
+        'Join base classes, variant results, conditional values, and caller classes.',
+    },
+  ]}
+/>
+
+It does not generate CSS or markup. The default composer removes repeated tokens; configure a Tailwind-aware composer to resolve utility conflicts.
+
+## Which page should I read first?
+
+| If you need to…                                            | Start here                                   |
+| ---------------------------------------------------------- | -------------------------------------------- |
+| Install the package and create shared helpers              | [Quick start](/docs/style/quick-start)       |
+| Type a component prop from a finite set of styles          | [Variants](/docs/style/variants)             |
+| Combine shared classes, variants, and caller classes       | [Composition](/docs/style/composition)       |
+| Choose exact-token deduplication or Tailwind-aware merging | [Custom merging](/docs/style/custom-merging) |
+
+For accepted inputs, signatures, and serializer behavior, see the [API reference](/docs/style/reference).

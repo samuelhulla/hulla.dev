@@ -1,0 +1,99 @@
+---
+title: Results
+description: Create success and error branches, narrow their payloads, and choose error values that fit the caller.
+usefulFor:
+  - You need to decide between type guards, match, and tuple handling.
+  - Your errors carry domain data or custom branch tags.
+---
+
+A return type such as `string | Error` says which payloads may appear, but it does not say which one means success. `Result<T, E>` keeps the branch explicit, even when both payload types are the same.
+
+## Create the branch where the outcome is known
+
+In a domain function, use `ok(value)` for success and `err(error)` for an expected failure. The default tags are `'ok'` and `'error'`.
+
+```ts
+import { err, ok, type Result } from '@hulla/control'
+
+function parseCount(input: string): Result<number, string> {
+  const count = Number(input)
+  return Number.isInteger(count) && count >= 0
+    ? ok(count)
+    : err('Enter a non-negative whole number')
+}
+```
+
+The error payload can be any value. A string works for a single validation message; use a structured object when the caller needs a stable code or additional context. `@hulla/control` does not impose an error class or serialize the payload.
+
+## Wrap a value that may already be an error
+
+When an existing function returns a value or an `Error`, `result()` can choose the branch for you. Its default check is `value instanceof Error`:
+
+```ts
+import { result } from '@hulla/control'
+
+const wrapped = result(new Error('File unavailable'))
+console.log(wrapped.isErr()) // true
+```
+
+For a different error representation, pass an `isError` type guard in the configuration. Prefer explicit `ok()` and `err()` when you already know the outcome, especially when an `Error` can be a valid success payload. `result()` inspects the value it receives; use [`tcf()`](/docs/control/attempts) to catch thrown exceptions.
+
+## Narrow when the branches need different work
+
+At the call site, the type guard exposes only the active payload. This is the clearest option when success and failure take different actions.
+
+```ts
+const parsed = parseCount('12')
+
+if (parsed.isOk()) {
+  console.log(parsed.value.toFixed(0))
+} else {
+  console.error(parsed.error)
+}
+```
+
+`isErr()` narrows in the opposite direction. For `Result<string, string>`, this branch information remains reliable because the tag and type guard—not the payload type—identify the outcome.
+
+## Match when both branches produce one value
+
+Use `match(onOk, onErr)` when the caller needs one result from either branch. Here both paths create a display message, so `message` has type `string`.
+
+```ts
+const message = parseCount('twelve').match(
+  (count) => `Count: ${count}`,
+  (error) => `Invalid count: ${error}`
+)
+```
+
+`pair()` is another option when an integration expects a tuple: success produces `[value, undefined]`, and failure produces `[undefined, error]`. Prefer the type guards if a valid payload may itself be `undefined` or another falsy value; tuple contents alone cannot reliably identify the branch.
+
+`unwrap()` returns the active payload on either branch: the value for `Ok`, the error for `Err`. It does not throw an error payload. Narrow first when the caller needs only a successful value, or use `match()` when both outcomes should become one output.
+
+When a failure branch should stop the current operation, return it from the caller. That keeps the error type intact and makes every later caller responsible for choosing whether to display, retry, or translate it:
+
+```ts
+function pageTitle(id: string): Result<string, Error> {
+  const found = findTitle(id)
+  if (found.isErr()) return found
+  return ok(found.value.toUpperCase())
+}
+```
+
+The early return works because the failure type matches the function's result type. If the caller has a different error contract, use `mapErr()` to translate it before returning. Avoid `unwrap()` for this flow: it returns an error as a value and does not stop execution.
+
+## Add tags when the branch needs a stable label
+
+Tags help when a caller needs to distinguish several kinds of results with otherwise similar payloads. Supply a tag as the second argument to the constructors and include the tag types in `Result`:
+
+```ts
+type NameResult = Result<string, string, 'VALID', 'INVALID'>
+function validateName(input: string): NameResult {
+  return input ? ok(input, 'VALID') : err('Name is required', 'INVALID')
+}
+
+const name = validateName('Sam')
+```
+
+The tags are string labels carried at runtime and in the inferred type. Keep ordinary `'ok'` and `'error'` tags when the branch alone answers the caller's question. Continue with [chaining](/docs/control/chaining) to transform the active payload without deciding the outcome yet.
+
+For every constructor, method, and public type, see the [API reference](/docs/control/reference).

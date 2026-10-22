@@ -1,10 +1,9 @@
 ---
-import Card from '@/components/card/card.astro'
-import CardHeader from '@/components/card/card-header.astro'
-import CardTitle from '@/components/card/card-title.astro'
-import CardDescription from '@/components/card/card-description.astro'
-import CardContent from '@/components/card/card-content.astro'
-import Badge from '@/components/badge/badge.astro'
+import Stepper from '@/components/stepper/stepper.astro'
+import StepperItem from '@/components/stepper/stepper-item.astro'
+import StepperIndicator from '@/components/stepper/stepper-indicator.astro'
+import StepperContent from '@/components/stepper/stepper-content.astro'
+import StepperPanel from '@/components/stepper/stepper-panel.astro'
 import DocsCodeBlock from './DocsCodeBlock.astro'
 type Props = {
   label: string
@@ -14,27 +13,18 @@ const { label, steps } = Astro.props
 ---
 
 <section class="docs-example" aria-label={label} data-component-boundary>
-  <p class="eyebrow mb-4">{label}</p>
-  <ol class="grid list-none gap-4 p-0">
+  <Stepper variant="ordered" aria-label={label}>
     {steps.map((step, index) => (
-      <li>
-        <Card>
-          <CardHeader>
-            <>
-              <div>
-                <Badge size="sm">{String(index + 1).padStart(2, '0')}</Badge>
-              </div>
-              <CardTitle>{step.title}</CardTitle>
-              <CardDescription>{step.description}</CardDescription>
-            </>
-          </CardHeader>
-          {step.example && (
-            <CardContent>
-              <DocsCodeBlock code={step.example} language="ts" />
-            </CardContent>
-          )}
-        </Card>
-      </li>
+      <StepperItem>
+        <StepperIndicator>{index + 1}</StepperIndicator>
+        <StepperContent>
+          <span>{step.title}</span>
+        </StepperContent>
+        <StepperPanel>
+          <p>{step.description}</p>
+          {step.example && <DocsCodeBlock code={step.example} language="ts" />}
+        </StepperPanel>
+      </StepperItem>
     ))}
-  </ol>
+  </Stepper>
 </section>

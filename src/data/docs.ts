@@ -1,14 +1,15 @@
 export type DocEntry = {
   title: string
-  href: `/docs/api${string}`
+  href: `/docs/${string}`
   description: string
   chooseWhen?: string
   applicationOwns?: string
 }
 
 export type DocGroup = {
+  area?: 'guides' | 'reference'
   title: string
-  href: `/docs/api/${string}`
+  href: `/docs/${string}`
   description: string
   chooserColumnTitle?: string
   chooserTitle?: string
@@ -16,9 +17,11 @@ export type DocGroup = {
 }
 
 export type DocPackage = {
-  title: `@hulla/${string}`
+  kind: 'api' | 'ui' | 'cli' | 'control' | 'style' | 'db' | 'args'
+  title: `@hulla/${string}` | 'hulla CLI'
   href: `/docs/${string}`
   description: string
+  status?: string
   groups: readonly DocGroup[]
 }
 
@@ -404,6 +407,7 @@ export const apiDocs: readonly DocGroup[] = [
   },
   {
     title: 'Reference',
+    area: 'reference',
     href: '/docs/api/reference',
     description:
       'Inspect compiled route metadata, host-owned behavior, and public package boundaries.',
@@ -484,41 +488,479 @@ export const apiDocNavigation: readonly DocNavigationSection[] = [
 ]
 
 export const apiPackage: DocPackage = {
+  kind: 'api',
   title: '@hulla/api',
   href: '/docs/api',
   description:
     'Declare one HTTP contract, then bind typed clients and exhaustive servers to the boundaries your application chooses.',
   groups: apiDocs,
+  status: 'Beta',
 }
 
-export const docPackages: readonly DocPackage[] = [apiPackage]
+export const dbGuides: readonly DocGroup[] = [
+  {
+    title: 'Get started',
+    href: '/docs/db/guides',
+    description:
+      'Typed PostgreSQL access and live browser queries, from setup to a working app.',
+    entries: [
+      {
+        title: 'Introduction',
+        href: '/docs/db',
+        description: 'Choose direct server access or a live browser view.',
+      },
+      {
+        title: 'Installation',
+        href: '/docs/db/installation',
+        description: 'Prepare packages, tools and PostgreSQL.',
+      },
+      {
+        title: 'Quick start',
+        href: '/docs/db/quick-start',
+        description: 'Save a task and watch two browser tabs update.',
+      },
+      {
+        title: 'Mental model',
+        href: '/docs/db/mental-model',
+        description: 'Understand the server, service and browser boundaries.',
+      },
+    ],
+  },
+  {
+    title: 'Database',
+    href: '/docs/db/database-guides',
+    description:
+      'Define storage rules, read rows and expose the database functions your UI needs.',
+    entries: [
+      {
+        title: 'Schemas and constraints',
+        href: '/docs/db/schemas',
+        description: 'Declare fields, keys, relationships and storage rules.',
+      },
+      {
+        title: 'Data types and codecs',
+        href: '/docs/db/data-types',
+        description: 'Choose precise numbers, dates, JSON and conversions.',
+      },
+      {
+        title: 'Read and write data',
+        href: '/docs/db/database',
+        description: 'Filter, select, insert and group transactional writes.',
+      },
+      {
+        title: 'Queries and mutations',
+        href: '/docs/db/functions',
+        description: 'Declare validated browser-callable reads and writes.',
+      },
+      {
+        title: 'Live queries and pagination',
+        href: '/docs/db/live-queries',
+        description:
+          'Observe results, append stable pages and handle reconnects.',
+      },
+      {
+        title: 'Optimistic updates',
+        href: '/docs/db/optimistic-writes',
+        description: 'Predict an existing query result while a write runs.',
+      },
+      {
+        title: 'Code generation',
+        href: '/docs/db/code-generation',
+        description: 'Know what is discovered, generated and imported.',
+      },
+    ],
+  },
+  {
+    title: 'Integrations',
+    href: '/docs/db/integrations',
+    description:
+      'Connect framework lifecycles, server rendering and your existing auth provider.',
+    entries: [
+      {
+        title: 'Frameworks & SSR',
+        href: '/docs/db/framework-bindings',
+        description: 'Use framework reactivity and authorized initial data.',
+      },
+      {
+        title: 'Full-stack recipes',
+        href: '/docs/db/meta-frameworks',
+        description: 'Choose a complete framework setup.',
+      },
+      {
+        title: 'Next.js',
+        href: '/docs/db/frameworks/next',
+        description: 'Use Server Components and React live hooks.',
+      },
+      {
+        title: 'Nuxt',
+        href: '/docs/db/frameworks/nuxt',
+        description: 'Connect Nitro reads and Vue components.',
+      },
+      {
+        title: 'SvelteKit',
+        href: '/docs/db/frameworks/sveltekit',
+        description: 'Connect server loaders and reactive Svelte views.',
+      },
+      {
+        title: 'SolidStart',
+        href: '/docs/db/frameworks/solidstart',
+        description: 'Connect server functions and Solid resources.',
+      },
+      {
+        title: 'Astro',
+        href: '/docs/db/frameworks/astro',
+        description: 'Hydrate a live island over request-time rows.',
+      },
+      {
+        title: 'Authentication',
+        href: '/docs/db/authentication',
+        description: 'Verify credentials and scope data to the caller.',
+      },
+      {
+        title: 'Better Auth storage',
+        href: '/docs/db/better-auth',
+        description: 'Store provider users and sessions in PostgreSQL.',
+      },
+    ],
+  },
+  {
+    title: 'Run and deploy',
+    href: '/docs/db/operations',
+    description:
+      'Run the supplied service and package it for a compatible host.',
+    entries: [
+      {
+        title: 'Database service',
+        href: '/docs/db/runtime',
+        description: 'Configure listeners, browser connections and budgets.',
+      },
+      {
+        title: 'Deployment',
+        href: '/docs/db/deployment',
+        description: 'Deploy the app, persistent service and PostgreSQL.',
+      },
+    ],
+  },
+]
+
+const packageGuides: readonly DocGroup[] = [
+  {
+    title: 'Get started',
+    href: '/docs/control/guides',
+    description:
+      'Return failures as values and compose operations that can fail.',
+    entries: [
+      {
+        title: 'Introduction',
+        href: '/docs/control',
+        description: 'Choose when to return a Result.',
+      },
+      {
+        title: 'Quick start',
+        href: '/docs/control/quick-start',
+        description: 'Return and handle your first success or failure.',
+      },
+      {
+        title: 'Results',
+        href: '/docs/control/results',
+        description:
+          'Construct results, narrow outcomes, and read values safely.',
+      },
+      {
+        title: 'Chaining operations',
+        href: '/docs/control/chaining',
+        description: 'Transform successful values and stop on failures.',
+      },
+      {
+        title: 'Catching exceptions',
+        href: '/docs/control/attempts',
+        description:
+          'Convert throwing functions and promises to Result values.',
+      },
+      {
+        title: 'Asynchronous results',
+        href: '/docs/control/async',
+        description:
+          'Choose between promises of results and results containing promises.',
+      },
+    ],
+  },
+  {
+    title: 'Get started',
+    href: '/docs/style/guides',
+    description:
+      'Build reusable class recipes, add variants, and choose how classes merge.',
+    entries: [
+      {
+        title: 'Introduction',
+        href: '/docs/style',
+        description: 'Choose a class composer and reusable variant recipes.',
+      },
+      {
+        title: 'Quick start',
+        href: '/docs/style/quick-start',
+        description: 'Create a button recipe and use its class string.',
+      },
+      {
+        title: 'Variants',
+        href: '/docs/style/variants',
+        description: 'Add named choices, defaults, and conditional classes.',
+      },
+      {
+        title: 'Composition',
+        href: '/docs/style/composition',
+        description: 'Reuse and extend class recipes.',
+      },
+      {
+        title: 'Custom merging',
+        href: '/docs/style/custom-merging',
+        description: 'Configure the class composer for your CSS system.',
+      },
+    ],
+  },
+  dbGuides[0]!,
+  {
+    title: 'Get started',
+    href: '/docs/cli/guides',
+    description:
+      'Configure a project, install source components, and run repeatable commands.',
+    entries: [
+      {
+        title: 'Introduction',
+        href: '/docs/cli',
+        description:
+          'Choose a project workflow and understand beta compatibility.',
+      },
+      {
+        title: 'Quick start',
+        href: '/docs/cli/quick-start',
+        description: 'Initialize a project and install a source component.',
+      },
+      {
+        title: 'Configuration',
+        href: '/docs/cli/configuration',
+        description: 'Understand project config, subsystem paths, and caches.',
+      },
+      {
+        title: 'UI components',
+        href: '/docs/cli/ui',
+        description:
+          'Initialize a registry, add components, and inspect updates.',
+      },
+      {
+        title: 'API generation',
+        href: '/docs/cli/api',
+        description:
+          'Understand the legacy generator boundary and compatibility limits.',
+      },
+      {
+        title: 'CI and troubleshooting',
+        href: '/docs/cli/automation',
+        description: 'Run without prompts and diagnose installation failures.',
+      },
+    ],
+  },
+  {
+    title: 'Get started',
+    href: '/docs/args/guides',
+    description:
+      'Parse command-line input into typed options, commands, and validated values.',
+    entries: [
+      {
+        title: 'Introduction',
+        href: '/docs/args',
+        description: 'Understand declarations and parsed argument results.',
+      },
+      {
+        title: 'Quick start',
+        href: '/docs/args/quick-start',
+        description: 'Build and invoke a small command-line program.',
+      },
+      {
+        title: 'Arguments',
+        href: '/docs/args/arguments',
+        description: 'Read named values, switches, and positional input.',
+      },
+      {
+        title: 'Parser options',
+        href: '/docs/args/options',
+        description:
+          'Control argument slicing, name matching, and shared arguments.',
+      },
+      {
+        title: 'Commands',
+        href: '/docs/args/commands',
+        description: 'Organize subcommands and read their parsed results.',
+      },
+      {
+        title: 'Validation',
+        href: '/docs/args/validation',
+        description: 'Validate input and handle parser errors.',
+      },
+      {
+        title: 'Build a CLI',
+        href: '/docs/args/recipes',
+        description:
+          'Implement command routing, required input, validation, and exit codes.',
+      },
+    ],
+  },
+]
+
+const packageReferences: readonly DocGroup[] = [
+  {
+    title: 'Reference',
+    area: 'reference',
+    href: '/docs/control/reference-overview',
+    description:
+      'Look up result constructors, methods, types, and callback behavior.',
+    entries: [
+      {
+        title: 'API reference',
+        href: '/docs/control/reference',
+        description: 'Constructors, tags, methods, and public result types.',
+      },
+    ],
+  },
+  {
+    title: 'Reference',
+    area: 'reference',
+    href: '/docs/style/reference-overview',
+    description:
+      'Look up class inputs, variant types, and customization hooks.',
+    entries: [
+      {
+        title: 'API reference',
+        href: '/docs/style/reference',
+        description:
+          'Supported class inputs, helpers, serializers, and composers.',
+      },
+    ],
+  },
+  {
+    title: 'Reference',
+    area: 'reference',
+    href: '/docs/db/reference-overview',
+    description:
+      'Look up Rust and TypeScript entrypoints, database operations, and runtime options.',
+    entries: [
+      {
+        title: 'API reference',
+        href: '/docs/db/reference',
+        description:
+          'Schema, server, generation, runtime, and lifecycle contracts.',
+      },
+      {
+        title: 'Native Rust applications',
+        href: '/docs/db/rust',
+        description: 'Use the native facade and its own runtime lifecycle.',
+      },
+    ],
+  },
+  {
+    title: 'Reference',
+    area: 'reference',
+    href: '/docs/cli/reference-overview',
+    description:
+      'Look up implemented commands, aliases, flags, and configuration fields.',
+    entries: [
+      {
+        title: 'Command reference',
+        href: '/docs/cli/reference',
+        description:
+          'Implemented command behavior and exact configuration defaults.',
+      },
+    ],
+  },
+  {
+    title: 'Reference',
+    area: 'reference',
+    href: '/docs/args/reference-overview',
+    description:
+      'Look up argument declarations, parser settings, output records, and errors.',
+    entries: [
+      {
+        title: 'API reference',
+        href: '/docs/args/reference',
+        description:
+          'Constructors, settings, parsed metadata, and ParserError fields.',
+      },
+    ],
+  },
+]
+
+export const docPackages: readonly DocPackage[] = [
+  apiPackage,
+  {
+    kind: 'ui',
+    title: '@hulla/ui',
+    href: '/docs/ui',
+    description: 'Source-owned components for Astro, React, and Solid.',
+    groups: [],
+  },
+  ...packageGuides.map((group): DocPackage => {
+    const kind = group.href.split('/')[2] as Exclude<
+      DocPackage['kind'],
+      'api' | 'ui'
+    >
+    return {
+      kind,
+      title: kind === 'cli' ? 'hulla CLI' : `@hulla/${kind}`,
+      href: `/docs/${kind}`,
+      description: group.description,
+      groups: [
+        group,
+        ...(kind === 'db' ? dbGuides.slice(1) : []),
+        ...packageReferences.filter((reference) =>
+          reference.href.startsWith(`/docs/${kind}/`)
+        ),
+      ],
+      ...(kind === 'db'
+        ? { status: 'Private' }
+        : kind === 'cli'
+          ? { status: 'Beta' }
+          : {}),
+    }
+  }),
+]
+
+export const docGroups = docPackages.flatMap((pkg) => pkg.groups)
 
 export const flatApiDocs = apiDocs.flatMap((group) => group.entries)
+export const flatDocs = docGroups.flatMap((group) => group.entries)
+
+export function findDocPackage(pathname: string): DocPackage | undefined {
+  return docPackages.find(
+    (pkg) => pathname === pkg.href || pathname.startsWith(`${pkg.href}/`)
+  )
+}
 
 export function findDoc(pathname: string): DocEntry | undefined {
   const normalized =
     pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname
-  return flatApiDocs.find((entry) => entry.href === normalized)
+  return flatDocs.find((entry) => entry.href === normalized)
 }
 
 export function findDocGroup(pathname: string): DocGroup | undefined {
   const current = pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname
-  return apiDocs.find((group) =>
+  return docGroups.find((group) =>
     group.entries.some((entry) => entry.href === current)
   )
 }
 
 export function findDocGroupPage(pathname: string): DocGroup | undefined {
   const current = pathname.length > 1 ? pathname.replace(/\/$/, '') : pathname
-  return apiDocs.find((group) => group.href === current)
+  return docGroups.find((group) => group.href === current)
 }
 
 export function adjacentDocs(pathname: string) {
   const current = findDoc(pathname)
-  const index = current ? flatApiDocs.indexOf(current) : -1
+  const pages =
+    findDocPackage(pathname)?.groups.flatMap((group) => group.entries) ?? []
+  const index = current ? pages.indexOf(current) : -1
 
   return {
-    previous: index > 0 ? flatApiDocs[index - 1] : undefined,
-    next: index >= 0 ? flatApiDocs[index + 1] : undefined,
+    previous: index > 0 ? pages[index - 1] : undefined,
+    next: index >= 0 ? pages[index + 1] : undefined,
   }
 }

@@ -1,0 +1,80 @@
+---
+title: Installation
+description: Choose the database package and prepare the tools needed to run it locally.
+---
+
+Install `@hulla/db` in the application that defines your schema. Add a UI package
+only when that application observes queries through a framework.
+
+| Application                     | Packages                           |
+| ------------------------------- | ---------------------------------- |
+| Server code or plain JavaScript | `@hulla/db`                        |
+| React, including Next.js        | `@hulla/db` and `@hulla/db-react`  |
+| Vue, including Nuxt             | `@hulla/db` and `@hulla/db-vue`    |
+| Svelte, including SvelteKit     | `@hulla/db` and `@hulla/db-svelte` |
+| Solid, including SolidStart     | `@hulla/db` and `@hulla/db-solid`  |
+
+The core does not install the UI frameworks. Each binding uses your application's
+framework as a peer dependency. Zod is used by the examples; other Standard Schema
+validators can validate function inputs too.
+
+## Prepare the runtime and database
+
+You need:
+
+- **Bun** for generation and the development watcher.
+- **TypeScript 7.0.2** in the build environment for schema/function inference.
+- **PostgreSQL** and a connection URL for a database you can provision.
+- **Node 22.18+ or Bun** with permission to launch native processes for server
+  database access and the persistent service. A framework can require a newer Node.
+
+Browser code needs none of the native executables. A static browser application
+can connect to the service even when its asset host cannot run the database SDK.
+
+## Install the packages
+
+For the React quickstart, install the core, React binding and Zod from npm:
+
+import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun add @hulla/db@0.1.0 @hulla/db-react@0.1.0 zod',
+    npm: 'npm install @hulla/db@0.1.0 @hulla/db-react@0.1.0 zod',
+    pnpm: 'pnpm add @hulla/db@0.1.0 @hulla/db-react@0.1.0 zod',
+    yarn: 'yarn add @hulla/db@0.1.0 @hulla/db-react@0.1.0 zod',
+  }}
+/>
+
+Add the compiler as a development dependency:
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun add --dev typescript@7.0.2',
+    npm: 'npm install --save-dev typescript@7.0.2',
+    pnpm: 'pnpm add --save-dev typescript@7.0.2',
+    yarn: 'yarn add --dev typescript@7.0.2',
+  }}
+/>
+
+These commands assume React and React DOM are already installed by your app
+scaffold. For another framework, install its matching binding instead. Add
+`@hulla/db-better-auth@0.1.0` and `better-auth` when the application uses the
+[Better Auth storage adapter](/docs/db/better-auth).
+
+## Native executables are included
+
+The core package contains compiled JavaScript, declarations and native
+executables for macOS arm64 and Linux x64/glibc. Installation does not compile Rust
+or download additional native executables. Linux musl/Alpine, Linux arm64 and
+macOS x64 are not included; see [deployment](/docs/db/deployment) for host requirements.
+Browser bindings do not launch native processes.
+
+For a native Rust application, install the crate from crates.io:
+
+```sh
+cargo add hulladb@0.1.0
+```
+
+Continue with the [Rust guide](/docs/db/rust) for native authoring, or the
+[first working live list](/docs/db/quick-start) for the React TypeScript example.

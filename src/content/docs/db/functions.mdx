@@ -1,0 +1,144 @@
+---
+title: Queries and mutations
+description: Declare browser-callable reads and atomic writes, with typed input and server-side validation.
+---
+
+A query reads a consistent database snapshot. A mutation writes in one
+transaction. Both handlers run on the service; the browser imports generated
+callables rather than the handler module.
+
+After [generation](/docs/db/code-generation), import the schema-bound constructors
+from `./_generated/functions`. The examples use the quickstart's `tasks` table.
+
+## Start with a read
+
+A handler alone is the shorthand for a declaration without options:
+
+```ts filename="db/tasks.ts"
+import { query } from './_generated/functions'
+
+export const list = query((ctx) =>
+  ctx.db.select('tasks').orderBy('title').limit(100)
+)
+```
+
+`ctx.db` is read-only in a query. The service tracks its database reads so a
+subscription can reevaluate after relevant changes. Return selected rows, an
+aggregate or another supported value; the result does not have to be a table.
+
+## Validate function input
+
+Use an options object when a query accepts input. Both queries and mutations
+support the same declaration shape:
+
+```ts filename="db/tasks.ts"
+import { query, mutation } from './_generated/functions'
+import { z } from 'zod'
+
+export const unfinished = query({
+  input: z.object({ limit: z.number().int().min(1).max(100) }),
+  handler: (ctx, input) =>
+    ctx.db.select('tasks').where({ completed: false }).limit(input.limit),
+})
+```
+
+The handler receives `ctx` first and validated `input` second. The browser call is
+`unfinished({ limit: 20 })`; its input and result types come from the declaration.
+Zod is one Standard Schema validator, not a requirement of the database.
+
+Table fields use `v` to describe storage rules. Function validators describe the
+values the handler accepts, including explicit transformations. See
+[schema validation](/docs/db/schemas#reuse-table-validation) to reuse table fields.
+
+## Write atomically
+
+```ts filename="db/tasks.ts"
+export const create = mutation({
+  input: z.object({ title: z.string().min(1) }),
+  handler: (ctx, input) => ctx.db.insert('tasks', input),
+})
+```
+
+All database operations performed by this handler share its transaction. Throwing
+rolls back its writes. A failed database operation also prevents commit if caught.
+There is no caller-supplied storage version or separate transaction declaration.
+
+Mutations use serializable OCC with up to three conflict retries after the first
+attempt. Each retry follows a confirmed rollback and reruns the handler against
+current data. Application failures and uncertain commits are not replayed. Keep
+handlers free of external effects and await their database operations.
+
+## Add shared authorization with an extension
+
+Declarations are browser-callable. Protect them in the handler or a shared guard.
+With [auth configured](/docs/db/authentication) to return an identity containing
+`id`, a guarded query constructor can prepare a user once:
+
+```ts filename="db/guards.ts"
+import { query } from './_generated/functions'
+
+export const authenticatedQuery = query.extend((ctx) => {
+  if (!ctx.identity) throw new Error('Sign in required')
+  return { user: ctx.identity }
+})
+```
+
+The derived constructor keeps the declaration syntax. For a table with an
+`owner` field, scope the read to the verified user:
+
+```ts filename="db/private-tasks.ts"
+import { authenticatedQuery } from './guards'
+
+export const list = authenticatedQuery((ctx) =>
+  ctx.db.select('privateTasks').where({ owner: ctx.user.id })
+)
+```
+
+Extensions execute in declaration order. Returned properties join `ctx`; reserved
+or duplicate context names throw. An extension may also declare `input` and use
+the validated second argument. Extension inputs and the final input share that
+argument; they do not live in another `locals` object. Each stage validates before
+its handler. Parsed input keys must be distinct across stages and the final
+declaration; duplicates reject even if the values are equal. Limits and output validation
+belong on the final declaration.
+
+## Validate or transform the result
+
+An optional output schema checks the handler result before it leaves the
+transaction. An explicit schema transform can change the returned representation:
+
+```ts filename="db/tasks.ts"
+export const createTitle = mutation({
+  input: z.object({ title: z.string().min(1) }),
+  output: z.string().transform((title) => title.toUpperCase()),
+  handler: async (ctx, input) => (await ctx.db.insert('tasks', input)).title,
+})
+```
+
+The stored title keeps its original case; the caller receives the transformed
+string. Output validation failure rolls back the mutation. There is no implicit
+coercion added around your validator.
+
+## Share ordinary database helpers
+
+If server routes and declarations need the same read, extract the database work:
+
+```ts filename="db/task-data.ts"
+import type { ReadDatabase } from './_generated/types'
+
+export const readTasks = (database: ReadDatabase) =>
+  database.select('tasks', ['id', 'title']).orderBy('title').limit(50)
+```
+
+Use `readTasks(ctx.db)` in a declaration and `readTasks(db)` in application server
+code. Use `WriteDatabase` for a helper that also writes. Exporting a helper does
+not expose it as an endpoint.
+
+Email, payments, filesystem access and framework APIs belong in ordinary server
+routes/actions/jobs. Handlers can bundle compatible computation and validation
+libraries, but cannot use arbitrary Node/Bun modules or external I/O. Generation
+diagnoses unsupported imports; the service enforces the execution boundary too.
+
+Next, [observe results in the browser](/docs/db/live-queries), connect a
+[framework binding](/docs/db/framework-bindings), or use the
+[database builders](/docs/db/database) for more reads and writes.

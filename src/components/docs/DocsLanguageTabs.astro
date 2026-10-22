@@ -1,0 +1,113 @@
+---
+import Tabs from '@/components/tabs/tabs.astro'
+import TabsContent from '@/components/tabs/tabs-content.astro'
+import TabsList from '@/components/tabs/tabs-list.astro'
+import TabsTrigger from '@/components/tabs/tabs-trigger.astro'
+import CodeBlock from '@/components/code/code-block.astro'
+import CodeBlockHeader from '@/components/code/code-block-header.astro'
+import CodeBlockBody from '@/components/code/code-block-body.astro'
+
+const typescript = await Astro.slots.render('typescript')
+const rust = await Astro.slots.render('rust')
+
+if (!typescript.trim()) {
+  throw new Error('DocsLanguageTabs requires a non-empty typescript slot.')
+}
+if (!rust.trim()) {
+  throw new Error('DocsLanguageTabs requires a non-empty rust slot.')
+}
+---
+
+<div class="docs-example" data-component-boundary>
+  <Tabs defaultValue="typescript" data-docs-language-tabs>
+    <CodeBlock>
+      <CodeBlockHeader>
+        <TabsList aria-label="Code language">
+          <TabsTrigger value="typescript">TypeScript</TabsTrigger>
+          <TabsTrigger value="rust">Rust</TabsTrigger>
+        </TabsList>
+      </CodeBlockHeader>
+      <CodeBlockBody>
+        <TabsContent value="typescript" class="docs-language-prose">
+          <noscript>
+            <p class="mx-4 mb-2 text-xs font-medium text-muted-foreground">
+              TypeScript
+            </p>
+          </noscript>
+          <Fragment set:html={typescript} />
+        </TabsContent>
+        <TabsContent value="rust" class="docs-language-prose">
+          <noscript>
+            <p class="mx-4 mb-2 text-xs font-medium text-muted-foreground">
+              Rust
+            </p>
+          </noscript>
+          <Fragment set:html={rust} />
+        </TabsContent>
+      </CodeBlockBody>
+    </CodeBlock>
+  </Tabs>
+</div>
+
+<style>
+  :global(.docs-language-prose > section > .md-p),
+  :global(.docs-language-prose > section > .md-ul),
+  :global(.docs-language-prose > section > .md-ol),
+  :global(.docs-language-prose > section > .md-table) {
+    margin-inline: 1rem;
+  }
+
+  @layer base {
+    :global(
+      [data-docs-language-tabs]:not([data-language-tabs-ready])
+        [data-slot='tabs-content'][hidden]
+    ) {
+      display: block !important;
+    }
+  }
+</style>
+
+<script>
+  import { TABS_VALUE_CHANGE_EVENT } from '@/lib/tabs'
+
+  type LanguageTabsElement = HTMLElement & { value: string }
+  const languages = ['typescript', 'rust']
+  const selector = '[data-docs-language-tabs]'
+
+  function setLanguage(value: string) {
+    if (!languages.includes(value)) return
+
+    document.querySelectorAll<LanguageTabsElement>(selector).forEach((tabs) => {
+      tabs.value = value
+      tabs.dataset.languageTabsReady = 'true'
+    })
+  }
+
+  await customElements.whenDefined('hulla-tabs')
+
+  try {
+    const stored = localStorage.getItem('hulla-docs-language')
+    if (stored) setLanguage(stored)
+  } catch {
+    // Language selection still works when storage is unavailable.
+  }
+
+  document.querySelectorAll<LanguageTabsElement>(selector).forEach((tabs) => {
+    tabs.dataset.languageTabsReady = 'true'
+  })
+
+  document.addEventListener(TABS_VALUE_CHANGE_EVENT, (event) => {
+    const target = event.target
+    if (!(target instanceof Element) || !target.closest(selector)) return
+
+    const value = (event as CustomEvent<{ value: string }>).detail.value
+    if (!languages.includes(value)) return
+
+    setLanguage(value)
+    try {
+      localStorage.setItem('hulla-docs-language', value)
+    } catch {
+      // Persistence is optional.
+    }
+  })
+</script>

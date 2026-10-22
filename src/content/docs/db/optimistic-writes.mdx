@@ -1,0 +1,179 @@
+---
+title: Optimistic updates
+description: Show a predicted change while a mutation runs, then let the server result settle the view.
+---
+
+Mutations normally show server-confirmed results. Use `.withOptimistic(...)` when
+the UI can predict a change to an already-loaded query result, such as marking
+a task completed. The wrapper keeps the mutation's normal input and result types.
+
+## Declare the real write first
+
+Add this mutation beside the quickstart's `list` query:
+
+```ts filename="db/tasks.ts"
+export const setCompleted = mutation({
+  input: z.object({ id: z.string().uuid(), completed: z.boolean() }),
+  handler: (ctx, input) =>
+    ctx.db
+      .update('tasks', { completed: input.completed })
+      .where({ id: input.id })
+      .expectRows(1),
+})
+```
+
+This example uses the public quickstart table. A private table also needs an
+ownership condition and verified-identity guard. Regenerate before importing
+the new client callable.
+
+## Define the prediction once
+
+Put a wrapper in a browser application module. It identifies the query result
+to change and returns an immutable replacement:
+
+```ts filename="src/task-mutations.ts"
+import { list, setCompleted } from '../db/_generated/client/tasks'
+
+export const completeTask = setCompleted.withOptimistic({
+  query: list,
+  update: (tasks, input) =>
+    tasks.map((task) =>
+      task.id === input.id ? { ...task, completed: input.completed } : task
+    ),
+})
+```
+
+The `list` query has no input, so no input mapping is needed. The SDK finds its
+cache entry using the generated query and the current auth context. You do not
+construct a cache key or declare a runtime predictor.
+
+Only an existing cached result can be updated. If it is absent, the prediction is
+skipped; the mutation still runs. An empty array is a real result. The updater
+must return the query's result shape and cannot create server authorization.
+
+## Call it like any mutation
+
+```tsx filename="src/TaskCheckbox.tsx"
+import { useMutation } from '@hulla/db-react'
+import { completeTask } from './task-mutations'
+
+export function TaskCheckbox({
+  id,
+  completed,
+}: {
+  id: string
+  completed: boolean
+}) {
+  const save = useMutation(completeTask)
+  return (
+    <input
+      type="checkbox"
+      checked={completed}
+      onChange={(event) => {
+        void save({ id, completed: event.currentTarget.checked })
+      }}
+    />
+  )
+}
+```
+
+The parent reads the live `list` query and passes its task into this checkbox.
+The prediction changes that result immediately; the mutation still resolves
+only with its authoritative server response. Use `save.state` for error/pending
+UI, or `await completeTask({ id, completed: true })` outside a component.
+
+Use the original `setCompleted` export for a server-confirmed call. There is no
+per-call optimistic mode switch; export the wrapper where prediction is intended.
+
+## Target one query input
+
+For a query that accepts input, map the mutation's input to the query input.
+For example, add a single-task query beside the quickstart declarations in
+`db/tasks.ts`, which already imports `query` and `z`:
+
+```ts filename="db/tasks.ts"
+export const get = query({
+  input: z.object({ id: z.string().uuid() }),
+  handler: (ctx, input) =>
+    ctx.db.select('tasks').where({ id: input.id }).unique(),
+})
+```
+
+After regenerating, wrap the mutation to update only that task's cached result:
+
+```ts filename="src/task-detail-mutations.ts"
+import { get, setCompleted } from '../db/_generated/client/tasks'
+
+export const completeTaskDetail = setCompleted.withOptimistic({
+  query: get,
+  input: ({ id }) => ({ id }),
+  update: (task, input) =>
+    task ? { ...task, completed: input.completed } : task,
+})
+```
+
+Calling `completeTaskDetail({ id, completed: true })` predicts only `get({ id })`.
+The updater preserves null when that query has no matching task. It does not
+create a result when the query has never been loaded.
+
+## Match several cached inputs
+
+Use `match` when several input variants should receive the same change. For
+example, different views can request different list sizes:
+
+```ts filename="db/tasks.ts"
+export const listWithLimit = query({
+  input: z.object({ limit: z.number().int().min(1).max(100) }),
+  handler: (ctx, input) =>
+    ctx.db.select('tasks').orderBy('title').limit(input.limit),
+})
+```
+
+Regenerate, then target every already-loaded variant without an input mapper:
+
+```ts filename="src/task-list-mutations.ts"
+import { listWithLimit, setCompleted } from '../db/_generated/client/tasks'
+
+export const completeTaskLists = setCompleted.withOptimistic({
+  query: listWithLimit,
+  match: () => true,
+  update: (tasks, input) =>
+    tasks.map((task) =>
+      task.id === input.id ? { ...task, completed: input.completed } : task
+    ),
+})
+```
+
+This updates the task wherever it appears in cached results such as
+`listWithLimit({ limit: 10 })` and `listWithLimit({ limit: 50 })`. It does not
+fetch other variants. Changing `completed` preserves this query's title ordering
+and membership; a query filtered by completion would need an updater that also
+respects that filter.
+
+The full callbacks are `match(queryInput, mutationInput)` and
+`update(current, mutationInput, queryInput)`, with each target's types inferred.
+Choose `input` for an exact cache entry or `match` for cached variants. Input-bearing
+queries require a selector; no-input queries need neither.
+
+Pass multiple target objects to `.withOptimistic(first, second)` when one mutation
+affects several queries. Each target keeps its own selection and updater.
+
+Updaters are synchronous, pure functions and may run again over a newer confirmed
+base. Return new arrays/objects. Capture temporary IDs or other nondeterministic
+values before starting the call. An invalid prediction is removed without
+preventing the real mutation from executing.
+
+## Understand how predictions end
+
+| Outcome                            | What the view does                                                                 |
+| ---------------------------------- | ---------------------------------------------------------------------------------- |
+| Mutation commits                   | Keeps the prediction until that query sees the commit, then uses the server result |
+| Mutation is rejected               | Removes its prediction and retains newer confirmed data                            |
+| Connection fails during submission | Removes the prediction while the same handle checks its original result            |
+| User/account changes               | Clears the old account's results and predictions                                   |
+
+Overlapping predictions are replayed over the latest confirmed base, so rejecting
+one does not restore an obsolete snapshot or erase someone else's committed edit.
+The SDK does not persist predictions or resubmit offline writes after a reload.
+See [mutation confirmation](/docs/db/live-queries#when-a-mutation-response-is-lost)
+for interrupted calls.

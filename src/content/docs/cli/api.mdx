@@ -1,0 +1,20 @@
+---
+title: API commands
+description: Understand the legacy API generation commands in the hulla CLI and the current @hulla/api path.
+---
+
+The `hulla api` commands in CLI beta `0.0.0-beta.1` belong to an older `@hulla/api` generation model. They emit `createApi`, `generate`, and `runGenerateConfig` code that is incompatible with the current `@hulla/api` 2.0 API, which removed that generator. Do not use these commands to scaffold a new 2.0 application.
+
+For a current API, follow the [@hulla/api 2.0 quick start](/docs/api/quick-start), which defines the contract, server implementation, and client call directly.
+
+## What the legacy commands expect
+
+The CLI still exposes `hulla api init`, `hulla api generate`, and `hulla api dev`. The initializer detects older framework and database setups and writes missing files such as `api.config.ts`, router modules, a handler, and a framework mount. It leaves existing files alone, but generated imports still target the legacy API surface.
+
+The generate and dev commands load an `api.config.ts` that carries the `hulla.api.client-config` marker, compile it with Bun, and call `runGenerateConfig` exported from the installed `@hulla/api`. Dev mode then watches the config and source inputs reported by the generator. These mechanics only describe that legacy integration boundary; they do not make it compatible with 2.0.
+
+## Existing legacy projects
+
+If you maintain a project built against the older generator, confirm its exact `@hulla/api` version and generated output contract before invoking the CLI. The current docs do not prescribe a compatible version pin, and no automatic migration from `createApi` or generated clients is provided here.
+
+For a 2.0 migration, use the current API documentation for [contracts](/docs/api/core/contracts), [servers](/docs/api/core/servers), and [clients](/docs/api/core/clients). Keep generated legacy files separate from new hand-authored 2.0 modules until the migration is complete.

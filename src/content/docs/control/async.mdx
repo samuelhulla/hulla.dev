@@ -1,0 +1,65 @@
+---
+title: Async result lifecycles
+description: Choose whether a promise is the operation's result or a payload stored inside a Result.
+---
+
+Async code can put a promise on either side of a result boundary. The types look similar, but they describe different work: `Promise<Result<T, E>>` means the operation is still running, while `Result<Promise<T>, E>` means the success branch has already been selected and its payload is still pending.
+
+## Return a result when the operation finishes
+
+For I/O, declare the function as `Promise<Result<T, E>>`. Await the I/O, then return `ok()` or `err()`; callers await the operation before narrowing:
+
+```ts
+import { err, ok, type Result } from '@hulla/control'
+
+async function readTitle(id: string): Promise<Result<string, Error>> {
+  try {
+    const response = await fetch(`/titles/${id}`)
+    if (!response.ok) return err(new Error(`HTTP ${response.status}`))
+    return ok(await response.text())
+  } catch (cause) {
+    return err(cause instanceof Error ? cause : new Error(String(cause)))
+  }
+}
+
+const outcome = await readTitle('welcome')
+if (outcome.isOk()) console.log(outcome.value)
+else console.error(outcome.error.message)
+```
+
+The await happens before branch inspection because `readTitle()` returns a promise of a result. An async function that returns `Err` is still resolving normally; its `Err` does not reject the promise.
+
+## Keep a promise as a result payload
+
+Use `Result<Promise<T>, E>` when the branch is already known but the successful value should remain pending. The result methods resolve promise payloads when they consume them:
+
+```ts
+import { ok } from '@hulla/control'
+
+const pending = ok(fetch('/titles/welcome').then((response) => response.text()))
+const greeting = pending.map((title) => `Hello, ${title}`)
+const text = await greeting.unwrap()
+```
+
+Here `greeting` is `Ok<Promise<string>>`; `unwrap()` returns that promise, so `await` resolves the payload. `match()` and `pair()` also return promises for promise payloads and invoke their callbacks after resolution. The result object itself is not thenable: `await pending` does not unwrap or resolve its payload.
+
+The corresponding error-payload form is `Err<Promise<E>>`; `mapErr`, `match`, and `pair` await that payload too. Promise rejections propagate out of these methods. They do not silently change the result branch to `Err`.
+
+## Keep a result returned by a mapper nested
+
+`map()` transforms a success payload without changing the outer branch. If it returns another result, the value is nested:
+
+```ts
+const nested = ok('welcome').map((id) =>
+  id ? ok({ id }) : err(new Error('Missing id'))
+)
+// Ok<Ok<{ id: string }> | Err<Error>>
+```
+
+The outer value remains `Ok`, because the callback ran in the success branch. Narrow `nested.value` to handle the inner result, or structure the caller to return one `Result` union from the function and branch there. `@hulla/control` does not provide a flattening `flatMap` method.
+
+## Pick an exception boundary deliberately
+
+Use `tcf()` when a thrown exception or rejected promise should be converted to a result. A direct `ok(promise).map(...)` preserves the promise as a payload and lets rejection propagate. Wrapping that work in `tcf({ try: async () => ... })` instead returns a promise that resolves to `Ok` or `Err`; the `catch` callback maps the thrown or rejected cause to an `Error`.
+
+See [Catching exceptions](/docs/control/attempts) for the synchronous and asynchronous `tcf()` lifecycle, and the [API reference](/docs/control/reference) for exact method signatures and type aliases.

@@ -1,0 +1,53 @@
+---
+title: '@hulla/args'
+description: Define typed command-line arguments and inspect validated results in Node.js, Bun, Deno, or another JavaScript runtime.
+---
+
+import DocsGuideLinks from '@/components/docs/DocsGuideLinks.astro'
+
+`@hulla/args` parses an argv array into typed, validated values. Define named options, positional input, and nested commands in one declaration.
+
+Your application decides what commands do and how to show help or errors. Pass a `string[]` to keep runtime integration at the edge.
+
+## Choose a guide
+
+<DocsGuideLinks
+  label="Argument parser guides"
+  items={[
+    {
+      title: 'Quick start',
+      href: '/docs/args/quick-start',
+      description: 'Build and run a small greeting command.',
+    },
+    {
+      title: 'Arguments',
+      href: '/docs/args/arguments',
+      description: 'Flags, options, positionals, and sequences.',
+    },
+    {
+      title: 'Commands',
+      href: '/docs/args/commands',
+      description: 'Aliases and nested commands.',
+    },
+    {
+      title: 'Validation',
+      href: '/docs/args/validation',
+      description: 'Validate provided values with Zod schemas.',
+    },
+    {
+      title: 'Parser options',
+      href: '/docs/args/options',
+      description: 'Configure argv slicing and parsing behavior.',
+    },
+    {
+      title: 'Build a CLI',
+      href: '/docs/args/recipes',
+      description: 'Add required input and error handling.',
+    },
+    {
+      title: 'Reference',
+      href: '/docs/args/reference',
+      description: 'Constructors, result fields, and error metadata.',
+    },
+  ]}
+/>

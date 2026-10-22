@@ -10,7 +10,7 @@ const { class: className, ...props } = Astro.props as Props
   {...props}
   data-slot="stepper-panel"
   class={cn(
-    'col-start-2 grid min-w-0 gap-3 pb-8 pt-3 text-sm leading-6 text-muted-foreground group-last/step:pb-0 [&>*]:m-0',
+    'col-start-2 grid min-w-0 gap-4 pb-8 pt-0 text-base leading-7 text-foreground group-last/step:pb-0 [&>*]:m-0',
     className
   )}>
   <slot />

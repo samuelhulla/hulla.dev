@@ -1,0 +1,53 @@
+---
+title: Parser options
+description: Control which argv entries are read and how names, aliases, and command arguments are matched.
+---
+
+Parser settings adjust how `@hulla/args` interprets the string array passed to `.parse()`. Most CLIs can use the defaults; set an option when the runtime input or command-line convention requires it. With the default `caseSensitive: false`, names match without regard to case. Positional and space-separated option values retain their original spelling; values in `--name=value` form are read from the lowercased matching token. Each result's `raw` field retains the original spelling.
+
+## Slice a larger argv array
+
+By default, `startIndex` is `0` and `stopIndex` is unset, so `parse()` reads the complete array. If you pass Node's or Bun's full `process.argv`, skip its executable and script path with `startIndex: 2`:
+
+```ts
+import { parser, positional } from '@hulla/args'
+
+const cli = parser({
+  name: 'greet',
+  arguments: [positional({ name: 'name' })],
+  settings: { startIndex: 2 },
+})
+
+const result = cli.parse(process.argv)
+```
+
+This is equivalent to passing `process.argv.slice(2)` to a parser with default settings. Prefer one approach, so the runtime prefix is removed exactly once. `stopIndex` can bound the end of the slice.
+
+## Choose matching behavior
+
+These are the supported settings and defaults:
+
+| Setting            | Default  | Effect                                                                 |
+| ------------------ | -------- | ---------------------------------------------------------------------- |
+| `caseSensitive`    | `false`  | Match names without regard to case.                                    |
+| `mode`             | `'both'` | Accept long and short forms; `'long'` or `'short'` restricts the form. |
+| `requireEquals`    | `false`  | Require options to use `--name=value` when enabled.                    |
+| `keepOnlyDetected` | `false`  | Omit declared argument and command entries that were not detected.     |
+| `mergeArgs`        | `false`  | Let root and selected command parsers inspect shared arguments.        |
+| `sharedDash`       | `false`  | Expand combined short forms such as `-abc`.                            |
+
+For example, a parser that accepts only long option forms can declare:
+
+```ts
+import { option, parser } from '@hulla/args'
+
+const cli = parser({
+  name: 'report',
+  arguments: [option({ name: 'output' })],
+  settings: { mode: 'long', requireEquals: true },
+})
+```
+
+Then a value option is written as `--output=report.txt`; a short form such as `-o` is not accepted. Combined short forms require every short name to be one character; see [arguments](/docs/args/arguments).
+
+Settings apply to the parser and its nested commands. Keep the defaults until a concrete runtime or CLI convention calls for a change; see [quick start](/docs/args/quick-start) for the recommended argv boundary and casing choice.

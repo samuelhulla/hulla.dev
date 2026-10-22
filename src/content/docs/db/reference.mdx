@@ -1,0 +1,175 @@
+---
+title: API reference
+description: Look up the entrypoints, result states, configuration defaults and execution limits used by the TypeScript SDK.
+---
+
+Use this page for exact names and defaults. Start with the
+[quick start](/docs/db/quick-start) for an end-to-end example or
+[read and write data](/docs/db/database) for database builders.
+
+## Application entrypoints
+
+| Import                         | Exports you normally use                                         |
+| ------------------------------ | ---------------------------------------------------------------- |
+| `@hulla/db/schema`             | `defineSchema`, `defineTable`, `v`, `sql`                        |
+| `@hulla/db/config`             | `defineConfig`                                                   |
+| `@hulla/db`                    | `Input`, `Output`, `DatabaseError`                               |
+| `@hulla/db-react`              | `useQuery`, `usePaginatedQuery`, `useMutation`                   |
+| `@hulla/db-vue`                | `useQuery`, `usePaginatedQuery`, `useMutation`                   |
+| `@hulla/db-svelte`             | `createQuery`, `createPaginatedQuery`, `createMutation`          |
+| `@hulla/db-solid`              | `createQuery`, `createPaginatedQuery`, `createMutation`          |
+| `@hulla/db/zod`                | `createSelectSchema`, `createInsertSchema`, `createUpdateSchema` |
+| `@hulla/db-better-auth`        | `hullaAdapter`                                                   |
+| `@hulla/db-better-auth/schema` | `betterAuthTables`, `generateAuthSchema`                         |
+
+Schema-bound constructors, callables and the direct database come from your
+[generated modules](/docs/db/code-generation#import-the-generated-surface-for-your-code).
+`Input<typeof fn>` and `Output<typeof fn>` work with declarations, generated
+callables and optimistic wrappers. Output describes resolved data rather than
+an invocation handle; query results are recursively readonly.
+
+## Configuration fields
+
+Import `defineConfig` from `@hulla/db/config`. The shipped config and browser
+startup accept different kinds of connection address:
+
+| Setting                                           | Purpose                                                        |
+| ------------------------------------------------- | -------------------------------------------------------------- |
+| `database.server.url` in `defineConfig`           | Private `postgresql://…` connection used by the server/service |
+| `database.server.namespace`                       | Optional PostgreSQL schema namespace                           |
+| `schema`                                          | Schema source path; defaults to `db/schema.ts`                 |
+| `functions`                                       | Optional declaration discovery directory                       |
+| `service.host`, `service.port`, `service.origins` | Listener and allowed browser origins                           |
+| `auth(headers)`                                   | Verify credentials and return `{ key, identity }` or null      |
+| `limits`                                          | Default server invocation budgets                              |
+| `database.client.url`                             | Public HTTP(S) query service address                           |
+
+Keep the two URLs separate from user/session state. See the
+[service setup](/docs/db/runtime) and [authentication guide](/docs/db/authentication).
+
+## Declaration options
+
+Both `query` and `mutation` accept `{ input?, handler, output?, limits? }`, or a
+handler alone. Handlers receive `(ctx, input)`. Queries get `ReadDatabase`;
+mutations get `WriteDatabase`. Both receive `identity` from the configured
+credential verifier, or null for an anonymous caller.
+
+`.extend(handler)` and `.extend({ input?, handler })` prepare context/input in
+declaration order. They cannot set limits or output validation. Returned context
+keys cannot overwrite reserved or previously prepared keys. Parsed input keys
+cannot be redeclared by another stage or the final input schema. See
+[queries and mutations](/docs/db/functions).
+
+## Calling and observing
+
+| Expression                                  | Behavior                                                      |
+| ------------------------------------------- | ------------------------------------------------------------- |
+| `await list(input)`                         | One server result; no continuing subscription                 |
+| `const call = list(input)`                  | Starts a read and returns an inspectable, awaitable handle    |
+| `list.subscribe(input, listener, options?)` | Observes live snapshots; returns cleanup                      |
+| `await create(input)`                       | Resolves the mutation's server result after commit            |
+| `create.withOptimistic(...targets)`         | Returns a mutation wrapper with shared prediction behavior    |
+| `list.paginate(cursor => input)`            | Returns a live growing-list handle for an eligible page query |
+
+No-input functions omit the input argument. Query call options accept a `signal`;
+submitted mutations do not accept cancellation signals or a per-call optimistic
+mode. Handles are thenables: use `await` or `Promise.resolve(handle)` when you
+need a standard promise's methods.
+
+### Optimistic targets
+
+Pass target objects to `mutation.withOptimistic(...targets)`. Each identifies a
+query and returns its replacement result through `update`:
+
+| Target query            | Selection                                                          |
+| ----------------------- | ------------------------------------------------------------------ |
+| Has no input            | `{ query, update }`                                                |
+| One exact input         | `{ query, input: mutationInput => queryInput, update }`            |
+| Existing input variants | `{ query, match: (queryInput, mutationInput) => boolean, update }` |
+
+`update(current, mutationInput, queryInput)` receives the selected query result
+and typed inputs. A `match` target needs no input mapper. Only already-cached
+results are predicted; the mutation still returns its server-confirmed result.
+See [optimistic updates](/docs/db/optimistic-writes) for complete examples.
+
+### Query states
+
+`status` is `pending`, `success` or `error`. Success includes `data`; pending/error
+may retain data according to lifecycle and error policy. `isStale` marks a result
+that is not current, and `isOptimistic` marks predicted data.
+
+### Mutation states
+
+`status` is `pending`, `recovering`, `success` or `error`. Success includes `data`;
+error includes `error`. Framework mutation bindings start at `idle` before the
+first call. `recovering` checks the original submitted result; it does not rerun
+the mutation. See [live result behavior](/docs/db/live-queries).
+
+## Browser configuration defaults
+
+`database.client` takes a public service `url`, optional `credentials` mode and timeouts.
+Generation emits lazy browser setup. Use generated `setHeaders` for current bearer credentials.
+Call `setAuth(null | { key, expiresAt? } | promise)` when provider state changes.
+`expiresAt` is optional Unix milliseconds. No manual loading status is needed.
+
+| Timeout                 | Default                                             |
+| ----------------------- | --------------------------------------------------- |
+| `operationTimeoutMs`    | 10 seconds per request                              |
+| `queryTimeoutMs`        | 30 seconds overall for a one-shot query             |
+| `confirmationTimeoutMs` | 30 seconds for mutation submission and confirmation |
+| `streamIdleTimeoutMs`   | 30 seconds without stream activity                  |
+
+Inactive query results have a five-minute grace period, bounded to 128 entries and
+16 MiB of encoded keys/results. Active queries remain pinned. A fresh browser
+page has no persisted result cache. One live set supports 128 distinct queries;
+loaded page ranges share that budget. Separate tabs have separate caches.
+
+## Execution limits
+
+Configure defaults in `defineConfig({ limits })` and optional per-function
+overrides on final declarations. These bound server work, not network latency:
+
+| Limit         | Default                                      |
+| ------------- | -------------------------------------------- |
+| `executionMs` | 5,000 milliseconds                           |
+| `inputBytes`  | 16 MiB                                       |
+| `outputBytes` | 16 MiB                                       |
+| `memoryBytes` | 64 MiB                                       |
+| `stackBytes`  | 512 KiB                                      |
+| `operations`  | 1,000 database operations                    |
+| `readRows`    | 100,000 returned rows                        |
+| `readBytes`   | 64 MiB of fetched PostgreSQL column payloads |
+
+Read budgets count fetched rows/payloads, including write returning data; they do
+not count every row scanned by PostgreSQL. Combined live rounds and page lists
+have additional bounds. See [pagination](/docs/db/live-queries#stay-within-a-bounded-live-view).
+
+## Errors and retry boundaries
+
+Intentional `DatabaseError({ code, message, details? })` instances preserve their
+fields across calls, subscriptions and mutation failure recovery. Details must be
+JSON-safe and the serialized payload must fit in 16 KiB. Larger errors fail with
+`execution_limit`. Stack traces, causes, ordinary exceptions and native database
+diagnostics remain private. Only declare information safe for the caller.
+Application codes never control transport retries or cache identity.
+
+Declared mutations can retry confirmed serializable conflicts up to three times
+after the first attempt. Direct `db.transaction` defaults to zero retries; opt in
+per call. Neither replays arbitrary application failures or uncertain commits.
+A mutation confirmation timeout is not proof of rollback.
+
+## Lower-level entrypoints
+
+Most applications use generated code instead of constructing these pieces:
+
+| Import               | Purpose                                                                         |
+| -------------------- | ------------------------------------------------------------------------------- |
+| `@hulla/db/server`   | `createDatabase` and generic database/builder types                             |
+| `@hulla/db/codegen`  | `generateProject`, schema/function generators and optional Rust contract output |
+| `@hulla/db/bindings` | Shared observation primitives used by UI packages                               |
+
+Generated code imports its binding factories, declaration constructor and worker
+installer through internal package entrypoints. Applications do not import or
+configure those pieces. The entries above support programmatic generation,
+direct database integrations and custom UI bindings.
+The native Rust facade has its own [authoring and runtime guide](/docs/db/rust).

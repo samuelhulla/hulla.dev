@@ -7,6 +7,7 @@ usefulFor:
 ---
 
 import DocsApiArchitecture from '@/components/docs/DocsApiArchitecture.astro'
+import DocsConceptFlow from '@/components/docs/DocsConceptFlow.astro'
 
 `@hulla/api` has one shared description and two runtime halves. The contract types both halves, but it performs no I/O and contains no business logic.
 
@@ -23,18 +24,39 @@ The client side asks for a route. The server side implements it. A transport and
 | `src/api/client.ts`             | Caller      | `createClient()`, client middleware, and the selected transport |
 | Framework route or server entry | Host only   | Adapter mounting and native request context                     |
 
-The contract is safe to publish as a package or import into browser code. The implementation is not: it can reach databases, secrets, queues, and framework state.
-
-That split is deliberate. A frontend team can compile against the boundary without gaining access to the server module that fulfills it.
+Share the contract with frontend code or publish it as a package. Keep the implementation server-only: it can access databases, secrets, queues, and framework state.
 
 ## Follow one call
 
-1. **The client selects a route.** The route already knows its method, path, accepted request fields, and possible responses.
-2. **Client middleware prepares the call.** It can add auth headers, tracing data, or cancellation without changing the contract.
-3. **One transport crosses the boundary.** Fetch serializes HTTP; in-process dispatches locally; MessagePort and WebSocket use their own protocols.
-4. **The adapter enters the host.** A native adapter lets Express, Hono, or another framework keep its router and native context. A Fetch adapter matches a Web `Request` itself.
-5. **The server validates and runs the handler.** Request fields are decoded before business logic. The handler can return only a declared response or error.
-6. **The client receives a typed result.** The status discriminates the body, so checking `result.status` narrows both together.
+<DocsConceptFlow
+  label="Request lifecycle"
+  steps={[
+    {
+      title: 'Select a route',
+      description:
+        'The client knows the method, path, accepted fields, and possible responses.',
+    },
+    {
+      title: 'Prepare the call',
+      description:
+        'Client middleware adds auth headers, tracing, or cancellation.',
+    },
+    {
+      title: 'Cross the boundary',
+      description:
+        'The selected transport carries the call. The adapter connects it to host routing and context.',
+    },
+    {
+      title: 'Validate and handle',
+      description:
+        'The server decodes request fields, runs middleware, and returns a declared response or error.',
+    },
+    {
+      title: 'Read a typed result',
+      description: 'Check the response status to narrow the body type.',
+    },
+  ]}
+/>
 
 ```ts filename="src/features/projects.ts"
 const result = await api.projects.byId({ params: { id } })
@@ -50,23 +72,14 @@ There is no generated client and no hidden global router. The client is a typed 
 
 ## Choose the middle boundary
 
-### Use in-process when both sides share a safe server runtime
+| Your application needs…                            | Choose                                                                                          | What stays in your application                                          |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Calls inside a trusted server runtime              | [In-process](/docs/api/transports/in-process)                                                   | Server rendering, jobs, and tests; validation and middleware still run. |
+| HTTP between browsers or services                  | [Fetch](/docs/api/transports/fetch)                                                             | Origin and deployment; the adapter matches Web requests.                |
+| An existing framework router                       | A [native adapter](/docs/api/servers)                                                           | Routing, hooks, parsed bodies, response writing, and request context.   |
+| A worker, desktop bridge, or persistent connection | [MessagePort](/docs/api/transports/message-port) or [WebSocket](/docs/api/transports/websocket) | The port or socket lifecycle. Client calls keep the same shape.         |
 
-Server-rendered pages, background jobs, and tests can call the completed implementation without opening a socket. The call still runs validation, middleware, handlers, declared errors, and codecs.
-
-Do not import an in-process client into browser code: it imports the server implementation with it.
-
-### Use Fetch when HTTP is already the boundary
-
-Browsers, services, edge runtimes, and Web-standard routes fit `fetchTransport()` and `fetchAdapter()`. The host owns the origin and deployment; the adapter owns contract matching and conversion.
-
-### Use a native adapter when framework behavior should stay native
-
-Express, Fastify, Hono, H3, Elysia, Koa, NestJS, and full-stack frameworks can keep their router, hooks, parsed bodies, response writer, and request context. The adapter connects those native objects to the portable implementation.
-
-### Use MessagePort or WebSocket for a different process boundary
-
-Workers and desktop shells often already have a port. Long-lived remote clients may already have a socket. These transports preserve the same client call shape without pretending the boundary is Fetch.
+**Keep in-process clients on the server.** They import the server implementation and must never enter browser code.
 
 ## Validation follows direction
 

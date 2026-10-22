@@ -1,0 +1,69 @@
+---
+title: Validate CLI input
+description: Use Zod schemas to coerce and constrain values that users supplied, and handle omitted input explicitly.
+---
+
+`@hulla/args` validates supplied option and positional values with their Zod schemas. When either is omitted, the result has `detected: false` and `value: undefined`; its schema is not called. Your CLI must check for missing input explicitly. Flags always validate a boolean, including `false` when absent.
+
+## Validate a supplied value
+
+In `src/cli.ts`, a Zod schema can convert an option's string into a number and reject invalid input. The `detected` check distinguishes an omitted option from a supplied value.
+
+```ts
+import { option, parser } from '@hulla/args'
+import { argv } from 'node:process'
+import { z } from 'zod'
+
+const cli = parser({
+  name: 'serve',
+  arguments: [option({ name: 'port', schema: z.coerce.number().int().min(1) })],
+})
+
+const portArg = cli.parse(argv.slice(2)).arguments.port
+const port = portArg.detected ? portArg.value : 3000
+console.log(port)
+```
+
+`bun src/cli.ts --port 8080` prints `8080`; running without `--port` prints the explicit fallback `3000`. `--port nope` throws a `ParserError` from Zod validation. The `raw` field retains the entered text. With default `caseSensitive: false`, positional and space-separated option values retain their original spelling, while an equals-form value such as `--label=Sam` is lowercased before validation. Set `caseSensitive: true` when equals-form values need exact casing; this also makes argument names case-sensitive.
+
+## Require a positional value
+
+Use `detected` to require that the user supplied a positional. A schema such as `.min(1)` validates a present string, but it cannot reject an omitted positional because the schema is skipped in that case.
+
+```ts
+import { ParserError, parser, positional } from '@hulla/args'
+import { argv } from 'node:process'
+import { z } from 'zod'
+
+const cli = parser({
+  name: 'notes',
+  arguments: [
+    positional({ name: 'title', schema: z.string().min(1, 'Enter a title') }),
+  ],
+})
+```
+
+Parse at the application's entrypoint. Check for a missing title explicitly, and catch validation errors from a title that was supplied:
+
+```ts
+try {
+  const title = cli.parse(argv.slice(2)).arguments.title
+  if (title.detected) {
+    console.log(title.value)
+  } else {
+    console.error('A title is required')
+    process.exitCode = 1
+  }
+} catch (error) {
+  if (error instanceof ParserError) {
+    console.error(error.message)
+    process.exitCode = 1
+  } else {
+    throw error
+  }
+}
+```
+
+When a title is absent, the CLI's explicit check reports `A title is required`. An empty title is present, so Zod rejects it with `Enter a title`. Catch parser errors at the CLI boundary to choose the message and exit policy; `@hulla/args` does not print help or set the process exit code.
+
+Zod validates values during parsing; it does not execute command handlers. See [arguments](/docs/args/arguments) for the available input shapes, and [commands](/docs/args/commands) to route a validated result.

@@ -1,0 +1,71 @@
+---
+title: Mental model
+description: Understand where your schema, server code and live browser functions run.
+---
+
+Your schema types the database. Server code uses `db` directly. Browser code calls
+generated functions whose handlers execute on the service, beside PostgreSQL.
+
+| Code                                  | Runs in            | Has access to                                         |
+| ------------------------------------- | ------------------ | ----------------------------------------------------- |
+| `db/schema.ts`                        | Build and server   | Table definitions and storage rules                   |
+| `db/tasks.ts` query/mutation handlers | Database service   | `ctx.db` and verified `ctx.identity`                  |
+| `db/_generated/client/tasks`          | Browser            | Typed calls and subscriptions                         |
+| Your route, server action or job      | Application server | Direct `db`, your auth provider and external services |
+
+## Follow a browser write
+
+1. A component calls a generated mutation, such as `create({ title })`.
+2. The service verifies its credentials and validates input.
+3. The handler executes in a database transaction. A failure rolls its writes back.
+4. After commit, the call resolves with the server result.
+5. The service reevaluates affected live queries and publishes their new results.
+
+A query handler is ordinary typed code, so it can filter rows, join results in
+application code or return a calculated value. Its tracked database reads tell the
+service when it needs another evaluation.
+
+The browser stores query results in memory. A fresh page waits for the first
+authorized server result. An already-open view can retain its last result while
+reconnecting; it does not query a local SQLite database or queue offline writes.
+
+## Choose a transaction boundary
+
+| Operation                       | Database behavior                                                       |
+| ------------------------------- | ----------------------------------------------------------------------- |
+| A declared `query`              | Read-only, consistent snapshot                                          |
+| A declared `mutation`           | One atomic transaction, with bounded OCC conflict retries               |
+| Separate direct `db` operations | Each executes independently                                             |
+| `db.transaction(async tx => …)` | One group commits or rolls back together; callback runs once by default |
+
+OCC is optimistic concurrency control: if concurrent work invalidates a mutation's
+snapshot, the failed attempt rolls back and eligible conflicts can retry against
+current data. It does not guarantee click order. Separate mutations may run in
+parallel; sequential `await`s express a dependency.
+
+## Keep application work in the application
+
+Queries and mutations can use database operations and bundled computation or
+validation code. They cannot call an email service, open files or use a framework's
+request APIs. That restriction keeps tracked reads and retryable writes safe.
+
+Send emails, call payments or schedule jobs from ordinary application server code.
+Use direct `db` operations there. To share database logic with a declaration,
+extract a helper accepting `ReadDatabase` or `WriteDatabase`; there is no need to
+make it a public endpoint.
+
+## Generation separates implementation from calling
+
+You write a query or mutation once. Generation emits a browser-safe callable with
+the same input/result types, without bundling the handler or database credentials.
+It also binds the declaration constructors and server database to your schema.
+You do not maintain an `api.ts` registry or duplicate the declaration for each UI.
+
+Framework bindings subscribe after mount and release subscriptions on unmount.
+Server-rendered data can be passed as `initialData` for the first render, then
+replaced by the live result. A Server Component or loader does not itself become
+a live subscription.
+
+Continue with [the working example](/docs/db/quick-start),
+[direct database access](/docs/db/database), or
+[query/mutation authoring](/docs/db/functions).

@@ -1,0 +1,94 @@
+---
+title: Code generation
+description: Generate schema-typed server access and browser callables from the declarations you write once.
+---
+
+Run generation after defining your schema, and again when declarations change.
+The generator binds the SDK to your schema and creates browser-safe callables.
+It does not open a database connection or start a listener.
+
+```sh
+bun --bun hulla-db generate
+```
+
+By default it reads `db.config.ts`, loads `db/schema.ts`, and discovers exported
+query/mutation declarations beside the schema. A first run with no declarations
+creates the constructors you need to author them.
+
+## Import the generated surface for your code
+
+| Import                           | Use it in                                                                 |
+| -------------------------------- | ------------------------------------------------------------------------- |
+| `./db/_generated/functions`      | Server declarations: schema-typed `query` and `mutation`                  |
+| `./db/_generated/server`         | Application server code: direct `db` access                               |
+| `./db/_generated/client/tasks`   | Browser code: call or observe exports from `db/tasks.ts`                  |
+| `./db/_generated/client/runtime` | Auth/lifecycle: `setAuth`, `setHeaders` and `dispose`                     |
+| `./db/_generated/tables`         | Database code: typed table and field references                           |
+| `./db/_generated/types`          | Schema-bound `Row`, `Insert`, `Patch`, `Id` and database capability types |
+
+Paths above are relative to the project root; adjust imports from nested files.
+Generated worker files are service artifacts, not another entrypoint to maintain.
+The client modules contain calling code and contracts; they do not ship your
+handlers to the browser. Package authoring imports stay separate:
+`@hulla/db/schema` defines storage and `@hulla/db/config` defines connection and
+service settings. The package root supplies shared helpers such as `Input`,
+`Output` and `DatabaseError`; it does not supply schema-bound constructors.
+
+## Let discovery follow your source tree
+
+An exported `query(...)` or `mutation(...)` is remotely callable. Ordinary exported
+functions are helpers, even when a declaration imports them. Generation recognizes
+declarations derived with `.extend(...)` as well.
+
+Keep schema, config, generated files and helpers out of accidental export schemes.
+You do not need a manual function registry or a second `api.ts` file. Nested
+modules produce matching nested client modules.
+
+If the default layout does not fit, configure source locations:
+
+```ts filename="db.config.ts"
+import { defineConfig } from '@hulla/db/config'
+
+export default defineConfig({
+  database: {
+    server: { url: process.env.DATABASE_URL! },
+    client: { url: 'http://localhost:3001', credentials: 'include' },
+  },
+  schema: 'data/schema.ts',
+  functions: 'data/functions',
+})
+```
+
+Paths resolve relative to the config. Output remains beside the resolved schema
+in `_generated/`. Only set `functions` when you need another discovery root.
+
+## Use the watcher during development
+
+```sh
+bun --bun hulla-db dev
+```
+
+The watcher regenerates and restarts the service as source changes. It does not
+provision tables or erase existing storage. Use `init` explicitly for provisioning;
+an incompatible development schema needs an explicit recreation of disposable data.
+
+Generation and development require Bun and TypeScript 7.0.2. Keep module
+initialization free of database calls and request-specific effects: generation
+evaluates your trusted schema/declaration modules to inspect them. Unsupported
+handler imports fail with a diagnostic rather than gaining server capabilities.
+
+## Build once, serve prepared artifacts
+
+```sh
+bun --bun hulla-db generate
+node node_modules/@hulla/db/dist/cli.js serve
+```
+
+The second command loads existing artifacts under Node; it does not invoke the
+generator or watcher. Include the config, schema, generated files, runtime
+dependencies and native assets in your deployment.
+
+Generated files carry ownership headers. Do not edit them or put application
+source in `_generated/`: the generator protects authored files and removes only
+its own obsolete outputs. Lower-level generation APIs are listed in the
+[reference](/docs/db/reference); most applications only need these CLI commands.

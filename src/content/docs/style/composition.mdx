@@ -1,0 +1,65 @@
+---
+title: Composition
+description: Combine a component's base classes, variant selections, and optional caller classes with cn.
+---
+
+Components often have three class sources: a stable base, one or more selected variants, and an optional class supplied by the caller. `cn` puts those sources into one string while accepting conditional objects and arrays for optional pieces.
+
+## Compose base classes and variants
+
+The following example belongs in an existing React application with its CSS utilities configured. Import `cn` and `vn` from the shared module created in the [quick start](/docs/style/quick-start). Declare each choice separately when callers may combine them: here size and tone are independent.
+
+```tsx filename="src/components/Tag.tsx"
+import type { ReactNode } from 'react'
+import { cn, vn } from '../lib/style'
+
+const $tone = vn({
+  neutral: 'bg-slate-100 text-slate-900',
+  green: 'bg-green-100 text-green-900',
+})
+const $size = vn({ small: 'px-2 py-1 text-xs', large: 'px-3 py-2 text-sm' })
+```
+
+In the same file, use those inferred choices for the props and combine their selected classes when rendering. Caller classes are passed last:
+
+```tsx filename="src/components/Tag.tsx"
+type TagProps = {
+  tone: typeof $tone.infer
+  size?: typeof $size.infer
+  className?: string
+  children: ReactNode
+}
+
+export function Tag({ tone, size = 'small', className, children }: TagProps) {
+  return (
+    <span
+      className={cn(
+        'inline-flex rounded',
+        $tone(tone),
+        $size(size),
+        className
+      )}>
+      {children}
+    </span>
+  )
+}
+```
+
+The call `<Tag tone="green" className="uppercase">New</Tag>` produces `inline-flex rounded bg-green-100 text-green-900 px-2 py-1 text-xs uppercase`. The default composer removes exact duplicate tokens and keeps first occurrence order. It does not decide which of two different CSS utilities should win.
+
+## Add conditional classes
+
+Pass an object for flags that toggle a class, or an array when a group of classes should be included together. False values are omitted by the default serializer.
+
+```ts
+const className = cn(
+  'rounded px-3',
+  { 'opacity-50': disabled, 'cursor-not-allowed': disabled },
+  ['transition-colors'],
+  isInteractive && 'hover:bg-slate-100'
+)
+```
+
+For example, when `disabled` is true and `isInteractive` is false, the result is `rounded px-3 opacity-50 cursor-not-allowed transition-colors`. For Tailwind-aware conflict handling, see [Custom merging](/docs/style/custom-merging); otherwise, use the default when exact-token deduplication is all the component needs.
+
+The declared array input is `string[]`, so keep conditional booleans outside arrays as shown by `isInteractive && 'hover:bg-slate-100'`. An array is useful for a fixed group of class strings; a conditional object is useful when each key should turn on independently. The [class input reference](/docs/style/reference) lists accepted values and the default serializer's behavior for empty values, numbers, Sets, and Maps.

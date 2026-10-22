@@ -1,0 +1,102 @@
+---
+title: '@hulla/db'
+description: Read and write PostgreSQL with a typed SDK, and keep browser queries up to date automatically.
+---
+
+`@hulla/db` gives your application typed PostgreSQL access and live query results.
+Define your tables once. Use `db` in server code, or declare queries and mutations
+for the browser.
+
+```ts filename="db/tasks.ts"
+import { query, mutation } from './_generated/functions'
+import { z } from 'zod'
+
+export const list = query((ctx) => ctx.db.select('tasks').limit(100))
+
+export const create = mutation({
+  input: z.object({ title: z.string().min(1) }),
+  handler: (ctx, input) => ctx.db.insert('tasks', input),
+})
+```
+
+In a React component, observe the query and call the mutation:
+
+```tsx filename="src/Tasks.tsx"
+import { useMutation, useQuery } from '@hulla/db-react'
+import { create, list } from '../db/_generated/client/tasks'
+
+export function Tasks() {
+  const tasks = useQuery(list)
+  const add = useMutation(create)
+  return (
+    <>
+      {tasks.data?.map((task) => (
+        <p key={task.id}>{task.title}</p>
+      ))}
+      <button
+        onClick={() => {
+          void add({ title: 'Write the guide' })
+        }}>
+        Add task
+      </button>
+    </>
+  )
+}
+```
+
+After a write commits, the server reevaluates affected queries and the component
+receives the new result. You do not invalidate query keys or synchronize a browser
+database. Vue, Svelte and Solid have their own [UI bindings](/docs/db/framework-bindings);
+plain JavaScript can subscribe directly.
+
+The examples above assume a table and a configured connection. The
+[quick start](/docs/db/quick-start) takes you from those files to a working live
+task list. [Installation](/docs/db/installation) covers npm packages, supported
+native platforms and build/runtime prerequisites.
+
+## Use the database directly on your server
+
+An API route, server action or background job can use ordinary database builders:
+
+```ts filename="server/tasks.ts"
+import { db } from '../db/_generated/server'
+
+const task = await db.insert('tasks', { title: 'Write the guide' })
+const tasks = await db.select('tasks').orderBy('title').limit(100)
+```
+
+Your application owns authentication, authorization and external services in
+this code. Use `db.transaction` when several writes must commit or roll back
+together. Direct writes also refresh matching browser subscriptions.
+
+## Choose the surface your application needs
+
+| You need to…                                        | Use                                                           |
+| --------------------------------------------------- | ------------------------------------------------------------- |
+| Read or write from trusted server code              | [Direct database access](/docs/db/database)                   |
+| Keep a browser view current                         | [Queries and mutations](/docs/db/functions) with a UI binding |
+| Render on the server, then subscribe in the browser | A [framework recipe](/docs/db/meta-frameworks)                |
+| Show a change before its mutation finishes          | An [optimistic mutation wrapper](/docs/db/optimistic-writes)  |
+
+A server-only application does not need browser declarations or a subscription
+service. A browser application calls declared functions; it never receives the
+PostgreSQL credentials or direct database handle.
+
+## Keep the rest of your stack
+
+PostgreSQL stores the data. You can self-host it or use a suitable managed
+PostgreSQL endpoint. Your existing framework owns routes, server functions,
+loading boundaries and deployment. Your auth provider owns login and sessions;
+the optional [Better Auth adapter](/docs/db/better-auth) stores its records in
+the same database.
+
+For live browser queries, run the supplied persistent service alongside your
+application. Server database access and that service require Node/Bun with native
+process support. See the [mental model](/docs/db/mental-model) for the boundaries
+and [deployment guide](/docs/db/deployment) for hosting requirements.
+
+Start with the [working React example](/docs/db/quick-start), or go directly to
+[Next.js](/docs/db/frameworks/next), [Nuxt](/docs/db/frameworks/nuxt),
+[SvelteKit](/docs/db/frameworks/sveltekit), [SolidStart](/docs/db/frameworks/solidstart)
+or [Astro](/docs/db/frameworks/astro). Native Rust applications have a
+[separate guide](/docs/db/rust).

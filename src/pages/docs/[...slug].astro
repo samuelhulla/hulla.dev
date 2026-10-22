@@ -2,11 +2,9 @@
 import { getCollection, render, type CollectionEntry } from 'astro:content'
 import DocsLayout from '@/layouts/DocsLayout.astro'
 import { components } from '@/components/mdx/components'
-import { apiDocs, type DocGroup } from '@/data/docs'
-import Card from '@/components/card/card.astro'
-import CardHeader from '@/components/card/card-header.astro'
-import CardTitle from '@/components/card/card-title.astro'
-import CardDescription from '@/components/card/card-description.astro'
+import { docGroups, type DocGroup } from '@/data/docs'
+import DocsGuideLinks from '@/components/docs/DocsGuideLinks.astro'
+import Heading from '@/components/mdx/h2.astro'
 import Table from '@/components/table/table.astro'
 import TableBody from '@/components/table/table-body.astro'
 import TableCell from '@/components/table/table-cell.astro'
@@ -21,7 +19,7 @@ export async function getStaticPaths() {
       params: { slug: entry.id.replace(/\/index$/, '') },
       props: { entry },
     })),
-    ...apiDocs.map((group) => ({
+    ...docGroups.map((group) => ({
       params: { slug: group.href.slice('/docs/'.length) },
       props: { group },
     })),
@@ -50,7 +48,7 @@ const hasDecisionGuide =
     <>
       {hasDecisionGuide && (
         <section aria-labelledby="choose-a-guide" class="mb-8">
-          <h2 id="choose-a-guide">{group!.chooserTitle}</h2>
+          <Heading id="choose-a-guide">{group!.chooserTitle}</Heading>
           <TableContainer
             tabindex="0"
             role="region"
@@ -79,19 +77,13 @@ const hasDecisionGuide =
         </section>
       )}
       <section aria-labelledby="guides">
-        <h2 id="guides">Guides</h2>
-        <div class="grid gap-4">
-          {group!.entries.map((item) => (
-            <Card>
-              <CardHeader>
-                <CardTitle aria-level={3}>
-                  <a href={item.href}>{item.title}</a>
-                </CardTitle>
-                <CardDescription>{item.description}</CardDescription>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
+        <Heading id="guides">
+          {group!.area === 'reference' ? 'Reference pages' : 'Guides'}
+        </Heading>
+        <DocsGuideLinks
+          label={group!.area === 'reference' ? 'Reference pages' : 'Guides'}
+          items={group!.entries}
+        />
       </section>
     </>
   )}

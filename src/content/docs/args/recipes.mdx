@@ -1,0 +1,98 @@
+---
+title: Build a CLI with @hulla/args
+description: Build a command that checks required input, validates optional values, and reports parser failures.
+---
+
+This recipe builds a `note add` command that requires one title token, accepts an optional priority, and supports quiet mode. Put the final file in `src/cli.ts`. The application owns argv slicing, command routing, messages, and exit status; `@hulla/args` returns parsed input and does not run command handlers.
+
+## Build the command in stages
+
+Start with a named command and required positional value. Omitted positionals skip their Zod schema, so the application must check `detected`.
+
+```ts
+const cli = parser({
+  name: 'note',
+  commands: [
+    command({
+      name: 'add',
+      arguments: [positional({ name: 'title' })],
+    }),
+  ],
+})
+```
+
+Next, add a validated optional option and a boolean flag. Since an omitted option also skips its schema, the fallback belongs in application code. A flag schema receives `false` when absent and `true` when present.
+
+```ts
+arguments: [
+  positional({ name: 'title' }),
+  option({ name: 'priority', schema: z.enum(['low', 'normal', 'high']) }),
+  flag({ name: 'quiet', short: 'q' }),
+]
+```
+
+## Use the complete file
+
+The complete `src/cli.ts` below routes `add`, checks for the title, defaults an omitted priority to `normal`, and turns parser or application input errors into exit status 1.
+
+```ts
+import { command, flag, option, parser, positional } from '@hulla/args'
+import { argv } from 'node:process'
+import { z } from 'zod'
+
+const cli = parser({
+  name: 'note',
+  commands: [
+    command({
+      name: 'add',
+      arguments: [
+        positional({ name: 'title' }),
+        option({ name: 'priority', schema: z.enum(['low', 'normal', 'high']) }),
+        flag({ name: 'quiet', short: 'q' }),
+      ],
+    }),
+  ],
+})
+
+function reportError(error: unknown): void {
+  console.error(error instanceof Error ? error.message : String(error))
+  process.exitCode = 1
+}
+
+try {
+  const add = cli.parse(argv.slice(2)).commands.add
+  if (!add.detected)
+    throw new Error('Use: note add <title> [--priority low|normal|high] [-q]')
+
+  const title = add.arguments.title
+  if (!title.detected) throw new Error('A title is required')
+
+  const priority = add.arguments.priority.detected
+    ? add.arguments.priority.value
+    : 'normal'
+
+  if (!add.arguments.quiet.value) {
+    console.log(`Adding ${priority} priority note: ${title.value}`)
+  }
+} catch (error) {
+  reportError(error)
+}
+```
+
+Run these from the project root after installing `@hulla/args` and `zod`. The quoted title arrives as one positional token.
+
+```sh
+bun src/cli.ts add 'Read docs'
+# Adding normal priority note: Read docs
+
+bun src/cli.ts add
+# A title is required; exit status 1
+
+bun src/cli.ts add 'Read docs' --priority urgent
+# Zod validation message; exit status 1
+
+bun src/cli.ts add 'Read docs' --priority high -q
+# No output; exit status 0
+```
+
+Catch `ParserError` at a CLI boundary when you need distinct formatting for schema/parser failures; this compact example reports all errors through the same function. See [Commands](/docs/args/commands) for nested routing, [Arguments](/docs/args/arguments) for sequences, and the [reference](/docs/args/reference) for result metadata.

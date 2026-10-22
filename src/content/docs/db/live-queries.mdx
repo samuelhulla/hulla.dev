@@ -1,0 +1,128 @@
+---
+title: Live queries and pagination
+description: Observe server query results and load more pages without shifting the rows you already loaded.
+usefulFor:
+  - A list should update when another user changes its data.
+  - A large result needs to load a few pages at a time.
+  - Your view needs clear loading, error, and disposal behavior.
+---
+
+Subscribe to a query when a view should stay current. The server reevaluates the query after relevant database changes and sends a complete authorized result. You render snapshots; there is no local database to synchronize.
+
+Use the [framework bindings](/docs/db/framework-bindings) to own query and paginated subscriptions in React, Vue, Svelte or Solid. The plain JavaScript API below uses the same cache and page lifecycle.
+
+## Keep a result current
+
+After [configuring the browser runtime](/docs/db/runtime), import the generated client query. This example assumes a `tasks.list` query with no input, declared as shown in [functions](/docs/db/functions). Put the subscription in the component or task that owns the view:
+
+```ts
+import { list } from './db/_generated/client/tasks'
+
+const stop = list.subscribe((snapshot) => {
+  if (snapshot.data) renderTasks(snapshot.data)
+  if (snapshot.status === 'pending') showLoading()
+  if (snapshot.status === 'error') showError(snapshot.error)
+})
+
+// When this view is removed:
+stop()
+```
+
+Snapshots use `pending`, `success`, or `error`. `data` is readonly; clone it before editing. A query with input takes that input before the callback. For the `unfinished`
+query in [queries and mutations](/docs/db/functions#validate-function-input), use
+`unfinished.subscribe({ limit: 20 }, listener)`.
+
+Use `await list()` for a one-time result. Calling `list()` without awaiting returns a handle whose state you can inspect or subscribe to. A subscription is what keeps receiving changes; awaiting alone does not keep a live connection open.
+
+Matching active queries share work within one browser runtime. Changes to several observed queries publish together after a complete server round, so a callback sees a consistent updated view.
+
+## Load a large list gradually
+
+Declare pagination inside the server query. Limit and cursor are ordinary input, so you decide whether callers can choose the page size. This example assumes a `tasks` table with a string `title`:
+
+```ts
+// db/tasks.ts
+import { z } from 'zod'
+import { query } from './_generated/functions'
+
+export const pages = query({
+  input: z.object({
+    limit: z.number().int().min(1).max(100),
+    cursor: z.string().nullable(),
+  }),
+  handler: (ctx, input) =>
+    ctx.db.select('tasks').orderBy('title').paginate(input),
+})
+```
+
+Add authorization checks and row filters for protected data. Return the database page directly: generation recognizes its `Page<Row>` type and enables the client helper. Rebuilding it as a plain object or transforming its output to another type removes that eligibility.
+
+In the browser, the helper combines loaded pages into one readonly array:
+
+```ts
+import { pages } from './db/_generated/client/tasks'
+
+const tasks = pages.paginate((cursor) => ({ limit: 20, cursor }))
+const stop = tasks.subscribe((snapshot) => {
+  if (snapshot.data) renderTasks(snapshot.data)
+  if (snapshot.status === 'error') showError(snapshot.error)
+})
+
+await tasks // The first page; loading starts at creation.
+await tasks.next() // Load one more page.
+```
+
+Use `tasks.hasMore` to decide whether to show a load-more button. `next(3)` loads up to three additional pages sequentially. Overlapping calls share the current load, and calls after exhaustion do nothing.
+
+Loading another page sets `status: 'pending'` while retaining existing rows. A failed append keeps successful pages; calling `next()` again retries from the last successful boundary. Keep the mapper's filters and other non-cursor input stable. To change them, dispose this handle and create another.
+
+## Keep boundaries stable as rows change
+
+Suppose the first page ends at title `B` and the second covers titles after `B` through `D`. Inserting `AA` grows the first page. Deleting `B` shrinks it; it does not pull `C` out of the second page. Renaming `A` to `C` moves that row into the second range, and the two pages update together.
+
+Pages therefore keep ranges, not fixed row counts. This prevents overlapping or missing rows when data moves between loaded pages. The final range has no upper boundary, so later inserts into that range remain visible.
+
+Ordering defaults to primary key. A custom order adds a primary-key tiebreaker. Cursors bind to the database source, scope, schema, filters, and ordering; pass them back unchanged. Each refresh still runs the query's current authorization checks.
+
+For direct server reads, `await db.select('tasks').paginate({ limit: 20 })` returns `{ page, cursor }`. Pass a non-null cursor into the next call. This does not start a subscription. `paginate`, `limit`, and `unique` are terminal alternatives.
+
+## Handle errors and identity changes
+
+A disconnected subscription keeps its last complete result with `isStale: true` while reconnecting. A handler error clears data by default and can recover after a relevant database change. A subscriber may choose `{ keepPreviousDataOnError: true }` as its final options argument to retain its last complete view as stale. Authorization or identity failures always clear protected data.
+
+That policy applies to the entire paginated list when an existing page fails to refresh. An append failure retains the already-loaded pages, since that failure affects new data only.
+
+Have your auth library call the generated runtime's `setAuth` when the user or authorization scope changes, and `setAuth(null)` on sign-out. Credentials travel separately through the configured request headers. Auth changes retire old handles and clear their data; create new subscriptions for the new identity. See [authentication](/docs/db/authentication) for credential and cache-identity setup.
+
+Call the returned `stop()` when a view is removed. Removing a paginated list's last observer disposes all its page subscriptions. If you load pages without subscribing, call `tasks.dispose()` when finished.
+
+## Stay within a bounded live view
+
+The current limits are 1,000 requested rows per page, 1,000 rows per refreshed range, 10,000 loaded rows per list, 128 loaded pages, and 16 MiB per list. Loaded pages share the runtime's 128-query limit and delivery budgets. Exceeding a bound produces an error; the SDK never silently truncates or splits a range. Narrow the query or open a new view when its range becomes too large.
+
+For native Rust subscription ownership, use the [separate native guide](/docs/db/rust).
+
+## When a mutation response is lost
+
+A mutation handle uses `pending`, `recovering`, `success` or `error`. If the write
+was submitted but the connection loses its response, the same handle enters
+`recovering` and checks the original result automatically. It never resubmits the
+mutation payload. You can keep observing that handle or await it normally.
+
+A confirmed result settles success or error. Continued connection loss keeps
+checking within the confirmation window (30 seconds by default). If that window
+ends, the handle becomes an error; a timeout does not prove the write rolled back.
+Do not automatically create a replacement mutation on that basis.
+
+Optimistic changes are removed when transport fails, so the UI does not keep a
+prediction that disappears on reload. Live queries continue to reflect the
+server's confirmed state. Browser recovery metadata stays in memory; there is no
+persistent browser mutation journal or offline write queue.
+
+## Reuse recently observed results
+
+Matching active queries share work within the browser runtime. Unsubscribing
+releases the live watch; an inactive result can remain in memory for up to five
+minutes under the cache's entry/byte bounds. Re-observing verifies a fresh server
+round. A fresh page load still waits for the first authorized result, and an auth
+change clears the previous account's cache.

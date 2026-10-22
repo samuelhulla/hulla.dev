@@ -1,0 +1,46 @@
+---
+title: Commands
+description: Route parsed argv through named and nested commands while keeping each command's arguments scoped.
+---
+
+Use `command()` when one CLI has distinct actions with different inputs. A matching command appears under `result.commands` with `detected: true`; your application checks that result and calls the corresponding behavior.
+
+## Define a command and alias
+
+The command below accepts a title and a `--pin` flag. Its alias `new` selects the command named `add`, while results remain keyed by the canonical name.
+
+```ts
+import { command, flag, parser, positional } from '@hulla/args'
+
+const cli = parser({
+  name: 'notes',
+  commands: [
+    command({
+      name: 'add',
+      alias: 'new',
+      arguments: [positional({ name: 'title' }), flag({ name: 'pin' })],
+    }),
+  ],
+  settings: { caseSensitive: true },
+})
+
+const result = cli.parse(['new', 'Read docs', '--pin'])
+if (result.commands.add.detected) {
+  console.log(result.commands.add.arguments.title.value)
+}
+```
+
+Arguments defined on the root parser and on a command are parsed separately by default. Set `settings.mergeArgs: true` when the same argument declaration should be visible at both levels; root-only arguments do not automatically appear in command results.
+
+## Nest another command level
+
+A command can itself define `commands`. Each level is represented under its canonical name, and each selected level has its own `detected` flag and `arguments` object. Check each flag before calling that level's behavior.
+
+```ts
+command({
+  name: 'remote',
+  commands: [command({ name: 'add' })],
+})
+```
+
+This declaration matches `remote add`, exposed as `result.commands.remote.commands.add`. Argument kinds and omission behavior are described in [arguments](/docs/args/arguments); use [parser options](/docs/args/options) to change matching and argv slicing.

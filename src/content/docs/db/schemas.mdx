@@ -1,0 +1,168 @@
+---
+title: Schemas and constraints
+description: Define tables once, infer application types and enforce storage rules in PostgreSQL.
+---
+
+Put your database structure in `db/schema.ts`. `defineTable` describes fields;
+the object keys passed to `defineSchema` are the table names used in queries.
+
+```ts filename="db/schema.ts"
+import { defineSchema, defineTable, v } from '@hulla/db/schema'
+
+export const tasks = defineTable({
+  title: v.string().min(1).max(200),
+  completed: v.boolean().default(false),
+})
+
+export default defineSchema({ tasks })
+```
+
+The table gets a generated UUID `id`. An insert can omit `completed` to use its
+default. Constraints such as `min`, `max` and `oneOf` validate values and become
+storage constraints; they are not only TypeScript annotations. These bounds
+apply to scalar columns. Nested JSON members use JSON shape validation; put
+additional member rules in function validation or an explicit SQL check.
+
+## Choose fields and defaults
+
+Fields are required unless they have a default. `.nullable()` permits null but
+does not make an insert optional:
+
+```ts
+const tasks = defineTable({
+  title: v.string(),
+  description: v.string().nullable().default(null),
+  status: v.string().oneOf(['draft', 'published']).default('draft'),
+})
+```
+
+Here `description` can be omitted or explicitly set to null. Without
+`.default(null)`, a nullable field would still be required on insert. An update
+ignores undefined values for known fields; null explicitly clears a nullable
+field. Unknown fields throw on inserts and updates.
+
+Generated UUIDs default to UUIDv7. For an explicit key, declare its field and name:
+
+```ts
+const projects = defineTable(
+  {
+    slug: v.string(),
+    title: v.string(),
+  },
+  { primaryKey: 'slug' }
+)
+```
+
+String keys need an explicit value unless you configure a generator. You can
+split tables into modules and import them into `defineSchema`; that final object
+remains the explicit set of registered tables.
+
+## Infer rows, inserts and patches
+
+Table declarations expose three type helpers:
+
+```ts
+type Task = typeof tasks.$inferSelect
+type NewTask = typeof tasks.$inferInsert
+type TaskPatch = typeof tasks.$inferUpdate
+```
+
+After generation, schema-bound aliases are also available:
+
+```ts
+import type { Row, Insert, Patch, Id } from './_generated/types'
+
+type Task = Row<'tasks'>
+type NewTask = Insert<'tasks'>
+type TaskPatch = Patch<'tasks'>
+type TaskId = Id<'tasks'>
+```
+
+Inserts account for defaults and key generation. Patches are partial assignments
+and exclude the primary key. Generated IDs distinguish known references to
+different tables while the database validates the underlying key representation.
+
+## Reference another table
+
+Use `v.id` for a foreign key. A string resolves a registered table name and avoids
+module cycles; a table declaration can be passed directly too:
+
+```ts
+const projects = defineTable({ slug: v.string() }, { primaryKey: 'slug' })
+const tasks = defineTable({
+  project: v.id(projects, { onDelete: 'cascade' }),
+  title: v.string(),
+})
+
+export default defineSchema({ projects, tasks })
+```
+
+`v.id('projects')` resolves the same registered key. Restrict is the default
+deletion policy. Choose cascade when children should be deleted too, or set-null
+on a nullable reference when they should remain. These are database-enforced
+relationships, not automatic joins or embedded related objects.
+
+One-to-many data uses a foreign key on each child. A many-to-many relationship
+uses an explicit join table that you define. Query related rows with ordinary
+builders; there is no implicit `include` or automatically generated join table.
+
+## Declare uniqueness and indexes
+
+A unique constraint expresses a data rule; an index is an explicit query aid:
+
+```ts
+const tasks = defineTable(
+  {
+    project: v.id('projects'),
+    title: v.string(),
+    completed: v.boolean().default(false),
+  },
+  {
+    unique: { project_title: { fields: ['project', 'title'] } },
+  }
+).index(['project', 'completed'])
+```
+
+Ordering or filtering does not create an index for you. Declare indexes around
+your actual queries. Unique constraints also provide eligible targets for
+[`onConflict`](/docs/db/database#make-duplicate-inserts-deliberate).
+
+Use a named SQL check for a rule involving several fields:
+
+```ts
+import { sql } from '@hulla/db/schema'
+
+const ranges = defineTable(
+  { low: v.int64(), high: v.int64() },
+  {
+    checks: (row) => ({ valid_range: sql`${row.low} <= ${row.high}` }),
+  }
+)
+```
+
+Interpolated fields and values remain separate from trusted SQL expression text.
+Checks use PostgreSQL null semantics; a SQL check is not automatically converted
+into a standalone function-input validator.
+
+## Reuse table validation
+
+The optional Zod adapter creates native strict schemas rather than requiring a
+conversion for every field:
+
+```ts filename="db/task-input.ts"
+import { createInsertSchema } from '@hulla/db/zod'
+import { tasks } from './schema'
+
+export const newTask = createInsertSchema(tasks).pick({ title: true })
+```
+
+Use `newTask` as a mutation's input. Stored constraints such as title length are
+preserved. Refinement callbacks can add application-only rules.
+`createSelectSchema` and `createUpdateSchema` cover rows and patches. Validators
+do not insert database defaults or silently coerce values. Resolve a schema with
+`defineSchema` before adapting fields that use named foreign-key references.
+
+Use [data types and codecs](/docs/db/data-types) for numbers, dates and JSON, or
+[read and write data](/docs/db/database) to use this schema. Regenerate after
+schema changes and provision storage explicitly; the development watcher never
+silently resets incompatible data.

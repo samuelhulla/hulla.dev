@@ -1,0 +1,98 @@
+---
+title: Deployment
+description: Deploy your application, persistent query service and PostgreSQL without choosing a specific cloud provider.
+---
+
+An application with live browser queries has three parts: your app, the persistent
+`@hulla/db` service and PostgreSQL. Your framework deploys as usual; the service
+maintains subscriptions and runs declared database functions.
+
+| Component                            | What its host needs                                                           |
+| ------------------------------------ | ----------------------------------------------------------------------------- |
+| Application server using direct `db` | Node 22.18+ or Bun, native subprocesses and PostgreSQL connectivity           |
+| Query service                        | A persistent Node/Bun process, native subprocesses and streaming HTTP ingress |
+| PostgreSQL                           | Schema privileges and compatible connection/session behavior                  |
+| Browser assets                       | Any suitable asset host with access to the service URL                        |
+
+A container or VM can host the app and service together. Suitable function hosts
+can run direct server operations; keep the subscription service persistent.
+An edge isolate cannot run direct `db` if it forbids native processes, but it can
+serve the frontend or call an application API. Next.js does not require Vercel.
+
+## Use self-hosted or managed PostgreSQL
+
+Supply the PostgreSQL connection URL in server config. A self-hosted instance and
+a compatible managed endpoint use the same application API. SQLite services are
+not PostgreSQL backends.
+
+Check TLS, schema privileges, connection limits and session behavior against the
+endpoint you will actually use. A transaction-pooler URL can behave differently
+from a direct database URL; a PostgreSQL-compatible label alone does not establish
+support for the package's session settings.
+
+## Generate during the build
+
+Install `@hulla/db@0.1.0` from npm using the
+[installation commands](/docs/db/installation). The package includes macOS arm64
+and Linux x64/glibc executables. Generate in a Bun build environment:
+
+```sh
+bun --bun hulla-db generate db.config.ts
+```
+
+Include the config, schema, generated artifacts and their runtime dependencies.
+Deploy the same schema and function artifacts to the app and service. Native
+files live under `node_modules/@hulla/db/native/<os>-<arch>/`; retaining only the
+JavaScript files is insufficient.
+
+Framework bundlers must externalize/copy the package and retain its executables.
+The [Next recipe](/docs/db/frameworks/next#keep-database-work-on-the-server) includes
+asset tracing; other hosts use their normal packaging mechanisms. Use the bundled
+executables for a supported target. Linux musl/Alpine, Linux arm64 and macOS x64
+are not included in this release.
+
+## Provision explicitly, then serve
+
+Use a provisioning credential to initialize or verify storage. Node can run the
+prepared runtime; Bun is not required for serving:
+
+```sh
+node node_modules/@hulla/db/dist/cli.js init db.config.ts
+node node_modules/@hulla/db/dist/cli.js serve db.config.ts
+```
+
+These commands assume server environment variables are already supplied. `serve`
+does not regenerate, watch source or reset storage. Terminate HTTPS at an ingress
+that preserves streaming responses, allow the browser app's exact origin, and
+verify credentials through the existing auth provider.
+
+For same-origin browser calls, route `/functions/*` to the persistent service
+and keep application/auth routes on the app server. Then browser configuration
+can use the app's public origin. When the service has a separate origin, use that
+service URL and configure CORS and credential transport for it explicitly. The
+PostgreSQL URL remains private in both layouts.
+
+## Share the database handle across requests
+
+The generated server `db` lazily leases native database sessions and drains idle
+ones. Reuse it across requests. Call `db.close()` at application shutdown, not
+after each request, because another request can share that handle.
+
+Transactions have an execution deadline, including waits between statements.
+Keep slow external requests outside them. PostgreSQL also enforces statement and
+idle-transaction bounds so a suspended application cannot hold a transaction
+indefinitely.
+
+A terminated application can lose a commit acknowledgement. Direct operations
+do not replay that uncertain commit. Browser mutations use their existing
+[confirmation flow](/docs/db/live-queries#when-a-mutation-response-is-lost).
+
+## Validate the deployment you choose
+
+Before routing production traffic, exercise native startup, concurrent requests,
+reused instances, rollback, reconnects and live updates against that host and
+database endpoint. Keep test namespaces and credentials separate from production.
+Local package/build tests do not substitute for this endpoint-specific check.
+
+Use the [framework recipes](/docs/db/meta-frameworks) for app entrypoints and the
+[service guide](/docs/db/runtime) for listeners and budgets.

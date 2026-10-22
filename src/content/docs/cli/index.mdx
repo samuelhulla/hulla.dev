@@ -1,13 +1,47 @@
 ---
 title: hulla CLI
-description: Generate, synchronize, and maintain source-owned integrations across the @hulla/* package ecosystem.
+description: Initialize a project and copy editable UI component source into your application with the hulla CLI.
 usefulFor:
-  - Discovering the hulla CLI
-  - Planning generated component and integration workflows
+  - You want to install @hulla/ui components as application source.
+  - You need repeatable component updates across local development and CI.
+  - You are maintaining a project initialized by an earlier hulla CLI workflow.
 ---
 
-## Documentation in progress
+import DocsConceptFlow from '@/components/docs/DocsConceptFlow.astro'
 
-The `hulla` CLI will provide the shared command-line workflow for generating and synchronizing source-owned integrations across the `@hulla/*` packages.
+The `hulla` CLI initializes project configuration and copies UI component source files into your application. Use it when you want to own and edit the components in your repository; the installed code does not need the CLI or registry at runtime.
 
-The command reference and package-specific workflows will appear here as they stabilize.
+The CLI currently requires Bun. Its `api` commands target an older `@hulla/api` generation interface and are not compatible with the current `@hulla/api` 2.0 API. For new API work, use the [current API quick start](/docs/api/quick-start).
+
+## Choose a workflow
+
+| Goal                                                             | Page                                     |
+| ---------------------------------------------------------------- | ---------------------------------------- |
+| Install the pinned beta and set up your first UI component       | [Quick start](/docs/cli/quick-start)     |
+| Understand `.hulla/hulla.json` and `.hulla/ui.json`              | [Configuration](/docs/cli/configuration) |
+| Configure registries and add, update, or remove component source | [UI components](/docs/cli/ui)            |
+| Understand the legacy API command boundary                       | [API commands](/docs/cli/api)            |
+| Look up commands, aliases, flags, and config fields              | [Reference](/docs/cli/reference)         |
+| Run repeatable commands without prompts                          | [Automation](/docs/cli/automation)       |
+
+## From project to component
+
+<DocsConceptFlow
+  label="CLI workflow"
+  steps={[
+    {
+      title: 'Initialize the project',
+      description: 'hulla init records project settings.',
+    },
+    {
+      title: 'Configure UI source',
+      description:
+        'hulla ui init sets component destinations and support files.',
+    },
+    {
+      title: 'Add components',
+      description:
+        'hulla ui add copies selected components into your application. Review the changes and run your application checks.',
+    },
+  ]}
+/>

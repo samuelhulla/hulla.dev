@@ -143,6 +143,10 @@ function renderFlowComponent(node: LooseNode): LooseNode[] {
       return packageManagerCommands(node)
     case 'DocsCodeDiff':
       return codeDiff(node)
+    case 'DocsLanguageTabs':
+      return docsLanguageTabs(node)
+    case 'DocsGuideLinks':
+      return guideLinks(node)
     case 'DocsConceptFlow':
       return conceptFlow(node)
     case 'DocsContractPath':
@@ -234,6 +238,38 @@ function packageManagerCommands(node: LooseNode): LooseNode[] {
   )
 }
 
+function docsLanguageTabs(node: LooseNode): LooseNode[] {
+  const languages = [
+    ['typescript', 'TypeScript'],
+    ['rust', 'Rust'],
+  ] as const
+
+  return languages.flatMap(([slotName, label]) => {
+    const section = (node.children ?? []).find(
+      (child) =>
+        child.type === 'mdxJsxFlowElement' &&
+        child.name === 'section' &&
+        (child.attributes ?? []).some(
+          (attribute) =>
+            isRecord(attribute) &&
+            attribute.type === 'mdxJsxAttribute' &&
+            attribute.name === 'slot' &&
+            attribute.value === slotName
+        )
+    )
+    if (!section || !(section.children ?? []).length) {
+      throw new Error(
+        `DocsLanguageTabs requires a non-empty ${slotName} slot for AI Markdown.`
+      )
+    }
+
+    return [
+      paragraph([strong([text(label)])]),
+      ...transformChildren(section.children ?? []),
+    ]
+  })
+}
+
 function codeDiff(node: LooseNode): LooseNode[] {
   const diff = componentProp(node, 'diff')
   const filename = componentProp(node, 'filename')
@@ -255,6 +291,42 @@ function codeDiff(node: LooseNode): LooseNode[] {
     value: diff,
   } satisfies Code)
   return result
+}
+
+function guideLinks(node: LooseNode): LooseNode[] {
+  const items = componentProp(node, 'items')
+  if (!Array.isArray(items)) return []
+  return [
+    {
+      type: 'list',
+      ordered: false,
+      spread: false,
+      children: items.flatMap((item): ListItem[] => {
+        if (
+          !isRecord(item) ||
+          typeof item.title !== 'string' ||
+          typeof item.href !== 'string' ||
+          typeof item.description !== 'string'
+        )
+          return []
+        return [
+          {
+            type: 'listItem',
+            children: [
+              paragraph([
+                {
+                  type: 'link',
+                  url: markdownDocsUrl(item.href),
+                  children: [text(item.title)],
+                },
+                text(` — ${item.description}`),
+              ]),
+            ],
+          },
+        ]
+      }),
+    } satisfies List,
+  ]
 }
 
 function conceptFlow(node: LooseNode): LooseNode[] {

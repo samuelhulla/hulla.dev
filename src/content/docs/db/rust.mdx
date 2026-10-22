@@ -1,0 +1,104 @@
+---
+title: Native Rust applications
+description: Use the hulladb facade for native schema authoring, typed functions and local or remote execution.
+---
+
+Use the native `hulladb` crate when the application itself is written in Rust.
+The TypeScript SDK and the Rust facade share PostgreSQL storage contracts, but
+they have separate authoring and runtime APIs. Rust derives do not generate a
+browser TypeScript client.
+
+For a TypeScript application, stay with `defineSchema`, generated `db` and
+[query/mutation declarations](/docs/db/functions). You do not need to learn the
+Rust host API to use the supplied TypeScript service.
+
+## Install the crate
+
+Add the facade to the native application from crates.io:
+
+```sh
+cargo add hulladb@0.1.0
+```
+
+Use the same release for the service, SDK and generated artifacts. The default
+features support PostgreSQL-backed execution; a remote-only application can use
+`hulladb = { version = "0.1.0", default-features = false, features = ["remote"] }`.
+
+## Describe a native table
+
+The facade reexports the derive and schema types. Put this table in a Rust module:
+
+```rust filename="src/tasks.rs"
+use hulladb::{Id, Table};
+
+#[derive(Table)]
+#[table(name = "tasks")]
+pub struct Task {
+    pub id: Id<Task>,
+    pub title: String,
+    #[field(default = false)]
+    pub completed: bool,
+    pub owner: String,
+}
+```
+
+The derive emits typed fields, row codecs and `TaskInsert`/`TaskPatch` inputs.
+`hulladb::schema!(Task)?` normalizes the table contract. Rows declare a primary
+key explicitly; UUID-backed `Id<Task>` keys default to UUIDv7 generation.
+`Id<OtherTable>` declares a reference to another registered table's key.
+
+## Declare a typed read
+
+The context's identity type is part of the native function signature. With a
+verified string identity, this query returns only the caller's tasks:
+
+```rust filename="src/tasks.rs"
+use hulladb::{Error, QueryContext, query};
+
+#[query(name = "tasks.list")]
+pub async fn list(ctx: QueryContext<'_, String>) -> Result<Vec<Task>, Error> {
+    ctx.db.select::<Task>()
+        .where_eq(Task::fields().owner, ctx.identity.clone())
+        .take(100)
+        .await
+}
+```
+
+Function attributes produce typed calls and registration adapters during Cargo
+compilation. Your native application assembles the registry and authorization
+policies; compilation alone does not expose or authorize the function.
+
+## Run the native application example
+
+The database repository includes `crates/hulladb/examples/tasks.rs`, a complete
+example with table/function registration and PostgreSQL execution. It creates
+and removes its own development namespace:
+
+```sh
+HULLADB_TEST_URL=postgresql://user:password@localhost:5432/development \
+cargo run -p hulladb --example tasks --locked
+```
+
+Run this from the database checkout with its workspace installed and a disposable
+PostgreSQL database. It is separate from the TypeScript quickstart and service CLI.
+
+## Choose local or remote ownership
+
+An embedded native runtime executes registered functions against PostgreSQL.
+A native remote application uses `hulladb::remote` with verified session ownership
+and its own subscription lifecycle. Retire that runtime on an account change.
+
+The native remote client can use SQLite for durable recovery. That is a native
+client feature, not a browser table replica or the TypeScript SDK's cache model.
+Generic TypeScript `.withOptimistic` wrappers have no equivalent native prediction
+layer. Native callers can await committed writes and use a connected query's
+visibility fence when needed.
+
+Native mutation updates can make row-version checks explicit inside their
+transaction. Reading a fresh version in a handler protects that transaction; it
+does not prove the user's earlier UI was current. If the product must reject
+stale user intent, model the observed value/version explicitly in its contract.
+
+Keep Rust-specific host configuration, registration and recovery inside the
+native application. Browser-facing TypeScript applications should continue with
+the [framework recipes](/docs/db/meta-frameworks), not copy native runtime setup.

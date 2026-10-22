@@ -1,0 +1,36 @@
+---
+title: Custom merging
+description: Configure a composer for a different class combination policy, including Tailwind utility conflict resolution.
+---
+
+The default `cn` composer removes repeated identical tokens. It cannot tell whether two different class names compete for the same CSS property: `cn('px-2', 'px-4')` keeps both. If your application uses Tailwind and wants the later spacing utility to replace the earlier one, install and configure `tailwind-merge` as the composer.
+
+## Configure Tailwind-aware merging
+
+Install `tailwind-merge` in the same application package. Put the configuration in the shared style module so every component gets the same behavior.
+
+import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun add @hulla/style tailwind-merge',
+    npm: 'npm install @hulla/style tailwind-merge',
+    pnpm: 'pnpm add @hulla/style tailwind-merge',
+    yarn: 'yarn add @hulla/style tailwind-merge',
+  }}
+/>
+
+```ts filename="src/lib/style.ts"
+import { style } from '@hulla/style'
+import { twMerge } from 'tailwind-merge'
+
+export const { cn, vn } = style({ composer: twMerge })
+```
+
+Now `cn('rounded px-2', 'px-4')` returns `rounded px-4`. The same composer is used for both `cn` calls and classes returned by `vn`, so the output of a variant participates when you compose it with other classes.
+
+## Choose the right boundary
+
+Only the composer changes in this setup; `@hulla/style` still serializes objects and arrays before passing strings to it. `tailwind-merge` is an optional dependency that applies its own Tailwind conflict rules. It does not generate styles, and the default configuration of `@hulla/style` does not perform Tailwind-aware merging.
+
+You can also provide your own `composer` or `serializer` through `style({ composer, serializer })`. A custom composer receives serialized strings in argument order. A custom serializer receives every input, including strings, so use it only when you need to change how inputs are converted. See [Composition](/docs/style/composition) for class inputs and [Variants](/docs/style/variants) for how variant output enters the same composition path.

@@ -1,0 +1,90 @@
+---
+title: API reference
+description: Look up supported class inputs, variant types, defaults, and customization signatures in @hulla/style.
+---
+
+Use this page while implementing a component. For the choices behind class composition, read [Composition](/docs/style/composition), [Variants](/docs/style/variants), or [Custom merging](/docs/style/custom-merging).
+
+## Create the helpers
+
+```ts
+import { style } from '@hulla/style'
+
+const { cn, vn } = style()
+```
+
+Both configuration properties are optional. `serializer` defaults to `defaultSerializer`; `composer` defaults to `defaultComposer`. The returned `cn` and `vn` share the same configured pipeline. `style()` does not generate CSS or know framework-specific class props.
+
+## Pass supported class inputs
+
+`ClassName` is a non-recursive class input or a conditional object. The source type is `ClassNameNonRecursive | Record<string, ClassNameNonRecursive>`; `ClassNameNonRecursive` is an internal helper, not a public export:
+
+```ts
+import type {
+  ClassName,
+  Composer,
+  Serializer,
+  StyleConfig,
+  Variant,
+  VariantsDefinition,
+} from '@hulla/style'
+```
+
+The exported `ClassName` accepts strings, `string[]`, booleans, nullish values, numbers, the `0n` bigint literal, and conditional records. Its source alias includes `typeof NaN`, which is TypeScript’s broad `number` type, so every number is accepted. The array form is `string[]`; nested arrays and booleans inside arrays are outside the declared type. Use object values to toggle individual names. At runtime the default serializer behaves as follows:
+
+| Input                                                | Serialized output                                    |
+| ---------------------------------------------------- | ---------------------------------------------------- |
+| `'base px-2'`                                        | `'base px-2'`                                        |
+| `['base', 'px-2']`                                   | `'base px-2'`                                        |
+| `{ active: true, hidden: false }`                    | `'active'`                                           |
+| `new Set(['base', 'px-2'])`                          | `'base px-2'`                                        |
+| `new Map([['base', 'active']])`                      | `'base active'` (entry key and value are serialized) |
+| `''`, `0`, `0n`, `NaN`, `false`, `null`, `undefined` | `''`                                                 |
+| Any non-zero number, such as `42`                    | Stringified numeric text                             |
+| `1n`                                                 | `''` (bigint values are not serialized)              |
+| `true`                                               | `''`                                                 |
+
+Non-zero bigints such as `1n` are not assignable to `ClassName`; only `0n` is included by the type. The runtime serializer also returns an empty string for bigint inputs. Set and Map are not assignable to the exported `ClassName` type. The default serializer nevertheless has runtime branches for them, so they work from untyped JavaScript or after a deliberate cast. Prefer the declared string-array or conditional-object forms in typed component APIs.
+
+## Understand `cn` and the defaults
+
+`style(config?: StyleConfig)` returns `cn` and `vn`. The returned `cn` has the generic call shape `<const CN extends ClassName[]>(...classes: CN) => string`; it serializes each argument, then calls the composer with one string for each original argument. With the defaults, `defaultComposer(...strings: string[]): string` drops empty input, splits whitespace, removes exact duplicate tokens, and preserves first-seen order:
+
+```ts
+cn('rounded px-2', 'px-2 text-sm') // 'rounded px-2 text-sm'
+cn(42, NaN) // '42'
+cn('px-2', 'px-4') // 'px-2 px-4'
+```
+
+Exact-token deduplication is not CSS conflict resolution. `defaultComposer` keeps both different spacing classes. Configure a utility-aware composer such as `twMerge` if the later conflicting utility should win; `cn` itself does not interpret CSS.
+
+## Define a variant
+
+`vn<const V extends VariantsDefinition>(variants: V)` accepts a record whose values are supported class inputs, record-shaped conditionals, or arrays. It returns `Variant<V>`, a function from a key of that record to a class string, with `.infer` typed as `keyof V`:
+
+```ts
+const $size = vn({ compact: 'px-2 text-sm', roomy: ['px-4', 'text-base'] })
+type Size = typeof $size.infer // 'compact' | 'roomy'
+const classes = $size('compact')
+```
+
+`.infer` is a type-level convenience whose runtime value is `undefined`; call the variant function to get classes. `vn()` has no default selection. Make the component prop optional and select its default in the component parameter when omission should choose a variant. Variant output passes through the same configured `cn` pipeline, so a custom serializer and composer affect it too.
+
+## Customize serialization and composition
+
+The exported signatures are `Serializer = (input: ClassName) => string` and `Composer = (...strings: string[]) => string`; both are synchronous. This runnable example imports the default serializer and changes each input to uppercase before a simple joining composer receives it:
+
+```ts
+import { defaultSerializer, style } from '@hulla/style'
+
+const { cn } = style({
+  serializer: (input) => defaultSerializer(input).toUpperCase(),
+  composer: (...strings) => strings.filter(Boolean).join(' '),
+})
+
+cn('base', { active: true }) // 'BASE ACTIVE'
+```
+
+A custom serializer receives **every** `cn` argument, including strings, and receives variant class input when a variant function runs. It should return a string for each input position. A custom composer receives those serialized strings in argument order; it decides whether to preserve duplicates, combine whitespace, or apply a merging policy. Both hooks are synchronous. `VariantsDefinition` describes variant maps, `Variant<V>` is the inferred key-to-string function with its `.infer` property, and `StyleConfig` holds the two optional hooks. See [Custom merging](/docs/style/custom-merging) for a tested Tailwind composer setup.
+
+The package exports `style(config?: StyleConfig)`, `defaultSerializer(input: ClassName): string`, `defaultComposer(...strings: string[]): string`, and the public types `ClassName`, `Serializer`, `Composer`, `VariantsDefinition`, `StyleConfig`, and `Variant`. The `Variant<V>` shape is `((prop: keyof V) => string) & { infer: keyof V }`.

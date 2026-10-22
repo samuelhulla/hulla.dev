@@ -1,9 +1,18 @@
 ---
-import { PanelsTopLeft, SquareTerminal, Waypoints } from '@lucide/astro'
+import {
+  Braces,
+  Database,
+  GitBranch,
+  Paintbrush,
+  PanelsTopLeft,
+  SquareTerminal,
+  Waypoints,
+} from '@lucide/astro'
+import type { DocPackage } from '@/data/docs'
 import { cn } from '@/lib/style'
 
 type Props = {
-  kind: 'api' | 'ui' | 'cli'
+  kind: DocPackage['kind']
   size?: number
   class?: string
 }
@@ -13,6 +22,10 @@ const icons = {
   api: Waypoints,
   ui: PanelsTopLeft,
   cli: SquareTerminal,
+  control: GitBranch,
+  style: Paintbrush,
+  db: Database,
+  args: Braces,
 } as const
 const Icon = icons[kind]
 ---

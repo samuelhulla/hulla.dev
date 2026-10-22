@@ -1,0 +1,87 @@
+---
+title: Catching exceptions with tcf
+description: Convert thrown exceptions and rejected promises into Result values at a deliberate boundary.
+usefulFor:
+  - You call APIs that communicate failure by throwing or rejecting.
+  - You want a typed Result around synchronous or asynchronous work.
+---
+
+Some code reports failure by throwing, including built-in operations and third-party APIs. When the caller should receive a `Result`, `tcf()` gives that operation an explicit `try` callback and maps a thrown value to an `Error` in `catch`.
+
+## Convert a synchronous throw
+
+For parsing a string in application code, the callback remains synchronous and `tcf()` returns a `Result` immediately. Catch input is `unknown` by default because JavaScript allows throwing any value.
+
+```ts
+import { tcf } from '@hulla/control'
+
+const parsed = tcf({
+  try: () => JSON.parse('{"name":"Sam"}') as { name: string },
+  catch: (cause) => new Error(`Invalid JSON: ${String(cause)}`),
+})
+
+console.log(parsed.isOk()) // true
+```
+
+The cast above describes the expected shape to TypeScript; it does not validate JSON fields at runtime. `tcf()` catches thrown exceptions, but it is not a schema validator. Separate parsing from shape checks when reading untrusted JSON. This function returns a `Result` for malformed JSON and for a valid JSON value with the wrong shape:
+
+```ts
+import { err, ok, tcf, type Result } from '@hulla/control'
+
+type Settings = { title: string }
+
+function parseSettings(source: string): Result<Settings, Error> {
+  const parsed = tcf({
+    try: () => JSON.parse(source) as unknown,
+    catch: (cause) => new Error(`Invalid JSON: ${String(cause)}`),
+  })
+  if (parsed.isErr()) return parsed
+
+  const value = parsed.value
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    !('title' in value) ||
+    typeof value.title !== 'string'
+  ) {
+    return err(new Error('Settings must include a string title'))
+  }
+  return ok({ title: value.title })
+}
+```
+
+`JSON.parse` returns untrusted data; the `unknown` annotation avoids treating a cast as validation. The property checks establish the `Settings` shape before constructing `Ok`. A display caller might recover with a fallback, while a save operation could return the error:
+
+```ts
+const title = parseSettings(source).match(
+  (settings) => settings.title,
+  () => 'Untitled'
+)
+```
+
+This fallback is appropriate for display. `tcf()` wraps the parser's thrown syntax error; explicit `err()` handles the domain validation failure.
+
+## Await asynchronous work
+
+When `try`, `catch`, or `finally` returns a promise, await the `tcf()` call. The following example runs in a browser and fetches `/data.txt` from the current site. It keeps a fetch failure inside the `Result` and returns the response text on success.
+
+```ts
+const downloaded = await tcf({
+  try: async () => {
+    const response = await fetch('/data.txt')
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    return response.text()
+  },
+  catch: (cause) => (cause instanceof Error ? cause : new Error(String(cause))),
+  finally: () => console.log('Request finished'),
+})
+
+downloaded.match(
+  (text) => console.log(text),
+  (error) => console.error(error.message)
+)
+```
+
+The output is a `Result<string, Error>`. If every callback is synchronous, `tcf()` returns a result immediately and cleanup runs before that return. If `try` or `catch` produces a promise, await `tcf(...)` before narrowing it; a promise returned by `finally` is awaited too. Cleanup runs once on success or a converted error. A synchronous exception from `catch` still runs cleanup and then propagates; an exception or rejection from cleanup propagates and takes precedence over the earlier result. Keep expected domain failures as explicit `err()` returns when they do not originate from thrown behavior. For branch handling, see [results](/docs/control/results).
+
+The caught value is `unknown` by default, since JavaScript permits throwing any value. `catch` must return an `Error` or a promise of one, because `tcf` produces `Err<Error>`; inspect and convert the cause before reading error-specific properties. Custom `tagOk` and `tagError` labels work like constructor tags. See [async result lifecycles](/docs/control/async) for the difference between awaiting an operation and storing a promise payload, or the [API reference](/docs/control/reference) for the public types.

@@ -1,0 +1,37 @@
+---
+title: '@hulla/control'
+description: Model expected success and failure as typed values, then decide where thrown exceptions should become results.
+usefulFor:
+  - You want callers to handle expected failures without relying on exceptions.
+  - Success and error values should stay distinct even when their payload types overlap.
+  - You need to compose transformations across synchronous or asynchronous values.
+---
+
+`@hulla/control` gives TypeScript functions a visible way to report expected failure. A function can return `Ok<T>` or `Err<E>`, and its caller can narrow or match the branch before using its payload.
+
+```ts
+import { err, ok, type Result } from '@hulla/control'
+
+function findTitle(id: string): Result<string, Error> {
+  return id === 'welcome' ? ok('Welcome') : err(new Error('Title not found'))
+}
+```
+
+This is useful when a failure is part of the function's contract, such as a missing record or invalid input. If callers already expect an exception boundary, keep throwing and use [`tcf()` to convert that boundary](/docs/control/attempts). For ordinary internal work with no meaningful failure case, a plain return value is simpler.
+
+## Choose how to consume the result
+
+| You want to…                                | Use                   |
+| ------------------------------------------- | --------------------- |
+| Run different code for success and failure  | `isOk()` or `isErr()` |
+| Produce one value from either branch        | `match()`             |
+| Transform a payload and preserve its branch | `map()` or `mapErr()` |
+
+| Need                                                           | Start here                               |
+| -------------------------------------------------------------- | ---------------------------------------- |
+| Install the package and build a first result                   | [Quick start](/docs/control/quick-start) |
+| Construct, narrow, and inspect success or error values         | [Results](/docs/control/results)         |
+| Transform values while keeping the result branch               | [Chaining](/docs/control/chaining)       |
+| Catch exceptions and rejected promises at an explicit boundary | [Attempts](/docs/control/attempts)       |
+
+The result branch carries its own tag (`'ok'` or `'error'` by default), so `Result<string, string>` remains unambiguous. Continue with the [quick start](/docs/control/quick-start) to install `@hulla/control` and call a function that returns both outcomes.

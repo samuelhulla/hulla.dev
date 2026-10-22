@@ -1,0 +1,48 @@
+---
+title: Configuration
+description: Understand the project settings and UI install records that the hulla CLI reads and writes.
+---
+
+The `hulla` CLI stores project-level defaults in `.hulla/hulla.json` and UI registry/install choices in `.hulla/ui.json`. Keeping these files in version control makes component paths and package-manager commands reproducible across your team.
+
+## Project settings
+
+`hulla init` detects the project's package manager and writes `.hulla/hulla.json`. A typical file records install/update scripts and the paths to the UI and API configuration files.
+
+```json filename=".hulla/hulla.json"
+{
+  "$schema": "https://raw.githubusercontent.com/hulladev/cli/v0.0.0-beta.1/schemas/hulla.schema.json",
+  "cli": {
+    "scripts": {
+      "add": "bun add",
+      "addDev": "bun add -D",
+      "uninstall": "bun remove",
+      "upgrade": "bun update"
+    }
+  },
+  "configs": { "api": "api.config.ts", "ui": ".hulla/ui.json" }
+}
+```
+
+The script values shown are Bun defaults; `hulla init` writes values for the detected package manager. UI paths such as `configs.ui` resolve from the project root. For a config file in a custom location, pass its absolute path with `--config`; the current relative-path flow can resolve a relative value again from its containing directory. A config directly inside `.hulla/` uses the directory above `.hulla/` as the UI project root.
+
+## UI install records
+
+`.hulla/ui.json` records configured sources, installed library roots, framework targets, and an optional post-add formatting command. Let `hulla ui init` create and maintain the install records, especially when a library supports multiple frameworks or shared support files.
+
+```json filename=".hulla/ui.json"
+{
+  "version": 1,
+  "sources": ["../my-ui-registry"],
+  "installs": [],
+  "postAddUpdateStep": ""
+}
+```
+
+This is the minimal shape for a local registry path relative to the project root. UI initialization fills `installs` with the selected framework paths and any shared files; do not add a hand-written install record from this abbreviated example.
+
+## Keep the registry input repeatable
+
+The built-in UI source currently points at the upstream `master` branch. For a repeatable team setup, replace it with a GitHub tree URL pinned to a release tag or commit, or use a local registry path managed in the same repository. A branch can resolve to different content when the CLI refreshes it.
+
+The standard project cache contains `.hulla/.cache/ui.cache.json` for resolved UI source records. Legacy API generator work uses `<api-config-directory>/.hulla/.cache/api` (with the default `api.config.ts`, this is `.hulla/.cache/api`). Remote Git downloads are cached separately under `~/.cache/hulla/gittar`. Commit the configuration and installed application source, not generated cache contents. To refresh UI source selection, rerun `hulla ui init`; see [UI components](/docs/cli/ui) for cache-specific steps.

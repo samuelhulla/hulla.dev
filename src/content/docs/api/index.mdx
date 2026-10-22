@@ -1,15 +1,33 @@
 ---
 title: '@hulla/api'
-description: Keep an HTTP API honest from the first route declaration to the last client call—without making one framework, validator, or transport your architecture.
+description: Declare an HTTP contract once. Implement it on the server and call it with a typed client.
 usefulFor:
   - You want HTTP paths, inputs, statuses, and bodies to stay typed together.
   - Frontend and backend work should share a contract without sharing server code.
   - One API must fit several frameworks, runtimes, or process boundaries.
 ---
 
-`@hulla/api` is for TypeScript teams that want the ergonomics of a typed RPC client without hiding HTTP.
+import DocsGuideLinks from '@/components/docs/DocsGuideLinks.astro'
 
-Declare the API once. The server must implement every selected route, the client can call only what the contract exposes, and every declared status arrives with the right body type.
+`@hulla/api` keeps methods, paths, inputs, and response types in one shared contract. Your server implements that contract; your client calls it through the transport you choose.
+
+<DocsGuideLinks
+  label="Start with @hulla/api"
+  items={[
+    {
+      title: 'Build your first route',
+      href: '/docs/api/quick-start',
+      description: 'Contract, handler, and client in one working example.',
+    },
+    {
+      title: 'Understand the model',
+      href: '/docs/api/mental-model',
+      description: 'See what belongs in shared, server, and client code.',
+    },
+  ]}
+/>
+
+## One contract, one call
 
 ```ts filename="src/api/projects.ts"
 import { defineContract, request, response, route } from '@hulla/api'
@@ -38,31 +56,16 @@ const api = createClient(contract, {
 const result = await api.createProject({ body: { name: 'Documentation' } })
 ```
 
-That small example already contains the whole model: a shared contract, a server implementation, a client, and one replaceable transport.
+## What changes for your application?
 
-## Why use it?
+| Concern            | How it works                                                                                                                           |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| HTTP behavior      | Methods, paths, headers, and statuses stay explicit. A declared `404` is a typed result the client can handle.                         |
+| Framework choice   | Native adapters connect the implementation to your host. The host keeps routing, middleware, and deployment.                           |
+| Runtime validation | Add a [Standard Schema](https://standardschema.dev/) validator where needed. Type-only declarations skip application-shape validation. |
+| Contract drift     | Missing handlers, undeclared statuses, and incorrect response types become TypeScript errors.                                          |
 
-### HTTP remains visible
-
-Routes declare real methods, paths, request representations, response statuses, headers, and bodies. A `404` is not an exception-shaped afterthought—it is a response the client must handle.
-
-This makes the contract useful beyond one UI. You can serve it to a browser, another service, an OpenAPI consumer, a worker, or a desktop bridge without redesigning the API around a procedure protocol.
-
-### Your stack stays yours
-
-Use native adapters for Express, Fastify, Hono, H3, Elysia, Koa, NestJS, Next.js, SvelteKit, Nuxt, Astro, serverless hosts, and more. The host keeps the things it is good at: routing, middleware, request context, streaming, and deployment.
-
-On the calling side, choose Fetch, an in-process call, MessagePort, or WebSocket. Changing that boundary does not change `api.createProject(...)`.
-
-### Runtime work is opt-in
-
-Type-only declarations add no application-shape validation. When a boundary needs runtime checks, pass any [Standard Schema](https://standardschema.dev/) validator—Zod is one option, not a dependency or a requirement.
-
-For values such as `Date` that look different in memory and on the wire, explicit codecs keep both directions visible.
-
-### Drift fails early
-
-Server implementations are exhaustive for the contract selection they implement. Rename a route, remove a handler, return an undeclared status, or send the wrong body and TypeScript points at the broken edge before a client discovers it in production.
+Use codecs for values such as `Date` that need different in-memory and wire representations.
 
 ## How it compares
 
@@ -78,20 +81,32 @@ These tools overlap, but they start from different sources of truth:
 
 Choose `@hulla/api` when the boundary should outlive any one framework and when transport choice should remain explicit. If the API is only an internal function call, use an ordinary function. If a framework-owned typed client already matches every consumer, adding a separate contract may not buy you enough.
 
-## One contract, a wider ecosystem
+## Choose your next step
 
-The core package covers contracts, clients, servers, Fetch, in-process calls, validation helpers, errors, and streams. Optional packages add only the boundary you need:
+The core package includes contracts, clients, servers, Fetch, and in-process calls. Add integrations only for the boundary you need.
 
-- native server and full-stack framework adapters;
-- MessagePort and WebSocket transports;
-- TanStack Query, SWR, and result-returning clients;
-- OpenAPI import, export, and drift checks;
-- serverless and edge runtime integrations.
-
-No plugin registry sits in the middle. Each integration is an explicit package and an explicit import.
-
-## Start with one working route
-
-New project? [Install the core package](/docs/api/installation), then build a small but complete API in the [quick start](/docs/api/quick-start).
-
-Evaluating the architecture first? The [mental model](/docs/api/mental-model) shows where every part lives and how one call moves through the system. Upgrading from 1.x? Go straight to the [migration guide](/docs/api/start/migration).
+<DocsGuideLinks
+  label="API guides"
+  items={[
+    {
+      title: 'Installation',
+      href: '/docs/api/installation',
+      description: 'Install the core package and optional integrations.',
+    },
+    {
+      title: 'Server adapters',
+      href: '/docs/api/servers',
+      description: 'Connect your existing framework or runtime.',
+    },
+    {
+      title: 'Transports',
+      href: '/docs/api/transports',
+      description: 'Choose Fetch, in-process, MessagePort, or WebSocket.',
+    },
+    {
+      title: 'Migration from 1.x',
+      href: '/docs/api/start/migration',
+      description: 'Move an existing application to the current API.',
+    },
+  ]}
+/>

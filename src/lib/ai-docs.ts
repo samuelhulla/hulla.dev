@@ -1,5 +1,5 @@
 import { getCollection, type CollectionEntry } from 'astro:content'
-import { apiDocs } from '@/data/docs'
+import { docGroups, docPackages, findDocPackage } from '@/data/docs'
 import { renderDocGroupMarkdown } from '@/lib/doc-group-markdown'
 import { renderMarkdownDocument } from '@/lib/docs-markdown'
 
@@ -23,7 +23,7 @@ export async function loadAiDocs(): Promise<AiDoc[]> {
   const ordered: AiDoc[] = [docsLanding(entries)]
   const used = new Set<string>()
 
-  for (const group of apiDocs) {
+  for (const group of docGroups) {
     ordered.push({
       pathname: group.href,
       markdownPathname: `${group.href}.md`,
@@ -41,7 +41,13 @@ export async function loadAiDocs(): Promise<AiDoc[]> {
     for (const metadata of group.entries) {
       const doc = contentDocs.get(metadata.href)
       if (!doc) continue
-      ordered.push({ ...doc, section: group.title })
+      ordered.push({
+        ...doc,
+        section:
+          findDocPackage(doc.pathname)?.kind === 'api'
+            ? group.title
+            : (findDocPackage(doc.pathname)?.title ?? group.title),
+      })
       used.add(doc.pathname)
     }
   }
@@ -117,12 +123,7 @@ export function markdownResponse(doc: AiDoc): Response {
 
 function contentDoc(entry: CollectionEntry<'docs'>): AiDoc {
   const pathname = pathnameForEntry(entry)
-  const section =
-    pathname === '/docs/ui'
-      ? '@hulla/ui'
-      : pathname === '/docs/cli'
-        ? 'hulla CLI'
-        : 'Start here'
+  const section = findDocPackage(pathname)?.title ?? 'Start here'
 
   return {
     pathname,
@@ -143,13 +144,10 @@ function pathnameForEntry(entry: CollectionEntry<'docs'>): `/docs${string}` {
 }
 
 function docsLanding(entries: readonly CollectionEntry<'docs'>[]): AiDoc {
-  const packages = entries
-    .filter((entry) => ['api', 'ui', 'cli'].includes(entry.id))
-    .sort(
-      (left, right) =>
-        ['api', 'ui', 'cli'].indexOf(left.id) -
-        ['api', 'ui', 'cli'].indexOf(right.id)
-    )
+  const packages = docPackages.flatMap((pkg) => {
+    const entry = entries.find((entry) => pathnameForEntry(entry) === pkg.href)
+    return entry ? [entry] : []
+  })
 
   return {
     pathname: '/docs',

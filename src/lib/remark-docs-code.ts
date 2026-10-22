@@ -10,11 +10,12 @@ type Node = {
 export function remarkDocsCode() {
   return (tree: Node) => {
     let hasCode = false
-    function visit(node: Node) {
+    function visit(node: Node, embedded = false) {
+      const insideLanguageTabs = embedded || node.name === 'DocsLanguageTabs'
       if (!node.children) return
       node.children = node.children.map((child) => {
         if (child.type !== 'code') {
-          visit(child)
+          visit(child, insideLanguageTabs)
           return child
         }
         hasCode = true
@@ -38,6 +39,9 @@ export function remarkDocsCode() {
           type: 'mdxJsxFlowElement',
           name: 'MarkdownCodeBlock',
           attributes: [
+            ...(insideLanguageTabs
+              ? [{ type: 'mdxJsxAttribute', name: 'embedded', value: null }]
+              : []),
             { type: 'mdxJsxAttribute', name: 'code', value: child.value ?? '' },
             {
               type: 'mdxJsxAttribute',

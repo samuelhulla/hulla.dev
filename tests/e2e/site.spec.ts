@@ -76,26 +76,9 @@ test('search opens, finds indexed content, and restores focus', async ({
   await expect(trigger).toBeFocused()
 })
 
-test('architecture overview and package preferences remain functional', async ({
+test('package manager preference syncs across commands and reloads', async ({
   page,
 }) => {
-  await page.goto('/docs/api/mental-model')
-  const architecture = page.getByRole('region', {
-    name: '@hulla/api architecture',
-  })
-  await expect(architecture).toBeVisible()
-  await expect(
-    architecture.getByText('Typed client', { exact: true })
-  ).toBeVisible()
-  await expect(
-    architecture.getByText('Implementation', { exact: true })
-  ).toBeVisible()
-  await expect(
-    architecture.getByText('Your application owns:', { exact: true })
-  ).toBeVisible()
-  await expect(
-    architecture.getByText('@hulla/api owns:', { exact: true })
-  ).toBeVisible()
   await page.goto('/docs/api/installation')
   const commands = page.locator('[data-package-manager-tabs]')
   await commands.first().getByRole('tab', { name: 'Use pnpm' }).click()
@@ -104,8 +87,8 @@ test('architecture overview and package preferences remain functional', async ({
       command.getByRole('tab', { name: 'Use pnpm' })
     ).toHaveAttribute('aria-selected', 'true')
     await expect(
-      command.locator('[data-slot="tabs-content"]:visible')
-    ).toContainText('pnpm add')
+      command.locator('[data-slot="tabs-content"][data-value="pnpm"]')
+    ).toBeVisible()
   }
   await page.reload()
   await expect(

@@ -1,0 +1,126 @@
+---
+title: Run the database service
+description: Start the supplied query service, connect browser functions and configure the limits your app needs.
+---
+
+The service executes declared queries and mutations, verifies browser credentials
+and maintains live subscriptions. You do not write a route or HTTP runtime for
+each function. Application server routes and actions use direct `db` separately.
+
+The [quick start](/docs/db/quick-start) shows the first setup. This page covers
+the service's lifecycle and configuration once those files exist.
+
+## Choose a command
+
+| Command    | Effect                                                                     |
+| ---------- | -------------------------------------------------------------------------- |
+| `generate` | Creates typed entrypoints and service artifacts; no connection or listener |
+| `init`     | Explicitly creates/verifies database storage                               |
+| `dev`      | Generates, watches source and restarts the service                         |
+| `serve`    | Runs existing artifacts without generation or a watcher                    |
+
+Generation and development use Bun:
+
+```sh
+bun --bun hulla-db generate
+bun --bun hulla-db init
+bun --bun hulla-db dev
+```
+
+Commands default to `db.config.ts` in the current directory. An optional final
+path selects another config. Initialization never silently resets data; schema
+changes in a disposable development database may need explicit recreation.
+
+## Set the listener and browser origin
+
+```ts filename="db.config.ts"
+import { defineConfig } from '@hulla/db/config'
+
+export default defineConfig({
+  database: {
+    server: { url: process.env.DATABASE_URL! },
+    client: { url: 'http://localhost:3001', credentials: 'include' },
+  },
+  service: {
+    host: '127.0.0.1',
+    port: 3001,
+    origins: ['http://localhost:5173'],
+  },
+})
+```
+
+Host and port default to the values shown. Origins are exact HTTP(S) origins,
+not wildcard patterns. The default empty list accepts requests without an Origin
+header. Configure your browser application's origin for remote browser calls.
+Production ingress needs HTTPS and unbuffered streaming responses.
+
+## Connect browser functions
+
+Put the public URL, credentials mode and optional timeouts in `database.client`.
+Generation copies these settings into browser bindings; it never imports the server
+config or credentials into the browser. A root-relative URL such as `/db` resolves
+against the browser origin when calls start. Regenerate when changing environments.
+
+Import generated callables directly. No startup call is required, and importing
+modules opens no connection. On application teardown, call generated `dispose()`;
+components release their subscriptions without disposing the shared runtime.
+
+For authenticated calls, use the [authentication guide](/docs/db/authentication).
+For framework startup and SSR, choose a [recipe](/docs/db/meta-frameworks).
+
+## Use direct database calls on the server
+
+Import `db` from `./db/_generated/server` in trusted application code. Authenticate
+and authorize the request there; it does not need browser runtime setup.
+See [read and write data](/docs/db/database) for builders and transactions.
+
+## Set execution budgets
+
+Defaults keep an individual invocation bounded. Raise the budget around a real
+workload, rather than making every operation unbounded:
+
+```ts filename="db.config.ts"
+export default defineConfig({
+  database: {
+    server: { url: process.env.DATABASE_URL! },
+    client: { url: 'http://localhost:3001', credentials: 'include' },
+  },
+  limits: { executionMs: 10_000, outputBytes: 24 * 1024 * 1024 },
+})
+```
+
+Keep the `defineConfig` import from the earlier setup. A final query/mutation declaration can
+override individual limits too; extensions cannot. Omitted settings inherit the
+config, then the defaults in the [reference](/docs/db/reference#execution-limits).
+
+The execution deadline covers server work, including lock waits and retries—not
+the browser's upload/download time. Near-limit development diagnostics report
+usage without logging submitted values. Exceeding a budget fails the operation
+and prevents a mutation commit.
+
+## Match browser deadlines to longer work
+
+For a deliberately longer server operation, raise `database.client` deadlines
+in `db.config.ts` before regenerating:
+
+```ts
+// Inside database.client:
+{
+  url: 'https://database.example.com',
+  operationTimeoutMs: 60_000,
+  queryTimeoutMs: 90_000,
+  confirmationTimeoutMs: 90_000,
+}
+```
+
+One-shot reads can retry interrupted transport within their overall deadline.
+Mutation confirmation checks the submitted result and never resubmits the write.
+Live reconnection is separate from replaying a handler failure. Defaults and the
+stream-idle deadline are listed in the [reference](/docs/db/reference).
+
+## Choose an application host
+
+The app, persistent service and PostgreSQL can run together or separately. Keep
+the same schema and generated artifacts on the server paths. See
+[deployment](/docs/db/deployment) for native assets, connection lifecycle and
+compatible hosting environments.

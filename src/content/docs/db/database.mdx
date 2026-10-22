@@ -1,0 +1,242 @@
+---
+title: Read and write data
+description: Use typed PostgreSQL builders in server code and inside query or mutation handlers.
+---
+
+Import the generated `db` in a server route, action, job or script. A query
+handler uses the same read builders through `ctx.db`; a mutation can also write.
+The examples extend the `tasks` table from the [quick start](/docs/db/quick-start).
+
+```ts filename="server/tasks.ts"
+import { db } from '../db/_generated/server'
+
+const tasks = await db
+  .select('tasks')
+  .where({ completed: false })
+  .orderBy('title')
+  .limit(20)
+```
+
+The result is an array of plain rows with IDs. Builders are lazy: the operation
+executes when awaited. Awaiting the same builder again reuses its result; create
+another builder for another read.
+
+## Filter the rows you want
+
+Use an object for equality, or put the field, operator and value in order:
+
+```ts
+const unfinished = await db.select('tasks').where({ completed: false })
+const matches = await db.select('tasks').where('title', 'contains', 'guide')
+```
+
+Repeated `where` calls combine with AND. Use the callback helpers for an explicit
+compound expression:
+
+```ts
+const tasks = await db
+  .select('tasks')
+  .where({ completed: false })
+  .where(({ or, startsWith }) =>
+    or(startsWith('title', 'Write'), startsWith('title', 'Review'))
+  )
+```
+
+Text matching is case-sensitive by default. Literal text helpers accept
+`{ caseSensitive: false }`; SQL patterns use `like` or `ilike`. Equality with
+null becomes `IS NULL`, and inequality becomes `IS NOT NULL`. Undefined filter
+values throw rather than silently dropping a condition. For example, a literal
+case-insensitive search is `.where('title', 'contains', 'guide', { caseSensitive: false })`.
+`contains`, `startsWith` and `endsWith` treat text literally; `like` and `ilike`
+use SQL `%` and `_` wildcards. Negation stays in the operator position, such as
+`.where('title', 'not contains', 'draft')`, or uses callback `not(...)`.
+
+Use generated references when you want table-based field access:
+
+```ts
+import { tasks } from '../db/_generated/tables'
+
+const rows = await db.select(tasks).where(tasks.completed, '=', false)
+```
+
+Both forms are typed. Field-name strings are relative to the selected table:
+use `title`, not `tasks.title`. Generated references come from `_generated/tables`,
+not the authored schema declaration. Strings in the value position are literals; a generated
+field reference there compares compatible columns of the same table.
+
+## Choose columns and result size
+
+Pass an array or inclusion map as the second argument to `select`:
+
+```ts
+const titles = await db.select('tasks', ['id', 'title']).limit(20)
+const titlesAgain = await db
+  .select('tasks', { id: true, title: true })
+  .limit(20)
+```
+
+You can filter and sort by unselected fields. Conditional inclusion produces
+optional result properties. An empty effective selection is an error.
+
+`limit(1)` returns an array with at most one row. `unique()` returns one row or
+null and rejects multiple matches. `paginate({ limit, cursor })` returns a page.
+These are terminal alternatives; do not combine them. See
+[live pagination](/docs/db/live-queries) for browser lists and stable ranges.
+
+## Insert and return a row
+
+```ts
+const task = await db.insert('tasks', { title: 'Write the guide' })
+const ids = await db
+  .insert('tasks', [
+    { title: 'Write the guide' },
+    { title: 'Review the guide' },
+  ])
+  .returning(['id'])
+```
+
+A single insert returns one row. Bulk inserts return an array. Defaults and
+generated IDs come from the schema. `returning` narrows the result with the same
+array or inclusion-map syntax as `select`.
+
+## Update or delete matching rows
+
+Updates take their patch as the second argument. Both operations require `where`:
+
+```ts
+const completed = await db
+  .update('tasks', { completed: true })
+  .where({ title: 'Write the guide' })
+  .returning(['id', 'completed'])
+
+const deleted = await db.delete('tasks').where({ completed: true })
+```
+
+Both return arrays of rows actually changed; no match returns `[]`. An update
+that leaves a stored row unchanged does not invent a changed-row result. Add `.expectRows(1)`
+when a missing row should fail before commit. A synchronous predicate such as
+`.expectRows(count => count >= 1 && count <= 10)` checks a range. The expectation
+checks the write; it does not limit how many rows it attempts to change.
+
+An explicit `.where(true)` permits a whole-table operation. Undefined patch values
+leave known fields unchanged; null requires a nullable field. Unknown properties
+throw. JSON fields are replaced as complete values, without implicit deep patches.
+
+## Commit several writes together
+
+Separate direct operations commit independently. Group dependent changes in one
+transaction and use the provided `tx` throughout:
+
+```ts
+await db.transaction(async (tx) => {
+  await tx.insert('tasks', { title: 'Write the guide' })
+  await tx.insert('tasks', { title: 'Review the guide' })
+})
+```
+
+If a write or the callback fails, the group rolls back. Calling the outer `db`
+inside this callback throws; it cannot accidentally start a separate transaction.
+Await every operation before returning.
+
+Direct transaction callbacks run once by default. Opt into conflict retries with
+`{ retries: 3 }` only when the whole callback is safe to replay. Keep external
+effects outside it. A declared mutation already has its transaction and bounded
+conflict retries, so use its `ctx.db` without opening another transaction.
+
+## Make duplicate inserts deliberate
+
+An `onConflict` policy targets a real primary or unique key declared in the schema.
+For example, configure uniqueness on the task title in your schema:
+
+```ts filename="db/schema.ts"
+export const tasks = defineTable(
+  { title: v.string(), completed: v.boolean().default(false) },
+  { unique: { task_title: { fields: ['title'] } } }
+)
+```
+
+Keep this table registered in `defineSchema`, regenerate, and explicitly provision
+the matching storage. Then an insert can skip an existing title:
+
+```ts
+const task = await db
+  .insert('tasks', { title: 'Write the guide' })
+  .onConflict(({ on }) => on('title').skip())
+```
+
+The result is the inserted row or null for a skip. To write the incoming completion
+state into an existing task instead:
+
+```ts
+const task = await db
+  .insert('tasks', { title: 'Write the guide', completed: true })
+  .onConflict(({ on }) =>
+    on('title').update(({ incoming }) => ({ completed: incoming.completed }))
+  )
+```
+
+The callback can also read `current` fields. A composite unique constraint needs
+all its fields in `on(...)`. The policy never bypasses other database constraints. Bulk results contain only written
+rows and have no promised correspondence to input positions.
+
+## Increment a value in the database
+
+For a counter that several callers can update, use a numeric column and a write
+expression instead of reading a value into JavaScript and writing it back:
+
+```ts filename="db/schema.ts"
+export const counts = defineTable(
+  { name: v.string(), value: v.int64().default(0) },
+  { primaryKey: 'name' }
+)
+```
+
+Register `counts` in `defineSchema`, regenerate and provision it. Insert a named
+counter once, then update that row with an expression:
+
+```ts
+await db.insert('counts', { name: 'visits' })
+await db
+  .update('counts', (current) => ({ value: current.value.add(1) }))
+  .where({ name: 'visits' })
+  .expectRows(1)
+```
+
+The addition runs in PostgreSQL against the stored value, avoiding a separate
+application read/replace race. The callback constructs an expression; it is not
+called once per fetched row. Column constraints still apply. For a codec, SQL
+arithmetic follows its storage type, as explained in
+[data types and codecs](/docs/db/data-types#use-a-codec-for-a-different-application-value).
+
+## Ask for a summary
+
+Named aggregates return a compact result instead of loading every row:
+
+```ts
+const total = await db
+  .select('tasks')
+  .where({ completed: false })
+  .aggregate(({ count }) => ({ unfinished: count() }))
+```
+
+Use `groupBy` before `aggregate` for one summary per group:
+
+```ts
+const totals = await db
+  .select('tasks')
+  .groupBy('completed')
+  .aggregate(({ count }) => ({ total: count() }))
+  .having(({ gte }) => gte('total', 2))
+  .orderBy('total', 'desc')
+```
+
+`where` filters rows; `having` filters aggregate groups and is available only
+after `groupBy(...).aggregate(...)`. Numeric fields support
+`sum` and `avg`; orderable fields support `min` and `max`. Null values are skipped;
+empty sums/averages/extrema return null, while `count()` returns zero. Grouped
+pagination is not supported. Representation details are in
+[data types and codecs](/docs/db/data-types).
+
+When this code runs in your application server, enforce authorization before the
+operation. A live browser declaration needs its own guard; see
+[queries and mutations](/docs/db/functions) and [authentication](/docs/db/authentication).

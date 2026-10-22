@@ -1,0 +1,32 @@
+---
+import NavigationLink from '@/components/navigation-menu/navigation-menu-link.astro'
+import LinkContent from '@/components/navigation-menu/navigation-menu-link-content.astro'
+import LinkTitle from '@/components/navigation-menu/navigation-menu-link-title.astro'
+import LinkDescription from '@/components/navigation-menu/navigation-menu-link-description.astro'
+import { ArrowUpRight } from '@lucide/astro'
+
+type Props = {
+  label: string
+  items: readonly { title: string; href: string; description: string }[]
+}
+const { label, items } = Astro.props
+---
+
+<nav class="docs-example" aria-label={label} data-component-boundary>
+  <ul role="list" class="m-0 grid list-none gap-2 p-0 sm:grid-cols-2">
+    {items.map((item) => (
+      <li class="min-w-0">
+        <NavigationLink href={item.href}>
+          <LinkContent>
+            <LinkTitle>{item.title}</LinkTitle>
+            <LinkDescription>{item.description}</LinkDescription>
+          </LinkContent>
+          <ArrowUpRight
+            class="mt-0.5 ml-auto size-4 shrink-0 text-muted-foreground"
+            aria-hidden="true"
+          />
+        </NavigationLink>
+      </li>
+    ))}
+  </ul>
+</nav>

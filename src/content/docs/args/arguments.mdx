@@ -1,0 +1,74 @@
+---
+title: Arguments
+description: Match the shape of user input with flags, options, positional values, or sequences.
+---
+
+Choose an argument declaration from the way users should provide a value. `flag()` reads a boolean switch, `option()` reads a named value, and `positional()` reads a value by its place in the command line.
+
+## Use switches and named values
+
+`flag()` and `option()` derive long and short forms from `name` by default. For `quiet`, those forms are `--quiet` and `-q`; options also consume a following value or accept `--output=report.txt`.
+
+```ts
+import { flag, option, parser } from '@hulla/args'
+
+const cli = parser({
+  name: 'report',
+  arguments: [option({ name: 'output' }), flag({ name: 'quiet' })],
+  settings: { caseSensitive: true },
+})
+
+const result = cli.parse(['--output', 'summary.txt', '-q'])
+```
+
+Here `result.arguments.output.value` is `'summary.txt'`, and `result.arguments.quiet.value` is `true`. Use `long` to add one or more long aliases; the declared name remains an alias. A custom `short` replaces the default short form.
+
+```ts
+option({ name: 'output', long: ['out', 'destination'], short: ['o', 'O'] })
+```
+
+That option accepts `--out`, `--destination`, `--output`, `-o`, and `-O`. With `sharedDash: true`, one-character short names can be combined, such as `-qv`.
+
+## Read values by position
+
+Use `positional()` when order gives each value its meaning. Each declaration consumes the next unclaimed positional token.
+
+```ts
+import { parser, positional } from '@hulla/args'
+
+const cli = parser({
+  name: 'copy',
+  arguments: [
+    positional({ name: 'source' }),
+    positional({ name: 'destination' }),
+  ],
+  settings: { caseSensitive: true },
+})
+
+const result = cli.parse(['photo.jpg', 'backup.jpg'])
+// source.value is 'photo.jpg'; destination.value is 'backup.jpg'
+```
+
+## Collect several positional values
+
+`infiniteSequence()` collects all remaining non-option tokens into a string array. Put it after other positional inputs so it collects only the values left over:
+
+```ts
+import { infiniteSequence, parser } from '@hulla/args'
+
+const cli = parser({
+  name: 'files',
+  arguments: [infiniteSequence({ name: 'files' })],
+})
+
+const result = cli.parse(['notes.txt', 'draft.txt'])
+console.log(result.arguments.files.value) // ['notes.txt', 'draft.txt']
+```
+
+For a fixed group, `sequence()` takes an `arguments` array of positional declarations and returns their individual results under the sequence's `.value`. The group is detected only when every member is present; incomplete input is left unconsumed and can produce an unhandled-argument error. Use separate positionals when you only need to read each value independently.
+
+## Check whether optional input was supplied
+
+An option or positional's schema runs only when it is detected. When either is omitted, the result has `detected: false` and `value: undefined`, even if the schema has a Zod default. Flags behave differently: their schema receives `false` when absent and `true` when present.
+
+Check `detected` before applying an application fallback or requiring input. See [validation](/docs/args/validation) for this boundary and [commands](/docs/args/commands) for nested command declarations.

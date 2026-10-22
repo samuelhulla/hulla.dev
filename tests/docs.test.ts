@@ -2,7 +2,16 @@ import { describe, expect, test } from 'bun:test'
 import { access, readFile, readdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { apiCoverage } from '../src/data/api-coverage'
-import { apiDocNavigation, apiDocs, flatApiDocs } from '../src/data/docs'
+import {
+  adjacentDocs,
+  apiDocNavigation,
+  apiDocs,
+  docGroups,
+  docPackages,
+  findDocPackage,
+  flatDocs,
+  flatApiDocs,
+} from '../src/data/docs'
 import { createShikiCodeHighlighter } from '../src/components/code-highlighter-shiki/code-highlighter-shiki'
 import { remarkDocsCode } from '../src/lib/remark-docs-code'
 import {
@@ -48,19 +57,52 @@ describe('documentation integrity', () => {
   })
   test('every documented route has a collection entry and a shared route renderer', async () => {
     await access(join(root, 'src/pages/docs/[...slug].astro'))
-    for (const entry of flatApiDocs) {
-      const suffix = entry.href.slice('/docs/api'.length)
+    for (const entry of flatDocs) {
+      const suffix = entry.href.slice('/docs/'.length)
+      const isLanding = findDocPackage(entry.href)?.href === entry.href
       await access(
         join(
           root,
-          'src/content/docs/api',
-          suffix ? `${suffix}.mdx` : 'index.mdx'
+          'src/content/docs',
+          isLanding ? `${suffix}/index.mdx` : `${suffix}.mdx`
         )
       )
     }
-    expect(new Set(apiDocs.map((group) => group.href)).size).toBe(
-      apiDocs.length
-    )
+    const routes = [...flatDocs, ...docGroups].map((item) => item.href)
+    expect(new Set(routes).size).toBe(routes.length)
+    for (const name of ['control', 'style', 'db', 'cli', 'args']) {
+      const files = (
+        await readdir(join(root, 'src/content/docs', name), { recursive: true })
+      )
+        .filter((file) => file.endsWith('.mdx'))
+        .map(
+          (file) =>
+            `/docs/${name}${file === 'index.mdx' ? '' : `/${file.slice(0, -4)}`}` as const
+        )
+        .sort()
+      expect(
+        flatDocs
+          .filter(
+            (entry) =>
+              entry.href === `/docs/${name}` ||
+              entry.href.startsWith(`/docs/${name}/`)
+          )
+          .map((entry) => entry.href)
+          .sort()
+      ).toEqual(files)
+    }
+  })
+  test('package navigation keeps pagination inside each package and resolves nested routes', () => {
+    for (const pkg of docPackages) {
+      const pages = pkg.groups.flatMap((group) => group.entries)
+      if (pages.length === 0) continue
+      expect(adjacentDocs(pages[0]!.href).previous).toBeUndefined()
+      expect(adjacentDocs(pages.at(-1)!.href).next).toBeUndefined()
+      for (const page of pages) {
+        expect(findDocPackage(page.href)?.href).toBe(pkg.href)
+      }
+    }
+    expect(findDocPackage('/docs/stylesheet')).toBeUndefined()
   })
   test('sidebar navigation groups server and client concepts without hiding integrations', () => {
     const server = apiDocNavigation.find(
@@ -139,6 +181,41 @@ describe('documentation integrity', () => {
     const before = structuredClone(tree)
     remarkDocsCode()(tree)
     expect(tree).toEqual(before)
+  })
+  test('language-tab fences share the containing code frame while ordinary fences keep theirs', () => {
+    type Tree = Parameters<ReturnType<typeof remarkDocsCode>>[0]
+    const tree: Tree = {
+      type: 'root',
+      children: [
+        {
+          type: 'mdxJsxFlowElement',
+          name: 'DocsLanguageTabs',
+          children: [
+            {
+              type: 'mdxJsxFlowElement',
+              name: 'section',
+              children: [
+                { type: 'code', lang: 'rust', value: 'let value = 1;' },
+              ],
+            },
+          ],
+        },
+        { type: 'code', lang: 'ts', value: 'const value = 1' },
+      ],
+    }
+    remarkDocsCode()(tree)
+    const embedded = tree.children?.[1]?.children?.[0]?.children?.[0]
+    const ordinary = tree.children?.[2]
+    expect(embedded?.attributes).toContainEqual({
+      type: 'mdxJsxAttribute',
+      name: 'embedded',
+      value: null,
+    })
+    expect(ordinary?.attributes).not.toContainEqual({
+      type: 'mdxJsxAttribute',
+      name: 'embedded',
+      value: null,
+    })
   })
   test('fenced code forwards line focus and state metadata', () => {
     type Tree = Parameters<ReturnType<typeof remarkDocsCode>>[0]
@@ -222,6 +299,22 @@ Read the [guide](/docs/api/quick-start).
     expect(output).not.toContain('import DocsPackageManagerCommand')
     expect(output).not.toContain('<DocsPackageManagerCommand')
   })
+  test('AI Markdown retains guide-list labels, descriptions, and destinations', () => {
+    const output =
+      cleanMdxForAgents(`<DocsGuideLinks label="Next steps" items={[
+      { title: 'Quick start', href: '/docs/api/quick-start', description: 'Build a working route.' },
+      { title: 'Reference', href: '/docs/api/reference', description: 'Look up an export.' },
+    ]} />`)
+
+    expect(output).toContain(
+      '[Quick start](https://hulla.dev/docs/api/quick-start.md)'
+    )
+    expect(output).toContain('Build a working route.')
+    expect(output).toContain(
+      '[Reference](https://hulla.dev/docs/api/reference.md)'
+    )
+    expect(output).not.toContain('DocsGuideLinks')
+  })
   test('AI Markdown preserves Alert meaning as a blockquote', () => {
     const output = cleanMdxForAgents(`<Alert variant="warning" role="alert">
   <AlertIcon><TriangleAlert /></AlertIcon>
@@ -250,6 +343,32 @@ Read the [guide](/docs/api/quick-start).
     expect(output).toContain('```sh\nbun add @hulla/api\n```')
     expect(output).not.toContain('Stepper')
   })
+  test('AI Markdown keeps both language-tab samples as labeled fences', () => {
+    const source = [
+      '<DocsLanguageTabs>',
+      '  <section slot="typescript">',
+      '',
+      '```ts',
+      'const value = 1',
+      '```',
+      '',
+      '  </section>',
+      '  <section slot="rust">',
+      '',
+      '```rust',
+      'let value = 1;',
+      '```',
+      '',
+      '  </section>',
+      '</DocsLanguageTabs>',
+    ].join('\n')
+    const output = cleanMdxForAgents(source)
+
+    expect(output).toContain('**TypeScript**\n\n```ts\nconst value = 1\n```')
+    expect(output).toContain('**Rust**\n\n```rust\nlet value = 1;\n```')
+    expect(output).not.toContain('DocsLanguageTabs')
+    expect(output).not.toContain('slot=')
+  })
   test('group Markdown preserves chooser and ordinary page structure', () => {
     const transports = apiDocs.find(
       (group) => group.href === '/docs/api/transports'
@@ -273,6 +392,13 @@ Read the [guide](/docs/api/quick-start).
   test('AI Markdown fails loudly when a visual component lacks a fallback', () => {
     expect(() => cleanMdxForAgents('<NewDiagram />')).toThrow(
       'Add an AI Markdown fallback for the NewDiagram MDX component.'
+    )
+    expect(() =>
+      cleanMdxForAgents(
+        '<DocsLanguageTabs><section slot="typescript">\n\n```ts\nlet value = 1\n```\n\n</section></DocsLanguageTabs>'
+      )
+    ).toThrow(
+      'DocsLanguageTabs requires a non-empty rust slot for AI Markdown.'
     )
   })
   test('site styles do not target shared component parts or descendants of prose containers', async () => {

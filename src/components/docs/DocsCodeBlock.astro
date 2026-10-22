@@ -9,11 +9,13 @@ import CodeBlockContent from '@/components/code/code-block-content.astro'
 import CodeBlockDescription from '@/components/code/code-block-description.astro'
 import CodeBlockFooter from '@/components/code/code-block-footer.astro'
 import CodeBlockHeader from '@/components/code/code-block-header.astro'
+import CodeBlockPath from '@/components/code/code-block-path.astro'
 import CodeBlockTitle from '@/components/code/code-block-title.astro'
 import { createShikiCodeHighlighter } from '@/components/code-highlighter-shiki/code-highlighter-shiki'
 import { Copy } from '@lucide/astro'
 type Props = {
   class?: string
+  embedded?: boolean
   code: string
   language?: string
   filename?: string
@@ -28,6 +30,7 @@ type Props = {
 }
 const {
   class: className,
+  embedded = false,
   code,
   language = 'ts',
   filename,
@@ -128,9 +131,9 @@ const label =
       : language)
 ---
 
-<div class:list={['docs-example', className]} data-component-boundary>
-  <CodeBlock>
-    <CodeBlockHeader>
+{embedded ? (
+  <>
+    <CodeBlockPath>
       <CodeBlockTitle>{label}</CodeBlockTitle>
       <CodeBlockActions>
         <Button
@@ -142,8 +145,8 @@ const label =
           <span data-copy-label>Copy</span>
         </Button>
       </CodeBlockActions>
-    </CodeBlockHeader>
-    <CodeBlockBody>
+    </CodeBlockPath>
+    <CodeBlockBody class={className}>
       <CodeBlockContent
         {highlighted}
         code={source}
@@ -162,8 +165,45 @@ const label =
         <CodeBlockDescription>{caption}</CodeBlockDescription>
       </CodeBlockFooter>
     )}
-  </CodeBlock>
-</div>
+  </>
+) : (
+  <div class:list={['docs-example', className]} data-component-boundary>
+    <CodeBlock>
+      <CodeBlockHeader>
+        <CodeBlockTitle>{label}</CodeBlockTitle>
+        <CodeBlockActions>
+          <Button
+            size="sm"
+            variant="ghost"
+            data-copy={source}
+            aria-label={`Copy ${label}`}>
+            <Copy size={14} aria-hidden="true" />
+            <span data-copy-label>Copy</span>
+          </Button>
+        </CodeBlockActions>
+      </CodeBlockHeader>
+      <CodeBlockBody>
+        <CodeBlockContent
+          {highlighted}
+          code={source}
+          {language}
+          {lineNumbers}
+          {highlightedLines}
+          {focusedLines}
+          {insertedLines}
+          {deletedLines}
+          {errorLines}
+          {warningLines}
+        />
+      </CodeBlockBody>
+      {caption && (
+        <CodeBlockFooter>
+          <CodeBlockDescription>{caption}</CodeBlockDescription>
+        </CodeBlockFooter>
+      )}
+    </CodeBlock>
+  </div>
+)}
 <script>
   document
     .querySelectorAll<HTMLButtonElement>('[data-copy]')

@@ -1,0 +1,152 @@
+---
+title: Authentication and authorization
+description: Verify credentials with your auth provider and scope every browser database operation to the caller.
+---
+
+Keep your existing login and session system. The database service asks your auth
+provider to verify request credentials, then makes the verified identity available
+as `ctx.identity`. Your handlers decide which rows that caller can access.
+
+Browser calls are anonymous by default. Declaring a query or mutation makes it
+callable; it does not automatically protect the data it returns or changes.
+
+## Verify credentials on the service
+
+Add an `auth` callback to `db.config.ts`. It receives the request's original
+headers. With Better Auth, verification can use its existing server API:
+
+```ts filename="db.config.ts"
+import { defineConfig } from '@hulla/db/config'
+
+export default defineConfig({
+  database: {
+    server: { url: process.env.DATABASE_URL! },
+    client: { url: 'http://localhost:3001', credentials: 'include' },
+  },
+  auth: async (headers) => {
+    const { auth } = await import('./auth')
+    const session = await auth.api.getSession({ headers })
+    return session
+      ? {
+          key: session.user.id,
+          identity: { id: session.user.id },
+        }
+      : null
+  },
+})
+```
+
+This assumes `auth.ts` exports your configured Better Auth instance. The lazy
+import avoids a cycle when that instance uses the generated server database.
+Other providers use their own verification method inside the same callback;
+there is no required framework/provider adapter combination.
+
+Return null for anonymous access. Invalid or expired credentials can be rejected
+by the provider or verifier. Do not treat a browser-supplied ID as verified proof.
+Include account or tenant boundaries in `key` when they affect access, and return
+only the stable identity fields your handlers need.
+
+## Filter protected reads and writes
+
+For example, keep the quickstart's public table and add a private table:
+
+```ts filename="db/schema.ts"
+import { defineSchema, defineTable, v } from '@hulla/db/schema'
+
+export default defineSchema({
+  tasks: defineTable({
+    title: v.string(),
+    completed: v.boolean().default(false),
+  }),
+  privateTasks: defineTable({
+    owner: v.string(),
+    title: v.string(),
+  }),
+})
+```
+
+Regenerate, then check the verified identity before each protected operation:
+
+```ts filename="db/private-tasks.ts"
+import { query, mutation } from './_generated/functions'
+import { z } from 'zod'
+
+export const list = query((ctx) => {
+  if (!ctx.identity) throw new Error('Sign in required')
+  return ctx.db.select('privateTasks').where({ owner: ctx.identity.id })
+})
+
+export const create = mutation({
+  input: z.object({ title: z.string().min(1) }),
+  handler: (ctx, input) => {
+    if (!ctx.identity) throw new Error('Sign in required')
+    return ctx.db.insert('privateTasks', {
+      title: input.title,
+      owner: ctx.identity.id,
+    })
+  },
+})
+```
+
+The caller submits a title, not an owner. Updates and deletes need both the target
+ID and an ownership/permission condition. A shared `.extend(...)` guard can remove
+repeated identity checks; it does not replace row-level authorization.
+
+## Synchronize browser cache identity
+
+Credentials and cache identity have different jobs. Cookies or a header callback
+carry credentials; `setAuth` tells the browser SDK which account owns its current
+view:
+
+```ts filename="src/database.ts"
+import { setAuth } from '../db/_generated/client/runtime'
+
+// In your auth provider's existing session-change listener:
+setAuth(session ? { key: session.user.id } : null)
+```
+
+Here `session` is the value provided by your auth library, not a database API.
+Include the same account/tenant boundary used by the service. A key change clears
+old results and optimistic updates; framework bindings reattach for the new scope.
+Changing the key cannot grant access because the server still verifies credentials.
+
+When the initial session is asynchronous, pass its promise to `setAuth`. Loading is inferred and live observation pauses until it
+resolves. An object can optionally include `expiresAt` in Unix milliseconds. If
+omitted, your app must send expiry, sign-out and account-change updates itself.
+
+For bearer credentials, set a header callback that
+reads the current token from your auth library:
+
+```ts filename="src/database.ts"
+import { setHeaders } from '../db/_generated/client/runtime'
+import { getAccessToken } from './auth-client'
+
+setHeaders(async () => ({ authorization: `Bearer ${await getAccessToken()}` }))
+```
+
+Here `getAccessToken` is an application helper backed by the provider. Keep
+`setAuth` for cache identity; token values do not belong in its key. For cookies across origins, configure the exact allowed app origin and
+the provider's cookie policy along with `database.client.credentials: 'include'`.
+
+## Authorize direct server database access yourself
+
+A framework route or server action verifies its own request using the auth
+provider before direct `db` operations. The database does not infer a user from
+the framework or apply browser declaration guards to direct SQL work.
+
+For SSR, pass only authorized rows and a verified `initialAuthKey` to the UI
+binding. It must match browser `setAuth`; never share private SSR responses through
+a public cache. The [framework recipes](/docs/db/meta-frameworks) show each request
+boundary, and the [Better Auth guide](/docs/db/better-auth) supplies a full storage
+and browser-session setup.
+
+## Expect permissions to change while a view is open
+
+The service rechecks credentials and authorization during live delivery. An auth
+or identity failure clears protected query data even when stale-data retention
+was requested. Provider refresh remains your application's job.
+
+A mutation whose response was lost checks its original result under matching
+current credentials and account scope. That is delivery of the original
+authorized response, not a rerun of the handler's business checks against new
+rows. See [confirmation behavior](/docs/db/live-queries#when-a-mutation-response-is-lost).

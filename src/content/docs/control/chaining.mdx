@@ -1,0 +1,44 @@
+---
+title: Chaining results
+description: Transform success and error payloads with map and mapErr while preserving the selected result branch.
+usefulFor:
+  - You want to prepare a value before a later caller handles the result.
+  - You need async transformations without losing the Result wrapper.
+---
+
+Sometimes a function should transform a successful value but leave failure handling to its caller. Unwrapping first would force an early branch; `map()` and `mapErr()` let each transformation apply only to its matching outcome.
+
+## Transform the active payload
+
+This function returns either a user or an error. `map()` trims a successful name, and `mapErr()` turns an error into a display message. The result type changes to `Result<string, string>` while preserving the original branch tags.
+
+```ts
+import { err, ok, type Result } from '@hulla/control'
+
+function loadUser(): Result<{ name: string }, Error> {
+  return ok({ name: ' Sam ' })
+}
+
+const displayName = loadUser()
+  .map((user) => user.name.trim())
+  .mapErr((error) => `Could not load user: ${error.message}`)
+```
+
+Only the active callback runs. Mapping a `Result` to another `Result` keeps the outer branch and nests the returned result as its payload. `map()` does not flatten or switch branches. It is for changing the value within an already selected success branch; to stop a caller when an inner operation fails, explicitly narrow or return that result. There is no `flatMap()` in `@hulla/control`, so flattening is not implicit.
+
+## Keep asynchronous output inside the result
+
+Mappers may return promises. The result remains an `Ok` or `Err` containing that promise, so you can continue chaining; consume the eventual value with `await` on `pair()`, `match()`, or `unwrap()`.
+
+```ts
+const doubled = ok(Promise.resolve(20))
+  .map((value) => Promise.resolve(value + 1))
+  .map((value) => value * 2)
+
+const [value] = await doubled.pair()
+console.log(value) // 42
+```
+
+`await doubled` alone does not resolve the payload because the result object is not a promise. If the source promise rejects, or a mapper throws or rejects, that exception propagates; `map()` does not turn it into `Err`. Put an explicit exception boundary around work that should become a result with [`tcf()`](/docs/control/attempts).
+
+The key distinction is where the promise sits. An async function commonly returns `Promise<Result<T, E>>`; await that function, then narrow the result. `ok(Promise<T>)` instead creates `Ok<Promise<T>>`; `.unwrap()` returns the promise payload and `await` resolves it, while `.match()` and `.pair()` resolve it as part of their own return. The result wrapper itself is not awaitable. See [async lifecycles](/docs/control/async) for these forms side by side.

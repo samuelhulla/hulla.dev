@@ -1,0 +1,64 @@
+---
+title: Quick start
+description: Install @hulla/style and create shared class and variant helpers for your components.
+---
+
+This quick start creates a class string for a button with a required tone and a default size. Use a TypeScript project and Bun to run the example. The same helpers work in React, Astro, Vue, Svelte, and plain JavaScript.
+
+The example uses Tailwind class names. `@hulla/style` produces the string; your application's CSS setup supplies the styles.
+
+## 1. Install the package
+
+Install `@hulla/style` in the application package that owns your components.
+
+import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun add @hulla/style@0.4.0',
+    npm: 'npm install @hulla/style@0.4.0',
+    pnpm: 'pnpm add @hulla/style@0.4.0',
+    yarn: 'yarn add @hulla/style@0.4.0',
+  }}
+/>
+
+## 2. Create shared helpers
+
+In `src/lib/style.ts`, create the `cn` and `vn` functions once and import them from components. `cn` accepts strings, arrays, and objects whose truthy keys should be included.
+
+```ts filename="src/lib/style.ts"
+import { style } from '@hulla/style'
+
+export const { cn, vn } = style()
+```
+
+With the default configuration, `cn('button', { disabled: false })` returns `button`. Repeated identical tokens are kept once, in their first-seen order.
+
+## 3. Add a component variant
+
+In `src/button.ts`, declare style choices and derive the function's input types from the maps. Here `tone` is required and `size` defaults to `small`.
+
+```ts filename="src/button.ts"
+import { cn, vn } from './lib/style'
+
+const $tone = vn({
+  primary: 'bg-blue-600 text-white',
+  quiet: 'bg-transparent text-blue-700',
+})
+const $size = vn({ small: 'px-3 py-1', large: 'px-5 py-3' })
+
+function buttonClass(
+  tone: typeof $tone.infer,
+  size: typeof $size.infer = 'small'
+) {
+  return cn('rounded font-medium', $tone(tone), $size(size))
+}
+
+console.log(buttonClass('primary'))
+```
+
+Run `bun src/button.ts`. It prints `rounded font-medium bg-blue-600 text-white px-3 py-1`. TypeScript rejects unknown tone and size names. Use the returned string as `class` in HTML or `className` in React.
+
+This composition preserves the selected class strings as written; if you need utility conflict resolution, configure a merging composer as described in [Custom merging](/docs/style/custom-merging).
+
+Continue with [Variants](/docs/style/variants) to understand inferred prop types, or [Composition](/docs/style/composition) to add caller-provided classes.

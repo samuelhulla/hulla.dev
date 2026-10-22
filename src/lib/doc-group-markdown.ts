@@ -17,7 +17,8 @@ export function renderDocGroupMarkdown(
       (entry) =>
         entry.chooseWhen !== undefined && entry.applicationOwns !== undefined
     )
-  if (!hasDecisionGuide) return `## Guides\n\n${guides}`
+  if (!hasDecisionGuide)
+    return `## ${group.area === 'reference' ? 'Reference pages' : 'Guides'}\n\n${guides}`
 
   const rows = group.entries
     .map(

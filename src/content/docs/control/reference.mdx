@@ -1,0 +1,115 @@
+---
+title: API reference
+description: Look up the constructors, result types, methods, tags, and callback signatures exported by @hulla/control.
+---
+
+This page is a lookup for code that already uses `@hulla/control`. For the decisions behind these APIs, start with [Results](/docs/control/results), [Chaining](/docs/control/chaining), or [Catching exceptions](/docs/control/attempts).
+
+## Construct a branch directly
+
+| Export   | Call                                     | Runtime result                                               |
+| -------- | ---------------------------------------- | ------------------------------------------------------------ |
+| `ok`     | `ok(value)` or `ok(value, tag)`          | `Ok<T, 'ok'>` by default; supplied tag is used verbatim      |
+| `err`    | `err(error)` or `err(error, tag)`        | `Err<E, 'error'>` by default; error may be any value         |
+| `result` | `result(value, config?)`                 | `Err` when `isError(value)` is true, otherwise `Ok`          |
+| `tcf`    | `tcf({ try, catch, finally?, ...tags })` | Executes a try callback and converts a caught value to `Err` |
+
+`ok` and `err` are the most direct choice when the function already knows its outcome. The optional tag replaces that branch's default tag, including an empty string. These constructors do not throw or inspect their payload.
+
+### Constructor signatures
+
+```ts
+import type { Err, Ok } from '@hulla/control'
+
+declare function ok<const T>(value: T): Ok<T>
+declare function ok<const T, const Tag extends string>(
+  value: T,
+  tag: Tag
+): Ok<T, Tag>
+declare function ok<const T, const Tag extends string>(
+  value: T,
+  tag: Tag | undefined
+): Ok<T, Tag | 'ok'>
+declare function err<const E>(error: E): Err<E>
+declare function err<const E, const Tag extends string>(
+  error: E,
+  tag: Tag
+): Err<E, Tag>
+declare function err<const E, const Tag extends string>(
+  error: E,
+  tag: Tag | undefined
+): Err<E, Tag | 'error'>
+```
+
+When omitted, tags are `"ok"` and `"error"`. A supplied tag replaces the default for that constructed branch.
+
+## Classify an existing value with `result`
+
+`result(value, config?)` uses `value instanceof Error` when `isError` is omitted. Its error generic is constrained to `E extends Error`, and the custom guard must identify that same error type:
+
+```ts
+import { result } from '@hulla/control'
+
+declare function readDocument(): unknown
+
+type InvalidDocument = Error & { code: 'INVALID_DOCUMENT' }
+const isInvalidDocument = (value: unknown): value is InvalidDocument =>
+  value instanceof Error && 'code' in value && value.code === 'INVALID_DOCUMENT'
+
+const outcome = result<
+  unknown,
+  InvalidDocument,
+  'INVALID_DOCUMENT',
+  'DOCUMENT'
+>(readDocument(), {
+  isError: isInvalidDocument,
+  tagOk: 'DOCUMENT',
+  tagError: 'INVALID_DOCUMENT',
+})
+```
+
+Here the predicate is both a runtime classifier and a TypeScript type guard. Since the input type is `unknown`, the success payload remains `unknown`; use a narrower input union if you want TypeScript to infer a narrower success type. The error and success tags are available as literal types and runtime `.tag` values. The explicit generic order is `T, E, TagError, TagOk`. When your error is a string, a plain object, or another non-`Error` value, use `err()` and `Result<T, E>` instead: `result()` does not support arbitrary error payload types.
+
+`config` accepts `isError`, `tagOk`, and `tagError`. Omitted tags use `ok` and `error`; providing only one tag customizes only that branch. The implementation chooses a branch by calling `isError(value)` once.
+
+`result` overloads accept optional configuration. Its custom guard has the shape `(value: T | E) => value is E`, and `E` must extend `Error`. Tag generics are ordered `T, E, TagError, TagOk`; for example:
+
+```ts
+declare const value: string | Error
+const tagged = result<string | Error, Error, 'BAD', 'GOOD'>(value, {
+  tagError: 'BAD',
+  tagOk: 'GOOD',
+})
+```
+
+Runtime defaults apply independently when a tag is omitted. The public config shape is `{ isError?: (value: T | E) => value is E; tagError?: TagError; tagOk?: TagOk }`.
+
+## Read and transform a result
+
+| Member                | On `Ok`                     | On `Err`                  | Return behavior                                           |
+| --------------------- | --------------------------- | ------------------------- | --------------------------------------------------------- |
+| `isOk()` / `isErr()`  | Narrows the branch          | Narrows the branch        | Boolean type guard                                        |
+| `.value` / `.error`   | Success payload             | Error payload             | Direct payload access on the narrowed branch              |
+| `.match(onOk, onErr)` | Calls `onOk`                | Calls `onErr`             | Callback output; promise payloads resolve before callback |
+| `.map(fn)`            | Calls `fn` with success     | Returns same error result | New `Ok`; nested result output stays nested               |
+| `.mapErr(fn)`         | Returns same success result | Calls `fn` with error     | New `Err`; nested result output stays nested              |
+| `.pair()`             | `[value, undefined]`        | `[undefined, error]`      | Tuple, or promise of tuple for promise payload            |
+| `.unwrap()`           | Returns the stored value    | Returns the stored error  | Does not throw an `Err` payload                           |
+
+`map` and `mapErr` preserve the original branch and tag. They do not flatten a result returned from a mapper. Their synchronous exceptions and rejected promise outputs propagate; use `tcf()` around work when those exceptions should become an `Err`.
+
+`pair()` is convenient for tuple-oriented callers, but both tuple slots can be `undefined` when the active payload is itself `undefined`. Branch with `isOk()` or `isErr()` when that distinction matters. `unwrap()` is not a success-only accessor: narrow first if failure must not be mistaken for a value.
+
+## Use the public types
+
+```ts
+import type { Err, Ok, Result, Tagged } from '@hulla/control'
+
+type User = { id: string; name: string }
+type LoadResult = Result<User, Error, 'USER', 'LOAD_ERROR'>
+type Success = Ok<User, 'USER'>
+type Failure = Err<Error, 'LOAD_ERROR'>
+type Reclassified = Tagged<Success, 'CACHED_USER'>
+```
+
+`Ok<T, Tag = 'ok'>` and `Err<E, Tag = 'error'>` describe one branch. `Result<T, E, TagOk = 'ok', TagError = 'error'>` is their union. `Tagged<T, Tag>` replaces the tag on an `Ok` or `Err` type while retaining its payload and branch. These are types only; use constructors to create runtime values.

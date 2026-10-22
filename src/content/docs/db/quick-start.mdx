@@ -1,0 +1,226 @@
+---
+title: Quick start
+description: Create a task from React and watch the saved PostgreSQL rows update in two browser tabs.
+---
+
+import DocsStepperHeading from '@/components/docs/DocsStepperHeading.astro'
+import Stepper from '@/components/stepper/stepper.astro'
+import StepperContent from '@/components/stepper/stepper-content.astro'
+import StepperDescription from '@/components/stepper/stepper-description.astro'
+import StepperIndicator from '@/components/stepper/stepper-indicator.astro'
+import StepperItem from '@/components/stepper/stepper-item.astro'
+import StepperPanel from '@/components/stepper/stepper-panel.astro'
+
+Build a React task list backed by PostgreSQL. Clicking **Add task** saves a row;
+every open copy of the page receives the updated list without reloading.
+
+Start in a React TypeScript Vite app with the local database packages, Zod and
+TypeScript installed as described in [installation](/docs/db/installation).
+Keep the Vite entrypoints `src/main.tsx` and `src/App.tsx`. Put your PostgreSQL
+connection URL in the app's `.env` file:
+
+```sh filename=".env"
+DATABASE_URL=postgresql://user:password@localhost:5432/my_app
+```
+
+This is a public development example. Authentication comes after the first working
+result; do not use these unguarded declarations for private data.
+
+<Stepper variant="ordered" aria-label="Build a live task list">
+  <StepperItem id="define-the-table" data-toc-section data-toc-label="Define the table" class="scroll-mt-24">
+    <StepperIndicator>1</StepperIndicator>
+    <StepperContent>
+      <DocsStepperHeading for="define-the-table">Define the table and connection</DocsStepperHeading>
+      <StepperDescription>Describe the rows, then tell the server where PostgreSQL lives.</StepperDescription>
+    </StepperContent>
+    <StepperPanel>
+
+Create `db/schema.ts` at the project root. The table gets a generated `id`; new
+tasks default to `completed: false`:
+
+```ts filename="db/schema.ts"
+import { defineSchema, defineTable, v } from '@hulla/db/schema'
+
+export default defineSchema({
+  tasks: defineTable({
+    title: v.string(),
+    completed: v.boolean().default(false),
+  }),
+})
+```
+
+Keep connection settings in `db.config.ts`, outside browser code. Allow the Vite
+app to connect to the development service:
+
+```ts filename="db.config.ts"
+import { defineConfig } from '@hulla/db/config'
+
+export default defineConfig({
+  database: {
+    server: { url: process.env.DATABASE_URL! },
+    client: { url: 'http://localhost:3001', credentials: 'include' },
+  },
+  service: { origins: ['http://localhost:5173'] },
+})
+```
+
+Generate the schema-bound constructors before declaring your functions:
+
+```sh
+bun --bun hulla-db generate
+```
+
+The command prints `Generated database entrypoints.` and creates `db/_generated/`.
+It does not create database tables or start a server.
+
+    </StepperPanel>
+
+  </StepperItem>
+  <StepperItem id="declare-the-functions" data-toc-section data-toc-label="Declare functions" class="scroll-mt-24">
+    <StepperIndicator>2</StepperIndicator>
+    <StepperContent>
+      <DocsStepperHeading for="declare-the-functions">Declare a query and a mutation</DocsStepperHeading>
+      <StepperDescription>Read saved tasks and validate each new title before writing.</StepperDescription>
+    </StepperContent>
+    <StepperPanel>
+
+Create `db/tasks.ts`. The query returns rows; the mutation inserts one row in a
+transaction and returns it:
+
+```ts filename="db/tasks.ts"
+import { query, mutation } from './_generated/functions'
+import { z } from 'zod'
+
+export const list = query((ctx) =>
+  ctx.db.select('tasks').orderBy('title').limit(100)
+)
+
+export const create = mutation({
+  input: z.object({ title: z.string().min(1) }),
+  handler: (ctx, input) => ctx.db.insert('tasks', input),
+})
+```
+
+Exporting these declarations makes them browser-callable. Generation discovers
+them beside the schema; you do not register routes or maintain another export file.
+The handler always receives `ctx` first and validated input second.
+
+    </StepperPanel>
+
+  </StepperItem>
+  <StepperItem id="start-the-service" data-toc-section data-toc-label="Start the service" class="scroll-mt-24">
+    <StepperIndicator>3</StepperIndicator>
+    <StepperContent>
+      <DocsStepperHeading for="start-the-service">Initialize storage and start development</DocsStepperHeading>
+      <StepperDescription>Provision the table explicitly, then leave the query service running.</StepperDescription>
+    </StepperContent>
+    <StepperPanel>
+
+From the app directory, initialize the schema and start the watcher:
+
+```sh
+bun --bun hulla-db init
+bun --bun hulla-db dev
+```
+
+`init` prints `Database initialized and schema verified.` The watcher generates
+the new function bindings and starts the service at `http://127.0.0.1:3001`.
+Leave this terminal running. `dev` reloads declaration changes; it never resets
+database data or silently applies an incompatible schema change.
+
+    </StepperPanel>
+
+  </StepperItem>
+  <StepperItem id="connect-react" data-toc-section data-toc-label="Connect React" class="scroll-mt-24">
+    <StepperIndicator>4</StepperIndicator>
+    <StepperContent>
+      <DocsStepperHeading for="connect-react">Mount the browser app</DocsStepperHeading>
+      <StepperDescription>Generated callables use the public connection settings automatically.</StepperDescription>
+    </StepperContent>
+    <StepperPanel>
+
+Replace `src/main.tsx` with the browser entry below. The generated runtime knows
+your function contracts and public service settings:
+
+```tsx filename="src/main.tsx"
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import App from './App'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>
+)
+```
+
+This file belongs in the browser. The URL points to the query service, not
+PostgreSQL; the private connection stays in `db.config.ts`. Importing the generated
+callables uses the public settings without opening a connection. For application teardown,
+see [connection ownership](/docs/db/runtime#connect-browser-functions).
+
+    </StepperPanel>
+
+  </StepperItem>
+  <StepperItem id="render-and-write" data-toc-section data-toc-label="Render and write" class="scroll-mt-24">
+    <StepperIndicator>5</StepperIndicator>
+    <StepperContent>
+      <DocsStepperHeading for="render-and-write">Render the live list and add a task</DocsStepperHeading>
+      <StepperDescription>Pass generated functions to hooks; call the mutation from an event.</StepperDescription>
+    </StepperContent>
+    <StepperPanel>
+
+Replace `src/App.tsx`:
+
+```tsx filename="src/App.tsx"
+import { useMutation, useQuery } from '@hulla/db-react'
+import { create, list } from '../db/_generated/client/tasks'
+
+export default function App() {
+  const tasks = useQuery(list)
+  const add = useMutation(create)
+  return (
+    <main>
+      <h1>Tasks</h1>
+      {tasks.status === 'pending' && !tasks.data && <p>Loading…</p>}
+      {tasks.status === 'error' && <p>Could not load tasks.</p>}
+      <ul>
+        {tasks.data?.map((task) => (
+          <li key={task.id}>{task.title}</li>
+        ))}
+      </ul>
+      <button
+        onClick={() => {
+          void add({ title: 'My first task' })
+        }}>
+        Add task
+      </button>
+      {add.state.status === 'error' && <p>Could not save the task.</p>}
+    </main>
+  )
+}
+```
+
+In a second terminal, start Vite on the origin allowed by your config:
+
+```sh
+bun run dev --port 5173 --strictPort
+```
+
+Open `http://localhost:5173` in two tabs. Click **Add task** in one. Both lists
+update after the commit, and the task remains after a reload. An empty database
+starts with an empty list; there is no seed or local replica to initialize.
+
+    </StepperPanel>
+
+  </StepperItem>
+</Stepper>
+
+## Build on this result
+
+Use [schemas](/docs/db/schemas) to add fields and constraints,
+[queries and mutations](/docs/db/functions) to add input and shared guards, and
+[authentication](/docs/db/authentication) before handling private data.
+For SSR and framework-specific entrypoints, choose a
+[full-stack recipe](/docs/db/meta-frameworks). If your app only needs server-side
+database access, start with [direct `db` operations](/docs/db/database) instead.

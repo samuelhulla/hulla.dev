@@ -1,0 +1,66 @@
+---
+title: '@hulla/args reference'
+description: Look up argument constructors, parsed result fields, parser settings, and error metadata.
+---
+
+This page lists the public `@hulla/args` surface by the choice you need to make. Start with [Quick start](/docs/args/quick-start) for a first parser, then return here to check exact shapes and defaults.
+
+## Choose an input constructor
+
+| Constructor                | Config fields                                                                                                                    | Default and result                                                                                                                                                            |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `flag(config)`             | `name: string`, optional `description: string`, `schema?: ZodTypeAny`, `long?: string \| string[]`, `short?: string \| string[]` | Defaults to `z.boolean()` and derives long/short forms from `name`. Absent: `value: false`, `detected: false`.                                                                |
+| `option(config)`           | Same named fields as `flag`                                                                                                      | Defaults to `z.string()`. Absent: `value: undefined`, `detected: false`.                                                                                                      |
+| `positional(config)`       | `name: string`, optional `description: string`, `schema?: ZodTypeAny`                                                            | Defaults to `z.string()`; consumes one unclaimed token not beginning with `-`.                                                                                                |
+| `sequence(config)`         | `name: string`, optional `description: string`, required `arguments: Positional[]`                                               | No caller schema; `.value` maps member names to their result records. The sequence is detected only when every member matches.                                                |
+| `infiniteSequence(config)` | `name: string`, optional `description: string`, optional `schema: ZodArray<ZodString>`                                           | Defaults to `z.array(z.string())`; collects remaining unclaimed non-option tokens. With none, `.value` is `[]` and `detected` is false.                                       |
+| `command(config)`          | `name: string`, optional `description: string`, `alias?: string \| string[]`, `arguments?: Argument[]`, `commands?: Command[]`   | Declares a branch under `result.commands[name]`. The typed result has `detected`, `arguments`, and nested `commands`; aliases still use the canonical name as the result key. |
+
+The public types include `ArgType`, `PossibleArguments`, `ArgumentConfig`, `CommandConfig`, `Flag`, `Option`, `Positional`, `Sequence`, `InfiniteSequence`, `Command`, `Parser`, `ArgOutput`, `ParserResult`, `ParserSettingsInit`, `ParserSettings`, `Code`, and `ParserErrorConstructor`; the exported `ParserError` class is described below. The top-level `ParserResult` has `argv`, `arguments`, and `commands`; a command result has `detected`, `arguments`, and nested `commands`. All argument constructors accept an optional Zod `schema` except `sequence`, whose members define its output records. `infiniteSequence` only accepts an array-of-strings schema. See [Arguments](/docs/args/arguments) for placement and [Validation](/docs/args/validation) for omission behavior.
+
+### Named forms and matching
+
+For flags and options, `name: 'output'` gives `--output` and `-o`. A custom `short` replaces the default short name. A custom `long` adds aliases while retaining the declared name: `long: ['out', 'dest']` accepts `--out`, `--dest`, and `--output`. Prefix dashes are optional in these declaration values. Duplicate names or aliases are rejected while preparing the parser.
+
+`mode: 'both'` accepts long and short spellings; `'long'` and `'short'` limit them. `sharedDash: true` permits flag groups such as `-qv`; every configured short name must then be one character. For options, a grouped option consumes a following value, for example `-vo file` when `v` is a flag and `o` an option.
+
+## Read a parsed argument record
+
+Each ordinary argument result has this shape:
+
+```ts
+{
+  value: unknown,       // TypeScript infers the Zod output type
+  raw: string | undefined,
+  index: number,        // index in the read slice (plus nested offset); -1 when absent
+  detected: boolean,
+  parser: string        // parser path, e.g. "notes.add"
+}
+```
+
+`raw` keeps the original matched token(s); an option written as `--output report.txt` has raw text `--output report.txt`, while an equals-form option retains its original token in `raw`. `index` identifies the option/flag/first positional token within the parser's read slice; nested command results add their offset within that slice. It is not an index into the original full `process.argv` array when you use `startIndex: 2`. `argv` on the top-level parse result contains the parsed slice, lowercased when `caseSensitive` is false.
+
+An omitted option or positional has `value: undefined`, `raw: undefined`, `index: -1`, and `detected: false`. Its schema is skipped, so a Zod `.default()` does not supply a value. This differs from a present option token with no following value: that result stays detected, and the parser can use the option token itself as the candidate value. A falsey candidate such as an empty equals value is not passed to the schema. Set `requireEquals` to reject a present option without `=`, and check `detected` plus `value` in application code when a value is required. Flags are always schema-parsed with `false` or `true`; `detected` tells you whether the user supplied the switch. `infiniteSequence` validates `[]` when no tokens were collected. A `sequence` has `value` shaped like `{ first: { value, raw, index, detected, parser }, second: ... }`, plus its own combined `raw`, first `index`, and `detected`.
+
+## Configure argv reading and parsing
+
+`parser({ name, arguments?, commands?, settings? })` returns `name`, normalized `settings`, `read(argv)`, and `parse(argv)`. `read` slices the input with `startIndex` inclusive and `stopIndex` exclusive (`null` means the array end); defaults are `0` and `null`. Pass `process.argv.slice(2)` with default settings, or pass full `process.argv` with `startIndex: 2`.
+
+| Setting            | Default  | Effect                                                                                                                                                                                                       |
+| ------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `caseSensitive`    | `false`  | Match command and argument names without case sensitivity. Equals-form values are taken from the normalized token, so they are lowercased too; space-separated and positional values retain original casing. |
+| `mode`             | `'both'` | Accept long and short option/flag forms; can be `'long'` or `'short'`.                                                                                                                                       |
+| `requireEquals`    | `false`  | Require an option value in `--name=value` form.                                                                                                                                                              |
+| `keepOnlyDetected` | `false`  | Remove undetected entries from the returned results; parsing and validation rules stay the same.                                                                                                             |
+| `mergeArgs`        | `false`  | Let root and selected command parsers inspect shared arguments across the command boundary. Without it, each parser sees its own command slice.                                                              |
+| `sharedDash`       | `false`  | Expand grouped single-character short forms.                                                                                                                                                                 |
+| `startIndex`       | `0`      | First argv entry to read.                                                                                                                                                                                    |
+| `stopIndex`        | `null`   | Exclusive end of the argv slice.                                                                                                                                                                             |
+
+See [Parser options](/docs/args/options) for argv ownership and examples; see [Commands](/docs/args/commands) for scope and merging.
+
+## Handle parser errors
+
+`ParserError` is exported from `@hulla/args`. It extends `Error` and exposes `message`, `parser`, `from` (`'parser' | 'zod' | 'runtime'`), `code`, `argvIndex`, `argumentName`, and `path`. Zod failures use the first Zod issue, `from: 'zod'`, `argvIndex: -1`, and an empty `argumentName`; parser failures can identify an argv token or use `-1` for declaration-time errors. `path` is assembled differently for each failure source, so treat it as diagnostic metadata rather than a guaranteed argument-name lookup. Do not assume every error has a user-supplied token index.
+
+Parser construction can throw for duplicate/ambiguous declarations (including invalid `sharedDash` short-name lengths); parsing can throw on invalid schema input or unmatched/unhandled tokens. Required input is an application decision: check `detected` and report your own missing-value message. `@hulla/args` does not render help or set process exit codes. See [Validation](/docs/args/validation) for a CLI-boundary catch example.
