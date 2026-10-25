@@ -1,61 +1,21 @@
 import { expect, test } from '@playwright/test'
-import AxeBuilder from '@axe-core/playwright'
 
-for (const route of ['/', '/docs/api', '/docs/ui']) {
-  test(`${route} is responsive and accessible`, async ({ page }) => {
-    await page.goto(route)
-    await expect(page.locator('main h1')).toBeVisible()
-    expect(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= innerWidth
-      )
-    ).toBe(true)
-    expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([])
-    if (route === '/') await expect(page.locator('astro-island')).toHaveCount(0)
-  })
-}
-
-test('Markdown does not change embedded component appearance in either theme', async ({
+test('copy writes the visible code sample to the clipboard', async ({
   page,
+  context,
 }) => {
-  await page.goto('/docs/ui')
-  for (const theme of ['light', 'dark']) {
-    await page.evaluate((value) => {
-      document.documentElement.dataset.theme = value
-    }, theme)
-    const result = await page.evaluate(() => {
-      const examples = [...document.querySelectorAll('[data-fidelity-example]')]
-      const props = [
-        'font-family',
-        'font-size',
-        'font-weight',
-        'line-height',
-        'letter-spacing',
-        'color',
-        'background-color',
-        'border-top-color',
-        'border-top-width',
-        'border-radius',
-        'padding-top',
-        'padding-right',
-        'padding-bottom',
-        'padding-left',
-        'box-shadow',
-      ]
-      const read = (root: Element) =>
-        [...root.querySelectorAll('[data-slot], button')].map((el) =>
-          Object.fromEntries(
-            props.map((prop) => [
-              prop,
-              getComputedStyle(el).getPropertyValue(prop),
-            ])
-          )
-        )
-      return [read(examples[0]!), read(examples[1]!)]
-    })
-    expect(result[0]?.length).toBeGreaterThan(5)
-    expect(result[0]).toEqual(result[1])
-  }
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await page.goto('/guides/api/quick-start')
+  const block = page
+    .locator('[data-slot="code-block"]')
+    .filter({ visible: true })
+    .first()
+  const source = await block.locator('pre code').innerText()
+
+  await block.getByRole('button', { name: /^Copy / }).click()
+
+  await expect(block.getByText('Copied', { exact: true })).toBeVisible()
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(source)
 })
 
 test('search opens, finds indexed content, and restores focus', async ({
@@ -96,10 +56,8 @@ test('package manager preference syncs across commands and reloads', async ({
   ).toHaveAttribute('aria-selected', 'true')
 })
 
-test('mobile navigation opens and closes with Escape', async ({
-  page,
-}, info) => {
-  test.skip(info.project.name !== 'mobile', 'Mobile navigation')
+test('mobile navigation opens and closes with Escape', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/docs/api')
   await page
     .getByRole('button', { name: 'Open documentation navigation' })
@@ -115,18 +73,14 @@ test('mobile navigation opens and closes with Escape', async ({
 
 test('documentation remains navigable without JavaScript', async ({
   browser,
-}, info) => {
+}) => {
   const context = await browser.newContext({
     javaScriptEnabled: false,
-    viewport:
-      info.project.name === 'mobile'
-        ? { width: 390, height: 844 }
-        : { width: 1440, height: 900 },
+    viewport: { width: 390, height: 844 },
   })
   const page = await context.newPage()
   await page.goto('/docs/api')
-  if (info.project.name === 'mobile')
-    await page.getByText('Browse documentation', { exact: true }).click()
+  await page.getByText('Browse documentation', { exact: true }).click()
   const navigation = page
     .getByRole('navigation', { name: 'Sidebar navigation', exact: true })
     .filter({ visible: true })

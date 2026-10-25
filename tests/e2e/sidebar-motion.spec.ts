@@ -2,8 +2,7 @@ import { expect, test } from '@playwright/test'
 
 test('sidebar navigation restores open branches without replaying disclosure motion', async ({
   page,
-}, info) => {
-  test.skip(info.project.name !== 'desktop', 'Desktop sidebar navigation')
+}) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' })
   await page.addInitScript(() => {
     document.addEventListener('transitionrun', (event) => {

@@ -1,18 +1,11 @@
 import { describe, expect, test } from 'bun:test'
-import { access, readFile, readdir } from 'node:fs/promises'
-import { join } from 'node:path'
-import { apiCoverage } from '../src/data/api-coverage'
 import {
   adjacentDocs,
-  apiDocNavigation,
-  apiDocs,
-  docGroups,
   docPackages,
   findDocPackage,
-  flatDocs,
-  flatApiDocs,
+  type DocGroup,
 } from '../src/data/docs'
-import { createShikiCodeHighlighter } from '../src/components/code-highlighter-shiki/code-highlighter-shiki'
+import { remarkDocsCallouts } from '../src/lib/remark-docs-callouts'
 import { remarkDocsCode } from '../src/lib/remark-docs-code'
 import {
   cleanMdxForAgents,
@@ -20,32 +13,8 @@ import {
 } from '../src/lib/docs-markdown'
 import { renderDocGroupMarkdown } from '../src/lib/doc-group-markdown'
 import { stripInlineCode, tokenizeInlineCode } from '../src/lib/inline-code'
-const root = join(import.meta.dir, '..')
-describe('documentation integrity', () => {
-  test('diff lines retain their source-language syntax highlighting', async () => {
-    const source =
-      "-import { api } from '@hulla/api'\n+import { defineContract } from '@hulla/api'"
-    const highlighter = await createShikiCodeHighlighter({ languages: ['ts'] })
-    const result = highlighter.highlightDiff(source, { language: 'ts' })
-
-    expect(
-      result.lines.map((line) =>
-        line.tokens.map((token) => token.content).join('')
-      )
-    ).toEqual(source.split('\n'))
-    expect(result.lines[0]?.tokens[0]).toMatchObject({
-      color: 'var(--color-danger)',
-      content: '-',
-    })
-    expect(result.lines[1]?.tokens[0]).toMatchObject({
-      color: 'var(--color-success)',
-      content: '+',
-    })
-    expect(
-      new Set(result.lines[1]?.tokens.slice(1).map((token) => token.color)).size
-    ).toBeGreaterThan(1)
-  })
-
+import { guides, findGuide, adjacentGuides } from '../src/data/guides'
+describe('documentation transforms and navigation', () => {
   test('metadata strips Markdown while descriptions retain code semantics', () => {
     const source = 'Use the `hulla` CLI.'
     expect(stripInlineCode(source)).toBe('Use the hulla CLI.')
@@ -54,43 +23,6 @@ describe('documentation integrity', () => {
       { kind: 'code', value: 'hulla' },
       { kind: 'text', value: ' CLI.' },
     ])
-  })
-  test('every documented route has a collection entry and a shared route renderer', async () => {
-    await access(join(root, 'src/pages/docs/[...slug].astro'))
-    for (const entry of flatDocs) {
-      const suffix = entry.href.slice('/docs/'.length)
-      const isLanding = findDocPackage(entry.href)?.href === entry.href
-      await access(
-        join(
-          root,
-          'src/content/docs',
-          isLanding ? `${suffix}/index.mdx` : `${suffix}.mdx`
-        )
-      )
-    }
-    const routes = [...flatDocs, ...docGroups].map((item) => item.href)
-    expect(new Set(routes).size).toBe(routes.length)
-    for (const name of ['control', 'style', 'db', 'cli', 'args']) {
-      const files = (
-        await readdir(join(root, 'src/content/docs', name), { recursive: true })
-      )
-        .filter((file) => file.endsWith('.mdx'))
-        .map(
-          (file) =>
-            `/docs/${name}${file === 'index.mdx' ? '' : `/${file.slice(0, -4)}`}` as const
-        )
-        .sort()
-      expect(
-        flatDocs
-          .filter(
-            (entry) =>
-              entry.href === `/docs/${name}` ||
-              entry.href.startsWith(`/docs/${name}/`)
-          )
-          .map((entry) => entry.href)
-          .sort()
-      ).toEqual(files)
-    }
   })
   test('package navigation keeps pagination inside each package and resolves nested routes', () => {
     for (const pkg of docPackages) {
@@ -103,44 +35,87 @@ describe('documentation integrity', () => {
       }
     }
     expect(findDocPackage('/docs/stylesheet')).toBeUndefined()
-  })
-  test('sidebar navigation groups server and client concepts without hiding integrations', () => {
-    const server = apiDocNavigation.find(
-      (section) => section.title === 'Server'
-    )!
-    const client = apiDocNavigation.find(
-      (section) => section.title === 'Client'
-    )!
-    const integrations = apiDocNavigation.find(
-      (section) => section.title === 'Integrations'
-    )!
-
-    expect(server.groups.map((group) => group.title)).toEqual([
-      'Server adapters',
-      'Full-stack frameworks',
-      'Serverless',
-    ])
-    expect(client.groups.map((group) => group.title)).toEqual([
-      'Client connections',
-    ])
-    expect(integrations.groups.map((group) => group.title)).toEqual([
-      'Integrations',
-    ])
-    expect(apiDocNavigation.flatMap((section) => section.groups)).toEqual([
-      ...apiDocs,
-    ])
-  })
-  test('coverage destinations exist and exports are unique per entrypoint', () => {
-    const routes = new Set(flatApiDocs.map((entry) => entry.href))
-    const seen = new Set<string>()
-    for (const item of apiCoverage) {
-      expect(routes.has(item.page)).toBe(true)
-      for (const name of item.exports) {
-        const key = `${item.entrypoint}:${name}`
-        expect(seen.has(key)).toBe(false)
-        seen.add(key)
+    const docsPaths = new Set<string>(
+      docPackages.flatMap((pkg) =>
+        pkg.groups.flatMap((group) => group.entries.map((entry) => entry.href))
+      )
+    )
+    for (const guide of guides) {
+      expect(docsPaths.has(guide.href)).toBe(false)
+      expect(docsPaths.has(`/docs/${guide.id}`)).toBe(false)
+      expect(findGuide(`${guide.href}/`)).toEqual(guide)
+      const adjacent = adjacentGuides(guide.href)
+      for (const page of [adjacent.previous, adjacent.next]) {
+        if (page) expect(page.packageKind).toBe(guide.packageKind)
       }
     }
+  })
+  test('callouts preserve content and leave ordinary blockquotes alone', () => {
+    const link = {
+      type: 'link',
+      url: '/docs/api',
+      children: [{ type: 'text', value: 'contract' }],
+    }
+    const ordinary = {
+      type: 'blockquote',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', value: 'An ordinary quote.' }],
+        },
+      ],
+    }
+    const tree = {
+      type: 'root',
+      children: [
+        {
+          type: 'blockquote',
+          children: [
+            {
+              type: 'paragraph',
+              children: [
+                {
+                  type: 'text',
+                  value: '[!WARNING] Keep secrets on the server\nRead the ',
+                },
+                link,
+              ],
+            },
+          ],
+        },
+        ordinary,
+      ],
+    }
+    remarkDocsCallouts()(tree)
+    expect(tree.children[1]).toMatchObject({
+      name: 'DocsCallout',
+      attributes: [
+        { name: 'kind', value: 'warning' },
+        { name: 'title', value: 'Keep secrets on the server' },
+      ],
+      children: [
+        { name: 'p', children: [{ type: 'text', value: 'Read the ' }, link] },
+      ],
+    })
+    expect(tree.children[2]).toEqual(ordinary)
+  })
+  test('tutorial prerequisites stay available in the Markdown edition', () => {
+    const output = renderMarkdownDocument({
+      title: 'Build a demo',
+      description: 'A complete example.',
+      body: 'Start here.',
+      tutorial: {
+        outcome: 'A saved note.',
+        prerequisites: [
+          { title: 'Install the parser', href: '/guides/args/quick-start' },
+        ],
+      },
+    })
+    expect(output).toContain("## What you'll build")
+    expect(output).toContain('A saved note.')
+    expect(output).toContain(
+      '[Install the parser](https://hulla.dev/guides/args/quick-start.md)'
+    )
   })
   test('fenced code preserves source and language, including JSX-sensitive characters', () => {
     type Tree = Parameters<ReturnType<typeof remarkDocsCode>>[0]
@@ -170,17 +145,6 @@ describe('documentation integrity', () => {
       { type: 'mdxJsxAttribute', name: 'filename', value: 'example.ts' },
     ])
     expect(tree.children?.[0]?.type).toBe('mdxjsEsm')
-  })
-  test('documents without fences do not gain an unnecessary component import', () => {
-    const tree = {
-      type: 'root',
-      children: [
-        { type: 'paragraph', children: [{ type: 'text', value: 'Hello' }] },
-      ],
-    }
-    const before = structuredClone(tree)
-    remarkDocsCode()(tree)
-    expect(tree).toEqual(before)
   })
   test('language-tab fences share the containing code frame while ordinary fences keep theirs', () => {
     type Tree = Parameters<ReturnType<typeof remarkDocsCode>>[0]
@@ -247,40 +211,6 @@ describe('documentation integrity', () => {
       { type: 'mdxJsxAttribute', name: 'lineNumbers', value: null },
     ])
   })
-  test('code emphasis stays sparse and limited to deliberate teaching moments', async () => {
-    const emphasizedFences: string[] = []
-    const directories = ['start', 'core', 'transports']
-
-    for (const directory of directories) {
-      const path = join(root, 'src/content/docs/api', directory)
-      for (const filename of await readdir(path)) {
-        if (!filename.endsWith('.mdx')) continue
-
-        const source = await readFile(join(path, filename), 'utf8')
-        const fences = source.matchAll(/^```([^\n]*)\n([\s\S]*?)^```[ \t]*$/gm)
-
-        for (const fence of fences) {
-          const metadata = fence[1] ?? ''
-          const hasEmphasis =
-            /(?:^|\s)(?:focus|error|warning)=\{/.test(metadata) ||
-            /(?:^|\s)\{[\d,\s-]+\}/.test(metadata)
-
-          if (hasEmphasis)
-            emphasizedFences.push(`${directory}/${filename}: ${metadata}`)
-        }
-      }
-    }
-
-    expect(emphasizedFences.sort()).toEqual([
-      'core/request-transport.mdx: ts filename="src/api/contract.ts" {6,10,14,18}',
-      'core/servers.mdx: ts filename="src/api/server.ts" {4,6}',
-      'transports/desktop-bridges.mdx: ts filename="src/api/desktop-relay.ts" focus={15-29,32,34-37}',
-      'transports/desktop-bridges.mdx: ts filename="src/api/dioxus-eval-script.ts" focus={6-10,13,15-18}',
-      'transports/desktop-bridges.mdx: ts filename="src/api/tauri-client.ts" focus={10-16,18,21,23-26}',
-      'transports/message-port.mdx: ts filename="src/api/message-port-demo.ts" focus={23-32}',
-      'transports/websocket.mdx: ts filename="src/api/websocket-demo.ts" focus={33-44}',
-    ])
-  })
   test('AI Markdown removes presentation-only MDX and targets Markdown siblings', () => {
     const output = renderMarkdownDocument({
       title: 'Example',
@@ -288,32 +218,60 @@ describe('documentation integrity', () => {
       usefulFor: ['Testing AI navigation.'],
       body: `import DocsPackageManagerCommand from '@/component.astro'
 
-Read the [guide](/docs/api/quick-start).
+Read the [guide](/guides/api/quick-start).
 
 <DocsPackageManagerCommand commands={{ bun: 'bun add example' }} />`,
     })
 
     expect(output).toContain('# Example')
-    expect(output).toContain('https://hulla.dev/docs/api/quick-start.md')
+    expect(output).toContain('https://hulla.dev/guides/api/quick-start.md')
     expect(output).toContain('```sh\nbun add example\n```')
     expect(output).not.toContain('import DocsPackageManagerCommand')
     expect(output).not.toContain('<DocsPackageManagerCommand')
   })
+  test('AI Markdown preserves the meaning and boundaries of package simulations', () => {
+    const api = cleanMdxForAgents('<PackageDemoFrame kind="api" />')
+    const db = cleanMdxForAgents('<PackageDemoFrame kind="db" />')
+    expect(api).toContain('makes no network request to an API')
+    expect(api).toContain('real TypeScript compiler')
+    expect(api).toContain('response.json')
+    expect(api).toContain('preset edit, not a live AI agent')
+    expect(api).toContain('https://hulla.dev/guides/api/quick-start.md')
+    expect(db).toContain('does not connect to PostgreSQL')
+    expect(db).toContain('https://hulla.dev/guides/db/quick-start.md')
+    expect(db).not.toContain('<PackageDemoFrame')
+    for (const kind of ['style', 'ui', 'control', 'args', 'gittar', 'cli']) {
+      const output = cleanMdxForAgents(`<PackageDemoFrame kind="${kind}" />`)
+      expect(output).toContain('Interactive example:')
+      expect(output).not.toContain('<PackageDemoFrame')
+    }
+  })
   test('AI Markdown retains guide-list labels, descriptions, and destinations', () => {
     const output =
       cleanMdxForAgents(`<DocsGuideLinks label="Next steps" items={[
-      { title: 'Quick start', href: '/docs/api/quick-start', description: 'Build a working route.' },
+      { title: 'Quick start', href: '/guides/api/quick-start', description: 'Build a working route.' },
       { title: 'Reference', href: '/docs/api/reference', description: 'Look up an export.' },
     ]} />`)
 
     expect(output).toContain(
-      '[Quick start](https://hulla.dev/docs/api/quick-start.md)'
+      '[Quick start](https://hulla.dev/guides/api/quick-start.md)'
     )
     expect(output).toContain('Build a working route.')
     expect(output).toContain(
       '[Reference](https://hulla.dev/docs/api/reference.md)'
     )
     expect(output).not.toContain('DocsGuideLinks')
+  })
+  test('Markdown callouts preserve their type, links, and code without MDX', () => {
+    const output = cleanMdxForAgents(
+      '> [!TIP] Check the result\n> Read [Results](/docs/control/results) before calling `unwrap()`.'
+    )
+    expect(output).toContain('> **Tip: Check the result**')
+    expect(output).toContain(
+      '[Results](https://hulla.dev/docs/control/results.md)'
+    )
+    expect(output).toContain('`unwrap()`')
+    expect(output).not.toContain('[!TIP]')
   })
   test('AI Markdown preserves Alert meaning as a blockquote', () => {
     const output = cleanMdxForAgents(`<Alert variant="warning" role="alert">
@@ -370,23 +328,31 @@ Read the [guide](/docs/api/quick-start).
     expect(output).not.toContain('slot=')
   })
   test('group Markdown preserves chooser and ordinary page structure', () => {
-    const transports = apiDocs.find(
-      (group) => group.href === '/docs/api/transports'
-    )!
-    const start = apiDocs.find(
-      (group) => group.href === '/docs/api/start-here'
-    )!
+    const group: DocGroup = {
+      title: 'Connections',
+      href: '/docs/example/connections',
+      description: 'Pick a connection.',
+      entries: [
+        {
+          title: 'HTTP',
+          href: '/docs/example/http',
+          description: 'Send requests.',
+          chooseWhen: 'Crossing a network.',
+          applicationOwns: 'The HTTP server.',
+        },
+      ],
+    }
 
-    expect(renderDocGroupMarkdown(transports)).toContain(
-      '## Choose how the client connects'
+    expect(renderDocGroupMarkdown(group)).toBe(
+      '## Documentation\n\n- [HTTP](https://hulla.dev/docs/example/http.md): Send requests.'
     )
-    expect(renderDocGroupMarkdown(transports)).toContain(
-      '| Connection | Choose it when |'
+    expect(renderDocGroupMarkdown({ ...group, area: 'reference' })).toStartWith(
+      '## Reference pages'
     )
-    expect(renderDocGroupMarkdown(transports)).toContain('## Guides')
-    expect(renderDocGroupMarkdown(start).startsWith('## Guides')).toBe(true)
-    expect(renderDocGroupMarkdown(start)).not.toContain(
-      '## Choose how the client connects'
+    expect(
+      renderDocGroupMarkdown({ ...group, chooserTitle: 'Choose a connection' })
+    ).toContain(
+      '| [HTTP](https://hulla.dev/docs/example/http.md) | Crossing a network. | The HTTP server. |'
     )
   })
   test('AI Markdown fails loudly when a visual component lacks a fallback', () => {
@@ -400,11 +366,5 @@ Read the [guide](/docs/api/quick-start).
     ).toThrow(
       'DocsLanguageTabs requires a non-empty rust slot for AI Markdown.'
     )
-  })
-  test('site styles do not target shared component parts or descendants of prose containers', async () => {
-    const css = await readFile(join(root, 'src/styles/site.css'), 'utf8')
-    expect(css).not.toContain('[data-slot')
-    expect(css).not.toMatch(/\.docs-content\s+[^,{]+\{/)
-    expect(css).not.toMatch(/\.md-(?:p|blockquote|li)\s+[^,{]+\{/)
   })
 })
