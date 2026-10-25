@@ -1,11 +1,11 @@
 ---
 title: 'Next.js data and caching'
-description: 'Apply typed Next Data Cache policy and tags, invalidate server data, and keep browser caches separate.'
+description: 'Cache API requests on the Next.js server and refresh them after a write.'
 ---
 
-Use `@hulla/api-next/client` when a Next.js server-side Fetch call should carry contract-shaped Data Cache policy and invalidation tags. It adds typed `cache`, `next.revalidate`, and `next.tags` options to `fetch`; Next still owns cache storage, freshness, and revalidation.
+Use `@hulla/api-next/client` to cache server-side API requests with Next.js. Set how long a result stays fresh, give it a tag, and invalidate that tag after a write.
 
-This page assumes the `users.byId` `GET` route and `users.rename` `PATCH` route from the [Next.js integration guide](/docs/api/full-stack/next). The cache API works with any `@hulla/api` contract, whether the HTTP server is the same application or a separate service.
+The examples build on the user routes from the [Next.js integration](/docs/api/full-stack/next).
 
 ## Pick the cache that owns the result
 

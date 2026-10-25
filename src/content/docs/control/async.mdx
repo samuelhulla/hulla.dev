@@ -1,9 +1,9 @@
 ---
 title: Async result lifecycles
-description: Choose whether a promise is the operation's result or a payload stored inside a Result.
+description: 'Return results from async functions or keep a promise inside a result.'
 ---
 
-Async code can put a promise on either side of a result boundary. The types look similar, but they describe different work: `Promise<Result<T, E>>` means the operation is still running, while `Result<Promise<T>, E>` means the success branch has already been selected and its payload is still pending.
+An async function usually returns `Promise<Result<T, E>>`: await it, then check whether it succeeded. A `Result<Promise<T>, E>` means something different: the result is already known, but its value is still loading.
 
 ## Return a result when the operation finishes
 

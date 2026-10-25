@@ -1,11 +1,15 @@
 ---
 title: '@hulla/db'
-description: Read and write PostgreSQL with a typed SDK, and keep browser queries up to date automatically.
+description: 'Read and write your own PostgreSQL database with a typed SDK, and refresh subscribed browser queries after committed writes.'
 ---
+
+import PackageDemoFrame from '@/components/site/PackageDemoFrame.astro'
 
 `@hulla/db` gives your application typed PostgreSQL access and live query results.
 Define your tables once. Use `db` in server code, or declare queries and mutations
 for the browser.
+
+<PackageDemoFrame kind="db" class="my-8" />
 
 ```ts filename="db/tasks.ts"
 import { query, mutation } from './_generated/functions'
@@ -50,7 +54,7 @@ database. Vue, Svelte and Solid have their own [UI bindings](/docs/db/framework-
 plain JavaScript can subscribe directly.
 
 The examples above assume a table and a configured connection. The
-[quick start](/docs/db/quick-start) takes you from those files to a working live
+[quick start](/guides/db/quick-start) takes you from those files to a working live
 task list. [Installation](/docs/db/installation) covers npm packages, supported
 native platforms and build/runtime prerequisites.
 
@@ -95,7 +99,7 @@ application. Server database access and that service require Node/Bun with nativ
 process support. See the [mental model](/docs/db/mental-model) for the boundaries
 and [deployment guide](/docs/db/deployment) for hosting requirements.
 
-Start with the [working React example](/docs/db/quick-start), or go directly to
+Start with the [working React example](/guides/db/quick-start), or go directly to
 [Next.js](/docs/db/frameworks/next), [Nuxt](/docs/db/frameworks/nuxt),
 [SvelteKit](/docs/db/frameworks/sveltekit), [SolidStart](/docs/db/frameworks/solidstart)
 or [Astro](/docs/db/frameworks/astro). Native Rust applications have a

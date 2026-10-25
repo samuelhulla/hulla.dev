@@ -1,9 +1,9 @@
 ---
 title: Package exports
-description: Find the public core entrypoints and integration packages without importing server or host code into the wrong runtime.
+description: 'Find the import path for a core API or integration package.'
 ---
 
-The root `@hulla/api` entrypoint owns contract declarations: `defineContract`, `router`, `route`, `request`, `response`, `codec`, contract compilation, declared errors, and their public types.
+Import contract helpers such as `route()` from `@hulla/api`. Import client and server APIs from their separate entrypoints below. Each integration package is listed with its purpose and documentation.
 
 | Entrypoint                                                | Primary exports                                                                                          |
 | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |

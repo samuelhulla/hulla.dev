@@ -3,19 +3,13 @@ title: Better Auth storage
 description: Store Better Auth users and sessions in the same PostgreSQL database as your application.
 ---
 
-Use `@hulla/db-better-auth` when Better Auth should store users, sessions, accounts
-and verification records in the same PostgreSQL database as your application.
-Better Auth owns passwords, cookies, session expiry and authentication endpoints.
-The adapter supplies storage; it does not add a second authentication system.
-
-Install `@hulla/db-better-auth@0.1.0` alongside `@hulla/db` and `better-auth`;
-see [installation](/docs/db/installation) for package-manager commands. The adapter
-is tested with Better Auth 1.7.12 and requires both packages as peers. Using another provider
-does not require this package; keep the existing [credential verifier](/docs/db/authentication#verify-credentials-on-the-service).
+`@hulla/db-better-auth` stores Better Auth's users and sessions in your application's PostgreSQL database. Continue using Better Auth to handle login and cookies; the adapter connects it to storage.
 
 ## Define the tables before generating your database
 
-Start with the normal [schema and config setup](/docs/db/quick-start).
+Install `@hulla/db-better-auth@0.1.0` with its peers, `@hulla/db` and `better-auth`; see [installation](/docs/db/installation). This adapter is tested with Better Auth 1.7.12. For another auth provider, use a [credential verifier](/docs/db/authentication#verify-credentials-on-the-service) instead.
+
+Start with the normal [schema and config setup](/guides/db/quick-start).
 Spread the auth tables into your application schema:
 
 ```ts
@@ -37,14 +31,9 @@ The schema helper does not import your generated database, open a connection or
 create tables itself. This lets a new project generate its database before its
 auth instance exists.
 
-For plugins, additional fields or renamed models, put the Better Auth options in
-an independent `auth-options.ts` module. Pass those same options to
-`betterAuthTables(authOptions)` and `betterAuth({ ...authOptions, database: ... })`.
-Keep the shared module independent of the generated database and auth instance.
-The configured helper discovers additional tables at runtime. For plugins whose
-constructors import server code, use the static generator below: query workers
-cannot bundle server imports from a shared options module. Static auth tables
-also preserve precise application field types for customized models.
+For plugins, extra fields, or renamed models, put Better Auth options in an independent `auth-options.ts`. Pass the same options to `betterAuthTables(authOptions)` and `betterAuth({ ...authOptions, database: ... })`. Keep that module independent of the generated database and auth instance.
+
+The helper discovers additional tables at runtime. Use the static generator below when plugin constructors import server code: query workers can't bundle those imports. Static tables also preserve precise field types for customized models.
 
 ## Connect Better Auth to the generated server database
 
@@ -139,14 +128,14 @@ stopAuth()
 await dispose()
 ```
 
-Import this startup module once from your framework's browser entrypoint. The
-relative generated import assumes `src/` and `db/` are siblings. Cookies travel
-separately with same-origin requests. Cross-origin deployments
-need matching cookie, CORS and `credentials: 'include'` settings. Bearer-based
-providers can use the existing request-header callback instead. Cache keys never
-authenticate a request. Include an active tenant/account in both keys when your
-app supports switching between them; changing the key retires the previous live
-view. `expiresAt` is optional, and framework bindings reattach automatically.
+Import this startup module once from the framework's browser entrypoint. The relative generated import assumes `src/` and `db/` are siblings.
+
+Cookies travel separately with same-origin requests. Cross-origin deployments need matching cookie, CORS, and `credentials: 'include'` settings. Bearer providers can use the request-header callback instead.
+
+Include the active tenant or account in both keys when users can switch between them. Changing the key retires the previous live view; framework bindings reattach automatically. `expiresAt` is optional.
+
+> [!IMPORTANT] A cache key is not a credential
+> The service still verifies the request. Keys separate cached results; they don't authenticate callers or authorize rows.
 
 ## Generate a static auth schema when you need exact types
 

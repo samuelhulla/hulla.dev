@@ -1,0 +1,90 @@
+---
+title: Choose a component
+description: Find a shared primitive for content, navigation, forms, overlays, and feedback.
+---
+
+Install components by registry name with [`hulla ui add`](/docs/cli/ui). The registry supplies Astro, React, and Solid source; choose the framework your page uses.
+
+```sh
+hulla ui add --framework astro alert card stepper
+```
+
+A component family can contain several parts. For example, installing `card` gives you Card, CardHeader, CardTitle, CardDescription, CardContent, and CardFooter. Import the parts you need from their installed files.
+
+## Explain and organize content
+
+| Family        | Use it for                                                                        |
+| ------------- | --------------------------------------------------------------------------------- |
+| `typography`  | Paragraphs and lists with shared measure, spacing, and text color.                |
+| `card`        | A related title, description, content, and actions.                               |
+| `alert`       | A note, warning, error, or success message that affects the reader's next action. |
+| `stepper`     | An ordered process, with a label and content for each stage.                      |
+| `code`        | Code samples with a filename, copy action, and optional line emphasis.            |
+| `table`       | Data compared across the same columns.                                            |
+| `badge`       | A short status or category.                                                       |
+| `collapsible` | Optional details that would interrupt the main task.                              |
+
+### Compose an alert
+
+Import the Alert parts from `src/components/alert/`, then put the consequence in the title and the remedy in the description:
+
+```astro
+<Alert variant="warning">
+  <AlertTitle>Changes aren't saved</AlertTitle>
+  <AlertDescription>Save this draft before leaving the page.</AlertDescription>
+</Alert>
+```
+
+The default `role="note"` suits static documentation. Use `role="alert"` for a newly displayed urgent message, rather than making every note an announcement.
+
+## Keep body copy consistent
+
+Install `typography` when you render Markdown or other long-form content. It adds a shared stylesheet, rather than paragraph or list components:
+
+```sh
+hulla ui add typography
+```
+
+The CLI activates the stylesheet in the application entrypoint. Wrap the rendered content in `class="prose"`:
+
+```html
+<article class="prose">
+  <h2>Save your draft</h2>
+  <p>Save the draft before you leave.</p>
+  <ul>
+    <li>Check the title.</li>
+    <li>Preview the result.</li>
+  </ul>
+  <div class="not-prose"><!-- Shared UI components --></div>
+</article>
+```
+
+The stylesheet owns paragraph, heading, list, link, and inline-code defaults using the shared theme. Body copy uses `0.9375rem` (15px at the default root size) with a line height of 1.75. A `not-prose` or `data-component-boundary` wrapper keeps embedded components under their own styling. A nested `prose` region can opt back in. Frontmatter remains document metadata; the styles apply to the rendered body.
+
+## Navigate and choose
+
+| Family              | Use it for                                     |
+| ------------------- | ---------------------------------------------- |
+| `navigation-menu`   | Links to other pages.                          |
+| `breadcrumbs`       | The path from a section to the current page.   |
+| `sidebar`           | Persistent navigation through a large section. |
+| `table-of-contents` | Links to sections within a long page.          |
+| `tabs`              | Equivalent views of one task.                  |
+| `command`           | Searchable actions or destinations.            |
+
+Keep required tutorial steps visible in order. Tabs suit equivalent install commands; they make poor hiding places for step two.
+
+## Accept input and show feedback
+
+| Family               | Use it for                                                          |
+| -------------------- | ------------------------------------------------------------------- |
+| `button`             | An action, with shared emphasis, sizes, and disabled states.        |
+| `input` / `textarea` | Short or long text input. Give each control a visible label.        |
+| `dialog`             | A focused task that interrupts the page and needs focus management. |
+| `spinner`            | Indeterminate progress, paired with a text label.                   |
+| `kbd`                | A keyboard shortcut.                                                |
+
+> [!TIP] Prefer the control that owns the behavior
+> Dialogs need focus management, tabs need keyboard navigation, and command menus need selection behavior. Start with the shared component rather than a styled container and a growing list of event handlers.
+
+For a complete page, follow [Build a reading counter](/guides/ui/quick-start). For shared styling rules, read [Composition and themes](/docs/ui/composition).

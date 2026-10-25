@@ -3,7 +3,7 @@ title: API reference
 description: Look up the constructors, result types, methods, tags, and callback signatures exported by @hulla/control.
 ---
 
-This page is a lookup for code that already uses `@hulla/control`. For the decisions behind these APIs, start with [Results](/docs/control/results), [Chaining](/docs/control/chaining), or [Catching exceptions](/docs/control/attempts).
+Look up `ok()`, `err()`, `tcf()`, and the methods on a `Result`. Start with [Results](/docs/control/results) if you want to see how a caller handles success and failure.
 
 ## Construct a branch directly
 
@@ -68,7 +68,11 @@ const outcome = result<
 })
 ```
 
-Here the predicate is both a runtime classifier and a TypeScript type guard. Since the input type is `unknown`, the success payload remains `unknown`; use a narrower input union if you want TypeScript to infer a narrower success type. The error and success tags are available as literal types and runtime `.tag` values. The explicit generic order is `T, E, TagError, TagOk`. When your error is a string, a plain object, or another non-`Error` value, use `err()` and `Result<T, E>` instead: `result()` does not support arbitrary error payload types.
+The predicate classifies the value at runtime and narrows its type. An `unknown` input still leaves the success payload `unknown`; a narrower input union gives a narrower success type.
+
+Tags are available through `.tag` and as literal types. The generic order is `T, E, TagError, TagOk`.
+
+For strings or plain objects used as errors, choose `err()` and `Result<T, E>`. `result()` requires an `Error` subtype.
 
 `config` accepts `isError`, `tagOk`, and `tagError`. Omitted tags use `ok` and `error`; providing only one tag customizes only that branch. The implementation chooses a branch by calling `isError(value)` once.
 

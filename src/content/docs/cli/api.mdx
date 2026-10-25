@@ -1,11 +1,11 @@
 ---
 title: API commands
-description: Understand the legacy API generation commands in the hulla CLI and the current @hulla/api path.
+description: 'Look up API generation commands for projects using the legacy API.'
 ---
 
-The `hulla api` commands in CLI beta `0.0.0-beta.1` belong to an older `@hulla/api` generation model. They emit `createApi`, `generate`, and `runGenerateConfig` code that is incompatible with the current `@hulla/api` 2.0 API, which removed that generator. Do not use these commands to scaffold a new 2.0 application.
+The `hulla api` commands generate code for the legacy API. They are incompatible with `@hulla/api` 2.0. For a new API, follow [Build a task API](/guides/api/quick-start).
 
-For a current API, follow the [@hulla/api 2.0 quick start](/docs/api/quick-start), which defines the contract, server implementation, and client call directly.
+The commands below document CLI beta `0.0.0-beta.1` for projects that still use that interface.
 
 ## What the legacy commands expect
 

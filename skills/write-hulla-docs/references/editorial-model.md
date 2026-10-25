@@ -1,6 +1,14 @@
 # `@hulla/*` documentation page models
 
-Use the smallest model that fits the page. These structures adapt the useful patterns observed in Turso's introduction, quickstart, and feature guides: a concise promise, path selection, visible outcomes, mechanism before configuration, and explicit constraints.
+Use the smallest model that fits the page. Start with the useful action, show an example, then explain the details it introduces. The outline describes the whole page; it is not a list of facts to pack into its opening.
+
+## The opening
+
+Treat the title, description, and first two paragraphs as one piece of writing. The description states the purpose. The opening adds a concrete explanation or example and leads to the first section. Don't repeat the outcome in a card and again in the body.
+
+An API transport page can start with “A browser needs to send a request to call your API. Server code can call the implementation directly when it is already running in the same process.” Save routing, credentials, and caching details for the sections where the reader configures them.
+
+Keep a warning at the top when it changes whether the page applies, such as legacy commands that generate incompatible code. Move routine pitfalls beside the operation they affect.
 
 ## Introduction
 
@@ -13,7 +21,7 @@ Use the smallest model that fits the page. These structures adapt the useful pat
 ## Quickstart
 
 1. Define the finished outcome and prerequisites.
-2. List the steps the reader will complete.
+2. Move into the first setup step; use the contents outline to show the remaining stages.
 3. Use numbered, outcome-named steps.
 4. Explain why each command or code fragment exists before showing it.
 5. Show a success signal after each meaningful stage.
@@ -45,11 +53,10 @@ When the concept has stages, render a compact flow from declaration to execution
 ## Integration
 
 1. Explain what the integration adds beyond the base package.
-2. State which side owns data, transport, caching, or lifecycle.
-3. Show the minimum installation and registration path.
-4. Demonstrate the first useful consumer call.
-5. Explain cache keys, errors, cancellation, or synchronization only where relevant.
-6. State what the integration deliberately does not manage.
+2. Show the minimum installation and registration path. Explain framework responsibilities beside the relevant code.
+3. Demonstrate the first useful consumer call.
+4. Explain cache keys, errors, cancellation, or synchronization only where relevant.
+5. State limits where they affect the reader's next step.
 
 ## Reference
 

@@ -1,13 +1,11 @@
 ---
 title: 'SWR'
-description: 'Create typed SWR keys and fetchers, run mutations, and revalidate the correct contract route.'
+description: 'Load API data with SWR and refresh it after a mutation.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-Use `@hulla/api-swr` when a React application already has a typed `@hulla/api` client and should use SWR 2 for reads and mutations. The package creates SWR-compatible `[key, fetcher]` tuples from that client; your application still owns `SWRConfig`, the cache provider, revalidation, retries, optimistic updates, SSR, hydration, and transport policy.
-
-This guide places the contract in `src/api/contract.ts`, the browser client in `src/api/client.ts`, the SWR view in `src/api/swr.ts`, and the component in `src/components/UserPanel.tsx`.
+`@hulla/api-swr` turns your client routes into keys and fetchers for SWR 2. Use them with `useSWR` to load a user, then refresh the cached result after changing their name.
 
 <DocsPackageManagerCommand
   commands={{
@@ -187,7 +185,9 @@ The bound form is usually shorter when a component edits one known resource. Use
 
 Declared route statuses are data. A `404` is not an SWR error; it is returned in `data` and must be narrowed like the `200` result in the component above.
 
-If the contract declares named errors with `defineErrors`, the default client mode (`errorMode: 'return'`) also returns those error values as data. Construct the client with `errorMode: 'throw'` when the application wants a declared error to reject as a `DeclaredError`. Operational failures reject regardless of that setting and populate SWR’s `error`, including transport failures, unexpected statuses, content-type mismatches, and response-schema failures.
+Named errors declared with `defineErrors` follow the client's `errorMode`. The default, `'return'`, returns them as data. Choose `'throw'` to reject with a `DeclaredError`.
+
+Operational failures always reject and populate SWR's `error`: a failed transport, unexpected status, content-type mismatch, or failed response decoding.
 
 SWR’s `error` describes a rejected promise. It does not replace status narrowing for declared HTTP responses.
 

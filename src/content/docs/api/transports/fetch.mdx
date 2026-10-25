@@ -1,14 +1,14 @@
 ---
 title: HTTP calls with Fetch
-description: Use Web-standard Request, Response, Headers, AbortSignal, and fetch as either a client transport or server adapter.
+description: 'Send API calls over HTTP and handle them with Fetch APIs.'
 usefulFor:
   - Your runtime or framework already exposes a Fetch-compatible request handler.
   - A browser or remote service should call the contract over HTTP.
 ---
 
-`@hulla/api/fetch` contains two independent boundaries. `fetchTransport()` turns typed client requests into Fetch calls. `fetchAdapter().mount()` turns a completed server implementation into a function from `Request` to `Promise<Response>`.
+Use `fetchTransport()` to send client calls over HTTP. On the server, `fetchAdapter().mount()` accepts those requests and runs your implementation.
 
-The examples below continue the `contract` and `implementation` modules from the [quick start](/docs/api/quick-start).
+The examples use the contract and implementation from [Build a task API](/guides/api/quick-start).
 
 ## Mount a Fetch handler
 

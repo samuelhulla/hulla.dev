@@ -128,16 +128,22 @@ Canonical `@hulla/api` Markdown cannot import the site component directly. Put
 
 ## Choose one page job
 
+The title, description, and first two paragraphs should explain the main task and lead into it. Don't begin with a list of everything the framework and adapter own. Introduce those details where they affect a mount, client call, or configuration choice.
+
+For example, “Add your contract's routes to an Express app or Router” gives the reader a place to start. Middleware order and body parsing belong beside the mount. A page about server/browser calls should show those two clients before comparing context, caching, and credentials.
+
+Keep introductory prose connected. A comma-separated list of technical terms is not an explanation, and splitting it into several short sentences does not fix that. Show what happens in a familiar example and name the rule afterward.
+
 Classify every page before revising it. Use the detailed models in
 `skills/write-hulla-docs/references/editorial-model.md`.
 
 | Page type    | Reader's job                                            | Opening obligation                                   |
 | ------------ | ------------------------------------------------------- | ---------------------------------------------------- |
-| Introduction | Decide whether the package fits and choose a path       | Problem, promise, boundaries, and next route         |
-| Quickstart   | Produce one working result                              | Finished outcome, prerequisites, and step preview    |
+| Introduction | Decide whether the package fits and choose a path       | Useful result and a concrete explanation             |
+| Quickstart   | Produce one working result                              | Finished outcome and the first setup step            |
 | Concept      | Understand a mechanism or boundary                      | Problem resolved and a concrete relationship         |
-| Task guide   | Complete one defined operation                          | Who needs it, final result, and starting state       |
-| Integration  | Connect `@hulla/api` to another host or tool            | Added capability and ownership on each side          |
+| Task guide   | Complete one defined operation                          | Main task and where to start                         |
+| Integration  | Connect `@hulla/api` to another host or tool            | What the connection lets the reader do               |
 | Reference    | Look up an exact option, export, default, or constraint | Scope and the lookup dimensions the page covers      |
 | Maintainer   | Verify, release, or extend the implementation           | Intended maintainer, trigger, commands, and evidence |
 

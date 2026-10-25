@@ -1,13 +1,13 @@
 ---
 title: 'Migrate from @hulla/api 1.x'
-description: 'Move a stable procedure API to an HTTP contract, exhaustive server implementation, direct client, and explicit transport.'
+description: 'Migrate a 1.x procedure to a working 2.0 API route.'
 ---
 
 import DocsCodeDiff from '@/components/docs/DocsCodeDiff.astro'
 
-Version 2 is an architectural change, not a chain of renamed methods. Migrate one vertical slice at a time: declare the HTTP boundary, move behavior into a server implementation, mount it, then update the client call.
+Move one route at a time from the 1.x procedure API to a 2.0 contract, server handler, and client call. This example starts with the stable 1.2 API and ends with a working request.
 
-This guide starts from the stable 1.2 procedure API. If your application already uses `defineContract()`, `defineServer()`, and `createClient()`, it is on the current model.
+If your app already uses `defineContract()`, `defineServer()`, and `createClient()`, it uses the current model.
 
 ## See the shape of the change
 

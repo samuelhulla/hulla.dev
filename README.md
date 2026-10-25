@@ -9,7 +9,11 @@ bun install
 bun run dev
 ```
 
-Use `bun run verify` for the complete site gate. The committed UI source is self-contained, so installing and verifying the site does not require a linked package or sibling checkout. To intentionally regenerate it from UI `master`, check out `hulladev/ui` beside this repository and run `bun run ui:sync -- --cli /absolute/path/to/packed/hulla --registry ../ui/generated`; use `bun run ui:check -- --cli ... --registry ...` for the full regeneration check. Neither command adds a tracked local dependency.
+Use `bun run verify` for formatting, lint, types, source integrity, unit tests, and a single production build followed by the docs link audit. It runs without browsers or sibling checkouts. Use `bun run test:e2e` for the small Chromium behavior suite, `bun run api:check` when changing imported API docs with a matching API checkout, and `bun run self-contained:build` when checking regeneration or release readiness in an isolated tree.
+
+Tests should exercise observable behavior or transformations that can lose content. Keep editorial wording, exact class lists, and subjective appearance in review; use temporary browser checks for visual work. Shared component behavior belongs in the `@hulla/ui` repository.
+
+The committed UI source is self-contained, so installing and verifying the site does not require a linked package or sibling checkout. To intentionally regenerate it from UI `master`, check out `hulladev/ui` beside this repository and run `bun run ui:sync -- --cli /absolute/path/to/packed/hulla --registry ../ui/generated`; use `bun run ui:check -- --cli ... --registry ...` for the full regeneration check. Neither command adds a tracked local dependency.
 
 `bun run cv:pdf` exports the three-page A4 CV to `output/Samuel Hulla -CV.pdf`; pass `--include-phone` to include the private phone field.
 
@@ -27,7 +31,9 @@ The same content collection automatically produces a Markdown sibling for every 
 
 Keep page layout and Markdown classes in `src/styles/site.css`. The CLI owns `src/styles.css` and the generated components. Do not add prose-container descendant selectors or overrides targeting shared component parts.
 
-The current API content still targets `2.0.0-beta.1`. The API coverage and example checks require that matching API revision; they intentionally fail against the redesigned 2.0.0 API until the content is migrated.
+The API content targets `@hulla/api` `2.0.0`. Coverage and example checks use the matching API workspace declarations. Run `bun run build && bun run docs:links` to check all local page, section, and Markdown destinations; the complete `verify` command includes that check.
+
+Follow-along pages can declare `tutorial.outcome` and `tutorial.prerequisites` in frontmatter. Write note, tip, and warning blocks as `> [!TIP] A short title` followed by quoted Markdown. The shared layout and Alert composition render them, and Markdown exports retain their meaning. See `skills/write-hulla-docs/SKILL.md` and `docs/documentation-review.md` for the writing rules and latest review.
 
 ## Release guardrail
 

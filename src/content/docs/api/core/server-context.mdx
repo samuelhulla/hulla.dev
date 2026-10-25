@@ -1,13 +1,13 @@
 ---
 title: 'Server context and middleware'
-description: 'Create request-scoped context and apply middleware globally or to selected routes.'
+description: 'Share request data between handlers and add checks with middleware.'
 ---
 
-Use server context for values shared by middleware and handlers during one request. Use middleware when a policy must run around handlers or stop a request with a contract-declared error. This page uses the shared `contract` from [contract authoring](/docs/api/core/contracts); the authentication example additionally assumes that the contract declares an `UNAUTHENTICATED` error.
+Create context when several handlers need the same request data, such as the current user or a request ID. Add middleware for work that runs before or after a handler, such as checking access or logging a response.
 
 ## Create portable request context
 
-`defineServer()` context receives a portable `signal` and matched `route` metadata. Return the application values needed during the request; the factory's resolved return type becomes `input.context`.
+The examples use the [shared contract](/docs/api/core/contracts). The context callback receives an abort `signal` and the matched `route`. Return the values your handlers need; their types are inferred as `input.context`.
 
 ```ts
 import { defineServer } from '@hulla/api/server'
@@ -49,6 +49,8 @@ The adapter still owns request parsing and response writing. See [server adapter
 
 Use `server.middleware()` to type middleware against the context and contract. Middleware receives `signal`, `context`, `route`, `next`, and declared `errors` when the contract defines them.
 
+The authentication example below requires an `UNAUTHENTICATED` error in your contract; see [declared errors](/docs/api/core/errors#declare-expected-application-failures).
+
 ```ts
 const logRequest = server.middleware(async ({ context, route, next }) => {
   console.info(context.userId, route.method, route.path)
@@ -61,7 +63,7 @@ const requireUser = server.middleware(async ({ context, errors, next }) => {
 })
 ```
 
-Both functions use the Fetch-backed `server` above, so `context.userId` is inferred. `UNAUTHENTICATED` must be declared in the contract, as assumed at the start of this page. Returning the declared error skips the remaining middleware and handler. Middleware and handlers may also throw a declared error. See [error handling](/docs/api/core/errors).
+Both functions use the Fetch-backed `server` above, so `context.userId` is inferred. Returning the declared error skips the remaining middleware and handler. Middleware and handlers may also throw a declared error. See [error handling](/docs/api/core/errors).
 
 Apply middleware while building the implementation:
 

@@ -1,15 +1,11 @@
 ---
 title: 'Koa'
-description: 'Mount contract routes as terminal Koa middleware with typed state, native context, and host-owned parsing.'
+description: 'Serve your API inside a Koa middleware stack.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-`@hulla/api-koa` mounts an `@hulla/api` server implementation as Koa middleware. Use it when contract routes should
-run inside an existing Koa middleware stack while Koa keeps ownership of application state, middleware order, and the
-Node HTTP response.
-
-This guide serves `GET /greeting`, verifies the response over HTTP, then adds typed Koa state to the handler context.
+Serve your contract's routes as Koa middleware with `@hulla/api-koa`. The example adds `GET /greeting`, checks the response, and passes Koa state to the handler.
 
 ## Before you start
 

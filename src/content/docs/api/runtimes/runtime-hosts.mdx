@@ -1,17 +1,9 @@
 ---
 title: 'Choose a web runtime'
-description: 'Choose how Bun, Deno, or Vercel should expose the same Fetch-compatible contract handler.'
+description: 'Connect a Fetch handler to Bun, Deno, or Vercel.'
 ---
 
-Use `fetchAdapter()` when the host already accepts a Web `Request` and returns a Web `Response`. The same mounted
-handler can run in Bun, Deno, or a standalone Vercel Function; none of these hosts needs a runtime-specific
-`@hulla/api` adapter package.
-
-This page helps you choose the host boundary. The [Bun](/docs/api/runtimes/bun), [Deno](/docs/api/runtimes/deno), and
-[Vercel](/docs/api/runtimes/vercel) guides use the same `fetchAdapter().mount()` call but different host entrypoints.
-
-> The Fetch adapter mounts an existing server implementation. It does not start a server, discover a deployment
-> function, configure authentication, or change the host's request and response limits.
+Bun, Deno, and Vercel can all run a handler that accepts a `Request` and returns a `Response`. Create that handler with `fetchAdapter().mount(implementation)`, then connect it to your host using the examples below.
 
 ## Choose the host boundary
 

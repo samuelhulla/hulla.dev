@@ -3,9 +3,15 @@ title: Data types and codecs
 description: Choose application representations for PostgreSQL values without losing precision or hiding conversions.
 ---
 
-Table validators describe both a storage type and the value your application
-reads and writes. Start with the default representations; choose an explicit
-mode or codec when your application needs another one.
+import Collapsible from '@/components/collapsible/collapsible.astro'
+import CollapsibleTrigger from '@/components/collapsible/collapsible-trigger.astro'
+import CollapsibleContent from '@/components/collapsible/collapsible-content.astro'
+
+Choose how PostgreSQL values appear in your application. A timestamp can be a `Date`, for example, while a large integer can stay exact as a `bigint`.
+
+Each validator has a default representation. Use a mode or codec below when you need a different one.
+
+## Choose a field representation
 
 | Field                         | Application value                            |
 | ----------------------------- | -------------------------------------------- |
@@ -19,79 +25,145 @@ mode or codec when your application needs another one.
 | `v.timestamp()`               | `Date` representing an instant               |
 | `v.json()`                    | JSON-safe data                               |
 
-Unsafe int64 number reads and writes fail instead of rounding. Bigint-mode sums
-can exceed the stored int64 range, while individual stored values cannot.
-Bigint-mode averages are decimal strings; ordinary numeric averages are numbers.
-Custom field codecs do not transform aggregate output.
+## Keep large integers exact
+
+Use bigint mode when an integer may exceed JavaScript's safe integer range. The default number mode rejects unsafe reads and writes instead of rounding them.
+
+Stored values must still fit PostgreSQL's int64 range. Aggregate results have their own return rules:
+
+<Collapsible class="docs-example" data-component-boundary>
+  <CollapsibleTrigger>Aggregate return types</CollapsibleTrigger>
+  <CollapsibleContent>
+    <div class="prose">
+
+| Operation              | Result                                              |
+| ---------------------- | --------------------------------------------------- |
+| Sum in bigint mode     | `bigint`; the sum may exceed the stored int64 range |
+| Average in bigint mode | Decimal string                                      |
+| Average in number mode | `number`                                            |
+
+Custom field codecs do not transform aggregate results. For example, summing a number-backed custom class returns a number, not an instance of that class.
+
+    </div>
+
+  </CollapsibleContent>
+</Collapsible>
 
 ## Make date and timezone choices explicit
 
-Use a date for a calendar day, and a timestamp for an instant. These have different
-meanings even when a UI renders both as a date:
+Use a date for a calendar day, such as a birthday. Use a timestamp for an instant, such as when an event starts:
 
 ```ts filename="db/schema.ts"
 import { defineTable, v } from '@hulla/db/schema'
 
 const events = defineTable({
-  day: v.date(),
-  startsAt: v.timestamp(),
-  precise: v.timestamp({ mode: 'string', precision: 6 }),
-  localTime: v.timestamp({ withTimezone: false }),
+  day: v.date(), // Calendar-date string
+  startsAt: v.timestamp(), // Date
 })
 ```
 
-Default timestamps use timezone-aware storage and millisecond Date values.
-String mode preserves finer precision. Timezone-free timestamps default to a
-clock-component string; they do not infer the machine's local timezone. Timestamp
-precision is 0–6, with a default of 3; Date mode supports at most 3.
-`v.date({ mode: 'date' })` and timezone-free Date mode are explicit alternatives.
-Calendar Date mode uses the UTC calendar day; formatting it in another timezone
-can display a different day. Incompatible precision/Date combinations reject
-rather than lose information.
+Default timestamps use timezone-aware storage. Their `Date` values preserve milliseconds.
+
+> [!TIP] A calendar day is not an instant
+> `v.date({ mode: 'date' })` uses the UTC calendar day. Formatting that Date in another timezone can display a different day. Keep the default calendar-date string when you don't need an instant.
+
+### Preserve finer timestamp precision
+
+Switch a timestamp to string mode when milliseconds aren't enough:
+
+```diff
+- startsAt: v.timestamp(),
++ startsAt: v.timestamp({ mode: 'string', precision: 6 }),
+```
+
+`startsAt` now reads as a string that preserves six fractional digits. Precision defaults to 3 and accepts 0–6. Date mode supports at most 3; incompatible combinations throw instead of losing information.
+
+### Store a clock time without a timezone
+
+Use timezone-free storage when a value should keep its date and clock components rather than identify a worldwide instant:
+
+```ts
+const localTime = v.timestamp({ withTimezone: false })
+```
+
+This mode returns a clock-component string. It does not infer the machine's local timezone.
 
 ## Store structured JSON
 
-A shape validates the whole JSON value, including nested objects and arrays:
+Describe the shape when you want nested values checked on reads and writes:
 
 ```ts
 const profiles = defineTable({
   settings: v.object({
     theme: v.string().nullable().optional(),
     tags: v.array(v.string()),
-    appearance: v.object({ compact: v.boolean() }),
   }),
 })
 ```
 
-Bare `v.object(...)` and `v.array(...)` fields create validated JSON columns,
-including nested types and codecs. `tags: v.array(v.string())` stores a JSON array.
-Use `.nullable()` for a null column; `.optional()` belongs to nested object members.
-Explicit `v.json({ ... })` remains available, as do `v.json()` for unrestricted data
-and `v.json(...)` with column defaults.
+`settings` is a JSON column. Its `theme` member may be missing or null; `tags` must be an array of strings. Undeclared properties throw.
 
-`v.json<MyType>()` adds a TypeScript representation without a shape validator.
-It still requires JSON-safe values, but does not prove the fields of `MyType`.
-Undeclared properties in shaped objects throw. JSON updates replace the complete
-column, avoiding ambiguous deep-patch behavior.
+Use `.nullable()` on the column to allow a null column value. `.optional()` applies to nested object members, not the column itself.
+
+Other JSON forms serve different needs:
+
+| You need                                        | Use                               |
+| ----------------------------------------------- | --------------------------------- |
+| A validated object or array                     | `v.object(...)` or `v.array(...)` |
+| A shape declared through the JSON constructor   | `v.json({ ... })`                 |
+| JSON-safe data without a fixed shape            | `v.json()`                        |
+| A TypeScript type without validating its fields | `v.json<MyType>()`                |
+
+JSON shapes can include nested objects, arrays, and explicit codecs. Column defaults remain available through `v.json(...)`.
+
+JSON updates replace the whole column. Include every member you want to keep; the update does not merge a deep patch into the existing object.
 
 ## Query JSON paths and arrays
 
-Register the `profiles` table in your schema and regenerate. In application
-server code, use the generated database and table references:
+Register `profiles` in your schema and regenerate. In server code, import the generated database and table references:
 
 ```ts filename="server/profiles.ts"
 import { db } from '../db/_generated/server'
 import { profiles } from '../db/_generated/tables'
 
 const dark = await db.select(profiles).where('settings.theme', '=', 'dark')
+```
+
+The path starts at the selected table. Use a generated field reference when a literal property name contains a dot, so it isn't mistaken for a nested path.
+
+### Distinguish missing and null members
+
+A missing member and an explicitly null member are different states. Choose a filter based on which states you want:
+
+| Value at `settings.theme` | Exists | Is null |
+| ------------------------- | ------ | ------- |
+| Missing                   | No     | Yes     |
+| `null`                    | Yes    | Yes     |
+| `'dark'`                  | Yes    | No      |
+
+For example, find profiles where no theme was provided:
+
+```ts
+const absent = await db.select(profiles).where('settings.theme', 'not exists')
+```
+
+Use `is not null` for a present, non-null value. The equality forms `= null` and `!= null` normalize to the same null checks.
+
+The three-argument form `where(path, 'exists', false)` is equivalent to `where(path, 'not exists')`.
+
+### Match array members
+
+Find profiles with at least one of the supplied tags:
+
+```ts
 const tagged = await db
   .select(profiles)
   .where(profiles.settings.tags, 'containsAny', ['editor', 'admin'])
 ```
 
-Strings are relative to the selected table. A generated field reference also
-preserves literal property names containing dots. Compound predicates use the
-same callback helpers as ordinary columns:
+Other array operators are `contains`, `containsAll`, and `containedBy`. Negate an operator with a form such as `'not contains'`, or use callback `not(...)`.
+
+Use callback helpers when a filter combines a calculation with a comparison. This finds profiles with at least two tags:
 
 ```ts
 const withSeveralTags = await db
@@ -99,48 +171,28 @@ const withSeveralTags = await db
   .where(({ gte, arrayLength }) => gte(arrayLength(profiles.settings.tags), 2))
 ```
 
-Null and presence checks have distinct jobs:
-
-```ts
-const absent = await db.select(profiles).where('settings.theme', 'not exists')
-const present = await db.select(profiles).where('settings.theme', 'exists')
-const nullOrAbsent = await db
-  .select(profiles)
-  .where('settings.theme', 'is', null)
-```
-
-`exists` tests member presence, including a present null. `is null` matches both
-missing and null members; `is not null` requires a present, non-null value.
-`= null` and `!= null` normalize to those same null checks. The three-argument
-`where(path, 'exists', false)` is equivalent to `where(path, 'not exists')`.
-Array operators include `contains`, `containsAny`, `containsAll` and `containedBy`;
-use forms such as `'not contains'` for negation or callback `not(...)`.
-
 ## Use a codec for a different application value
 
-A codec keeps encoding on writes and decoding on reads together. This field
-stores a string while application code works with a bigint:
+A codec converts application values on writes and restores them on reads. For example, this field stores a string while application code uses a bigint:
 
 ```ts
-const counters = defineTable({
-  value: v.string().codec({
-    encode: (value: bigint) => value.toString(),
-    decode: (value) => BigInt(value),
-  }),
+const counter = v.string().codec({
+  encode: (value: bigint) => value.toString(),
+  decode: (value) => BigInt(value),
 })
+
+counter.encode(42n) // '42'
+counter.decode('42') // 42n
 ```
 
-The storage validator still checks encoded data. Callbacks must be synchronous.
-Null and omission handling remain explicit and bypass the codec as appropriate.
-Inside JSON, declare conversions explicitly; a nested timestamp validator alone
-does not make a Date JSON-safe.
+Use `counter` as a field in `defineTable`. The string validator still checks the encoded value. Both callbacks must be synchronous; null and omitted values follow the field's rules without passing through the codec.
 
-Whole-value predicates encode application values. SQL text patterns and arithmetic
-operate according to storage semantics, not arbitrary operations on your decoded
-class or value. A string-backed bigint therefore does not become a numeric SQL
-column. Choose the storage type around how you need to query it.
+### Storage still determines queries
 
-Declared function results also need a supported serializable contract. A custom
-class returned from a direct server read is not automatically a browser wire type;
-return an explicit supported value or use an output schema. SSR handoffs follow
-your framework's serialization rules separately.
+Whole-value predicates encode the application value before comparing it. SQL text patterns and arithmetic use the stored column type. A bigint stored as a string is still a SQL string; use [bigint-mode int64](#keep-large-integers-exact) when you need integer storage.
+
+Inside JSON, conversions must be explicit too. A nested timestamp validator alone does not make a Date JSON-safe; use a JSON-compatible string or number validator with a codec.
+
+### Returning values to a browser
+
+A custom class from a direct server read is not automatically a valid browser result. Return a supported serializable value or declare an output schema; see [function results](/docs/db/functions). SSR handoffs also need to follow your framework's serialization rules.

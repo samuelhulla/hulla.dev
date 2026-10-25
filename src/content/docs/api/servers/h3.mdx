@@ -1,18 +1,13 @@
 ---
 title: 'H3'
-description: 'Mount contract routes on an H3 v2 app with native middleware, event context, and explicit request-body ownership.'
+description: 'Add your API routes to an H3 v2 app.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-`@hulla/api-h3` registers contract routes on an H3 v2 application that you create and own. H3 keeps control of
-native routing, middleware, event context, and deployment. The adapter validates the matched request, runs the server
-implementation, and returns the response declared by the contract.
+Add your contract's routes to an H3 v2 app with `@hulla/api-h3`. The routes use H3's middleware and event context.
 
-Use this adapter when a standalone H3 v2 app should host contract routes.
-
-> `@hulla/api-h3` targets H3 v2's `new H3()` API. `@hulla/api-nuxt` is built for Nuxt's H3 v1 server
-> integration; use the [Nuxt guide](/docs/api/full-stack/nuxt) in a Nuxt application.
+For Nuxt, use [`@hulla/api-nuxt`](/docs/api/full-stack/nuxt), which supports Nuxt's H3 v1 integration.
 
 ## Install the adapter
 

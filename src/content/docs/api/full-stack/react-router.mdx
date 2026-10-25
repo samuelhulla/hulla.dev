@@ -1,15 +1,13 @@
 ---
 title: 'React Router'
-description: 'Mount a Framework Mode resource route and choose HTTP or colocated calls from loaders and actions.'
+description: 'Expose your API through a React Router resource route.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-Use `@hulla/api-react-router` to expose an `@hulla/api` implementation through a React Router v7 Framework Mode resource route. The adapter returns the `loader` and `action` exports that React Router calls for reads and mutations.
+Add your API to a React Router v7 Framework Mode app with `@hulla/api-react-router`. The adapter creates `loader` and `action` exports for a resource route, so clients can send HTTP requests to it.
 
-Choose this integration when the HTTP contract must be available to browser Fetch, mobile applications, generated clients, other services, or OpenAPI tooling. For data used only by one React Router application, a page loader or action can call a colocated implementation without making a loopback HTTP request.
-
-React Router owns host routing, route middleware, rendering, navigation, and revalidation. `@hulla/api` owns contract matching, input decoding, server middleware, handler execution, and declared response serialization after the resource route receives a request.
+If only your own pages need the data, a page loader or action can [call the implementation directly](/docs/api/transports/in-process). Expose a resource route when other apps need to call it too.
 
 ## Install the integration
 

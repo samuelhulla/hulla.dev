@@ -1,15 +1,13 @@
 ---
 title: 'TanStack Start'
-description: 'Mount contract-backed server routes and call them through loaders, server functions, or browser clients.'
+description: 'Serve your API from a TanStack Start server route.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-Use `@hulla/api-tanstack-start` to expose an `@hulla/api` contract through a TanStack Start wildcard [server route](https://tanstack.com/start/latest/docs/framework/react/guide/server-routes), then choose a Start loader, server function, browser client, or external HTTP client for each caller.
+Serve your API from a TanStack Start wildcard [server route](https://tanstack.com/start/latest/docs/framework/react/guide/server-routes). Browser code and other apps can then call the contract's routes over HTTP.
 
-TanStack Start owns the host route, request middleware, rendering, loaders, server functions, and application caches. `@hulla/api` owns contract matching, input decoding, server middleware, handler execution, and declared response serialization.
-
-Choose this adapter when the contract is a shared or durable HTTP boundary for browser Fetch, mobile clients, generated clients, other services, or OpenAPI tooling. For an operation used only inside one Start application, prefer a Start [server function](https://tanstack.com/start/latest/docs/framework/react/guide/server-functions) or a colocated in-process client.
+For an operation used only by your Start app, a [server function](https://tanstack.com/start/latest/docs/framework/react/guide/server-functions) can call the implementation directly. We'll cover both approaches after mounting the API.
 
 ## Install the integration
 

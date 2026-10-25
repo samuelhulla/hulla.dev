@@ -1,14 +1,14 @@
 ---
 title: Same-process calls
-description: Call a completed server implementation without a URL match or network hop while preserving the contract lifecycle.
+description: 'Call your API directly when the client and server run in the same process.'
 usefulFor:
   - Server-rendered code and handlers share one JavaScript process.
   - Tests should exercise validation, middleware, statuses, and codecs without opening a socket.
 ---
 
-Use `inProcessTransport()` when the caller can import a completed implementation safely. The transport dispatches by immutable contract key, passes encoded parameters directly, and executes the same server validation, context, middleware, handler, response, and declared-error lifecycle as other transports.
+Use `inProcessTransport()` to call an implementation from the same JavaScript process. It runs validation, middleware, and the handler without making an HTTP request.
 
-The example continues the `contract` and `implementation` modules from the [quick start](/docs/api/quick-start).
+The example calls the server from [Build a task API](/guides/api/quick-start). Keep this client in server code: it imports the implementation directly.
 
 ```ts filename="src/api/local-client.ts"
 import { createClient } from '@hulla/api/client'

@@ -1,0 +1,85 @@
+---
+title: 'Build a template downloader'
+description: 'Download repository files and reuse the saved copy.'
+tutorial:
+  outcome: A Bun script that downloads a repository, reports its files, and reuses the cached copy.
+  prerequisites:
+    - title: Bun, Git, and the system tar, cp, and mkdir commands.
+    - title: An empty working directory and network access to a public repository.
+---
+
+import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
+
+Write a script that downloads a repository into `downloaded-template/`. Run it twice to see how the cache works.
+
+## 1. Create the project
+
+In an empty directory, initialize a package:
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun init -y',
+    npm: 'npm init -y',
+    pnpm: 'pnpm init',
+    yarn: 'yarn init -y',
+  }}
+/>
+
+Install the downloader:
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun add @hulla/gittar@0.0.4',
+    npm: 'npm install @hulla/gittar@0.0.4',
+    pnpm: 'pnpm add @hulla/gittar@0.0.4',
+    yarn: 'yarn add @hulla/gittar@0.0.4',
+  }}
+/>
+
+## 2. Copy the repository
+
+Create `download.ts` at the project root. Keeping the cache in this project makes it easy to inspect the two directories:
+
+```ts filename="download.ts"
+import gittar from '@hulla/gittar'
+import { resolve } from 'node:path'
+
+const snapshot = await gittar({
+  url: 'hulladev/gittar',
+  branch: 'master',
+  cacheDir: resolve('.cache/gittar/master'),
+  outDir: resolve('downloaded-template'),
+})
+
+console.log(snapshot.fromCache ? 'Used cache' : 'Downloaded')
+console.log(`Copied ${snapshot.files.length} files to ${snapshot.outDir}`)
+```
+
+`url` selects the repository. `branch` selects the ref to download. `outDir` keeps the editable copy separate from the [cache](/docs/gittar/caching).
+
+> [!WARNING] Choose an empty destination
+> Copying uses `cp -R` and can replace files with matching names. Use a new directory for this tutorial. Repeated copies don't remove files that disappeared upstream.
+
+## 3. Run it twice
+
+Run the script with Bun, even if you used another package manager to install it:
+
+```sh
+bun download.ts
+```
+
+The first run prints `Downloaded` and a file count. Open `downloaded-template/package.json`: it should name `@hulla/gittar`. The cache directory contains the full extracted repository and its metadata.
+
+Run the same command again. If the remote branch hasn't changed and the cache is intact, it prints `Used cache`. The default policy still contacts the remote to check the commit; a cache hit doesn't mean an offline run.
+
+## 4. Change the policy
+
+Add this property to the same config object when you want to reuse the local snapshot without a remote freshness check:
+
+```ts
+update: 'never',
+```
+
+Run `bun download.ts` again. It uses the existing cache. On a fresh machine, `never` still downloads because no snapshot exists yet.
+
+You now have the download stage of a scaffolding tool. Next, [copy one folder or handle stale snapshots](/docs/gittar/caching). For command-line options such as `--destination`, add an [`@hulla/args` parser](/guides/args/quick-start) around this script.

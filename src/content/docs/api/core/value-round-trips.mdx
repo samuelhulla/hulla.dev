@@ -1,16 +1,11 @@
 ---
 title: Validation and serialization
-description: Decide when values should stay as JSON, be checked at runtime, or become richer application types.
+description: 'Choose how values such as dates and URLs travel between your client and server.'
 ---
 
-Every API value crosses two worlds:
+JSON has no `Date` type. If a handler returns a date, the client normally receives a string. A codec lets you choose to receive a `Date` instead.
 
-- **On the wire**, HTTP carries strings, bytes, and JSON.
-- **In your application**, you may want richer values such as `Date`, `URL`, or branded identifiers.
-
-You do not need the most powerful option everywhere. Start with native JSON, then add validation or conversion only where the boundary earns it.
-
-This page evolves one route so you can see exactly what each choice changes.
+Start with ordinary JSON, then add validation or conversion when the values in your application need it. The examples below make that change one step at a time.
 
 ## Start with native JSON
 
@@ -27,7 +22,10 @@ const tomorrow = route.post('/tomorrow', {
 
 This is **type-only mode**. The client sends a string, the handler receives a string, and the response contains a string.
 
-It is a good fit when the value is already trusted or another layer validates it. There is no runtime check here: the generic describes the value to TypeScript, but it does not inspect incoming data.
+Use type-only declarations for already-trusted values or when another layer validates them.
+
+> [!WARNING] Types do not check incoming data
+> A generic type disappears at runtime. Pass a schema when a request can contain untrusted input.
 
 ## Add runtime validation
 

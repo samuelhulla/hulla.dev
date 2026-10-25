@@ -1,9 +1,9 @@
 ---
 title: Commands
-description: Route parsed argv through named and nested commands while keeping each command's arguments scoped.
+description: 'Give each CLI command its own arguments, including nested commands.'
 ---
 
-Use `command()` when one CLI has distinct actions with different inputs. A matching command appears under `result.commands` with `detected: true`; your application checks that result and calls the corresponding behavior.
+Use `command()` for actions such as `notes add` and `notes list`. Each command declares its own arguments. After parsing, check which command was detected and run its code.
 
 ## Define a command and alias
 

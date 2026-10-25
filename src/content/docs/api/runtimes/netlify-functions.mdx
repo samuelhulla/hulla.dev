@@ -1,22 +1,15 @@
 ---
 title: 'Netlify Functions'
-description: 'Mount a contract under a Netlify function path with native context and Web responses.'
+description: 'Serve your API from a Netlify web request function.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-`@hulla/api-netlify-functions` turns a server implementation into a Netlify web request function. Netlify calls the
-function with a Web `Request` and its native `Context`; the adapter matches that request against the contract, runs the
-implementation, and returns a Web `Response`.
-
-Use this adapter when an existing Netlify site should serve an `@hulla/api` contract. Netlify still owns function
-discovery, public routing, deployment, access controls, and platform limits. The adapter owns contract routing, input
-validation, server context, middleware, and response serialization.
-
-> The adapter requires Node.js 22 or later and `@netlify/functions` 4.x or 5.x. It targets web request functions that
-> return a response; background, scheduled, and platform event handlers have different lifecycles.
+`@hulla/api-netlify-functions` turns your implementation into a Netlify function. Export it from a function file, then configure the public path that serves your API.
 
 ## Install the adapter
+
+Use Node.js 22 or later and `@netlify/functions` 4.x or 5.x. This adapter targets web request functions that return a response. Background, scheduled, and platform event functions use different handlers.
 
 This guide assumes a Netlify project already exists. The example uses Zod for its request and response schemas.
 
@@ -295,9 +288,8 @@ observe a producer failure.
 
 ## Keep non-request lifecycles outside the adapter
 
-Do not set `background: true` on the mounted handler. Netlify immediately returns `202` for a background function and
-discards the handler's `Response`, so the contract's declared HTTP result would never reach the caller. Use a separate
-background function that calls the underlying application service directly.
+> [!WARNING] Keep background work in a separate function
+> Netlify returns `202` immediately for a background function and discards its handler's response. Setting `background: true` on this handler would prevent the declared contract result from reaching the caller. Call a shared application service from a separate background function instead.
 
 Scheduled functions and platform event handlers also do not have this request-response contract lifecycle. Keep their
 trigger handling separate and call shared application services beneath the API layer. Netlify's

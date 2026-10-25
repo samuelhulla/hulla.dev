@@ -3,35 +3,11 @@ title: Astro
 description: Render request-time rows and hydrate an island for live database updates.
 ---
 
-Use an Astro page for a request-time database read and a hydrated React island
-for live results. Complete the [shared task setup](/docs/db/meta-frameworks#set-up-the-shared-database-example)
-first. This recipe uses Astro's normal React integration and `@hulla/db-react`;
-Vue, Svelte or Solid islands use their corresponding database binding instead.
+Render tasks in an Astro page, then keep the list live with a React island and `@hulla/db-react`. The server supplies the first rows; the island subscribes to later changes.
 
 ## Enable request-time rendering and React
 
-Use a compatible server adapter. For a Node standalone deployment:
-
-```js
-// astro.config.mjs
-import { defineConfig } from 'astro/config'
-import node from '@astrojs/node'
-import react from '@astrojs/react'
-
-export default defineConfig({
-  output: 'server',
-  adapter: node({ mode: 'standalone' }),
-  integrations: [react()],
-  vite: { ssr: { external: ['@hulla/db'] } },
-})
-```
-
-Install the framework's `@astrojs/node` and `@astrojs/react` integrations alongside
-React and the database packages. The [server-rendered page](https://docs.astro.build/en/guides/on-demand-rendering/)
-runs its frontmatter per request; static prerendered pages instead capture data
-at build time and must not contain a private user's result.
-
-## Enable request-time rendering and React
+Complete the [shared task setup](/docs/db/meta-frameworks#set-up-the-shared-database-example) first. This example uses Astro’s React integration. Other island frameworks use their matching database binding.
 
 Use a compatible server adapter. For a Node standalone deployment:
 

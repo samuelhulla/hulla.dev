@@ -3,11 +3,11 @@ title: Automation
 description: Run specified hulla CLI tasks without prompts in CI and project scripts.
 ---
 
-Use `--yes` (or `-y`) when a script must run without an interactive terminal. The flag disables prompts and accepts confirmations; it does not choose an ambiguous component or framework for you. Pass the needed names and flags explicitly so a missing choice becomes a useful error instead of a guessed result.
+Add `--yes` (or `-y`) to run a CLI command without prompts. Supply the component names and framework explicitly so the script has everything it needs.
 
 ## Add known components in CI
 
-After the CLI is installed and `hulla ui init` has recorded the framework and output paths, a package script can add known components. Package scripts find the locally installed executable automatically; a direct CI shell command needs `node_modules/.bin` on its search path, as shown in the [quick start](/docs/cli/quick-start).
+After the CLI is installed and `hulla ui init` has recorded the framework and output paths, a package script can add known components. Package scripts find the locally installed executable automatically; a direct CI shell command needs `node_modules/.bin` on its search path, as shown in the [quick start](/guides/cli/quick-start).
 
 ```sh
 hulla ui add --yes --framework astro button dialog

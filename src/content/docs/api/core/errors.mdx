@@ -1,16 +1,13 @@
 ---
 title: 'Error handling'
-description: 'Keep expected application failures typed while giving validation, transport, and runtime failures one inspectable shape.'
+description: 'Handle expected API errors and diagnose unexpected failures.'
 ---
 
 import Alert from '@/components/alert/alert.astro'
 import AlertDescription from '@/components/alert/alert-description.astro'
 import AlertTitle from '@/components/alert/alert-title.astro'
 
-Not every non-success result is an exception. `@hulla/api` separates failures a client is expected to handle from failures that mean the boundary itself broke.
-
-- **Declared errors** are application outcomes such as `UNAUTHORIZED` or `PROJECT_NOT_FOUND`.
-- **Operational errors** cover invalid schemas, unexpected responses, incomplete implementations, and runtime failures.
+A missing user and a broken connection need different handling. Declare expected failures, such as `NOT_FOUND`, in the contract so callers can handle them by name. Unexpected failures reject the call; use [`isAPIError()`](#inspect-operational-failures) to inspect errors reported by the API runtime.
 
 ## Declare expected application failures
 

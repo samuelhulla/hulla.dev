@@ -1,9 +1,9 @@
 ---
 title: Custom merging
-description: Configure a composer for a different class combination policy, including Tailwind utility conflict resolution.
+description: 'Resolve conflicting Tailwind classes with a custom composer.'
 ---
 
-The default `cn` composer removes repeated identical tokens. It cannot tell whether two different class names compete for the same CSS property: `cn('px-2', 'px-4')` keeps both. If your application uses Tailwind and wants the later spacing utility to replace the earlier one, install and configure `tailwind-merge` as the composer.
+By default, `cn('px-2', 'px-4')` keeps both classes. To make the later Tailwind utility replace the earlier one, configure `tailwind-merge` as the composer.
 
 ## Configure Tailwind-aware merging
 

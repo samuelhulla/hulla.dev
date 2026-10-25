@@ -1,44 +1,38 @@
 ---
 title: '@hulla/style'
-description: Compose class names and define type-safe style choices without tying components to a framework or CSS system.
+description: 'Define class variants once and infer the component props from their keys, in any framework.'
 usefulFor:
   - You want one small API for conditional classes and named variants.
   - Your components run in more than one framework or styling system.
   - You need to decide whether class composition should deduplicate or merge utilities.
 ---
 
-import DocsConceptFlow from '@/components/docs/DocsConceptFlow.astro'
+import PackageDemoFrame from '@/components/site/PackageDemoFrame.astro'
 
-`@hulla/style` turns conditional classes and named variants into one class string. Your application chooses the CSS system and framework.
+`@hulla/style` combines class names and gives components named choices such as `small` or `large`. It works with your existing CSS and framework.
 
-<DocsConceptFlow
-  label="Class composition"
-  steps={[
-    {
-      title: 'Configure once',
-      description:
-        'Create a style() instance with the serializer and composer your application needs.',
-    },
-    {
-      title: 'Name your choices with vn',
-      description:
-        'Map finite options such as size or variant to classes, and infer their prop types.',
-    },
-    {
-      title: 'Combine with cn',
-      description:
-        'Join base classes, variant results, conditional values, and caller classes.',
-    },
-  ]}
-/>
+<PackageDemoFrame kind="style" class="my-8" />
 
-It does not generate CSS or markup. The default composer removes repeated tokens; configure a Tailwind-aware composer to resolve utility conflicts.
+## Combine classes
+
+Create the helpers once, then pass classes and conditions to `cn()`:
+
+```ts
+import { style } from '@hulla/style'
+
+const { cn } = style()
+const isActive = true
+
+cn('button', { active: isActive }) // 'button active'
+```
+
+Use [`vn()`](/docs/style/variants) to map names to classes. For Tailwind conflict resolution, [configure a custom composer](/docs/style/custom-merging).
 
 ## Which page should I read first?
 
 | If you need to…                                            | Start here                                   |
 | ---------------------------------------------------------- | -------------------------------------------- |
-| Install the package and create shared helpers              | [Quick start](/docs/style/quick-start)       |
+| Install the package and create shared helpers              | [Quick start](/guides/style/quick-start)     |
 | Type a component prop from a finite set of styles          | [Variants](/docs/style/variants)             |
 | Combine shared classes, variants, and caller classes       | [Composition](/docs/style/composition)       |
 | Choose exact-token deduplication or Tailwind-aware merging | [Custom merging](/docs/style/custom-merging) |

@@ -3,7 +3,7 @@ title: Parser options
 description: Control which argv entries are read and how names, aliases, and command arguments are matched.
 ---
 
-Parser settings adjust how `@hulla/args` interprets the string array passed to `.parse()`. Most CLIs can use the defaults; set an option when the runtime input or command-line convention requires it. With the default `caseSensitive: false`, names match without regard to case. Positional and space-separated option values retain their original spelling; values in `--name=value` form are read from the lowercased matching token. Each result's `raw` field retains the original spelling.
+Parser settings control how `.parse()` reads the array you pass. Start with the defaults, then change the options your command needs.
 
 ## Slice a larger argv array
 
@@ -24,6 +24,9 @@ const result = cli.parse(process.argv)
 This is equivalent to passing `process.argv.slice(2)` to a parser with default settings. Prefer one approach, so the runtime prefix is removed exactly once. `stopIndex` can bound the end of the slice.
 
 ## Choose matching behavior
+
+> [!WARNING] Case-insensitive matching also affects equals-form values
+> With the default `caseSensitive: false`, `--name=Sam` supplies the lowercased value `sam`. Positionals and space-separated values retain their spelling, and `raw` preserves the original token. Set `caseSensitive: true` when that distinction matters.
 
 These are the supported settings and defaults:
 
@@ -50,4 +53,4 @@ const cli = parser({
 
 Then a value option is written as `--output=report.txt`; a short form such as `-o` is not accepted. Combined short forms require every short name to be one character; see [arguments](/docs/args/arguments).
 
-Settings apply to the parser and its nested commands. Keep the defaults until a concrete runtime or CLI convention calls for a change; see [quick start](/docs/args/quick-start) for the recommended argv boundary and casing choice.
+Settings apply to the parser and its nested commands. Keep the defaults until a concrete runtime or CLI convention calls for a change; see [quick start](/guides/args/quick-start) for the recommended argv boundary and casing choice.

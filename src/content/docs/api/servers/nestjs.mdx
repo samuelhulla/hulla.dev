@@ -1,15 +1,11 @@
 ---
 title: 'NestJS'
-description: 'Integrate a contract with Nest controllers, dependency injection, and either Express or Fastify platforms.'
+description: 'Register your API routes as Nest controller methods.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-`@hulla/api-nestjs` registers contract routes as native Nest controller methods. Use it when Nest should keep owning
-modules, dependency injection, guards, interceptors, and the HTTP platform while `@hulla/api` validates contract
-inputs and serializes declared responses.
-
-This guide adds `GET /items/:id` to an existing Nest application and verifies it with a real request.
+`@hulla/api-nestjs` registers contract routes as Nest controller methods. They can use your application's dependency injection and guards. The example adds `GET /items/:id` to an existing Nest app.
 
 ## Before you start
 

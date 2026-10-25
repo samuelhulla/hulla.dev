@@ -1,15 +1,11 @@
 ---
 title: 'Bun'
-description: 'Serve an @hulla/api contract directly from Bun with a Web-standard request handler.'
+description: 'Run your API with Bun.serve().'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-Use `@hulla/api/fetch` to serve an `@hulla/api` implementation from Bun's native HTTP server. Bun owns the listener;
-the Fetch adapter owns contract matching, declared input and response handling, and the `Request`/`Response` boundary.
-
-This guide assumes a Bun project with a contract and server implementation to expose. It finishes with a local
-`GET /api/profiles/:id` request and a JSON response.
+Pass a mounted Fetch handler to `Bun.serve()` to run your API. You don't need a separate Bun adapter. The example below serves a profile route and checks it with an HTTP request.
 
 ## Install the packages
 

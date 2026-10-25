@@ -1,16 +1,16 @@
 ---
 title: 'Organizing server code'
-description: 'Split handlers into typed modules or independently mountable fragments, then compose a complete implementation.'
+description: 'Split a large API into smaller handler files or separately mounted fragments.'
 ---
 
-Choose between two module boundaries based on what the module must produce:
+As your API grows, move related handlers into separate files. You can assemble those files into one implementation, or create [fragments](#create-independently-mountable-fragments) that can be mounted separately.
 
-| Need                                                                             | Use                                                         |
-| -------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| Several modules contribute ordinary handler objects to one root implementation   | `ServerHandlersOf` and one root `implement()` call          |
-| A module owns a complete route or router subtree that can be mounted or composed | An implementation fragment from `implement(node, handlers)` |
+The examples use the contract and server definition from [Server implementations](/docs/api/core/servers).
 
-Both approaches use the contract and server definition from [server implementations](/docs/api/core/servers).
+| Need                                    | Use                                                |
+| --------------------------------------- | -------------------------------------------------- |
+| Keep related handlers in separate files | `ServerHandlersOf` and one root `implement()` call |
+| Mount part of the API on its own        | A fragment from `implement(node, handlers)`        |
 
 ## Assemble handler objects across modules
 

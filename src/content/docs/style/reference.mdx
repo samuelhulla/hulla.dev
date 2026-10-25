@@ -3,7 +3,7 @@ title: API reference
 description: Look up supported class inputs, variant types, defaults, and customization signatures in @hulla/style.
 ---
 
-Use this page while implementing a component. For the choices behind class composition, read [Composition](/docs/style/composition), [Variants](/docs/style/variants), or [Custom merging](/docs/style/custom-merging).
+Look up the inputs accepted by `cn()`, the types inferred by `vn()`, and the options for `style()`. For a worked example, follow [Style a button](/guides/style/quick-start).
 
 ## Create the helpers
 
@@ -30,7 +30,9 @@ import type {
 } from '@hulla/style'
 ```
 
-The exported `ClassName` accepts strings, `string[]`, booleans, nullish values, numbers, the `0n` bigint literal, and conditional records. Its source alias includes `typeof NaN`, which is TypeScript’s broad `number` type, so every number is accepted. The array form is `string[]`; nested arrays and booleans inside arrays are outside the declared type. Use object values to toggle individual names. At runtime the default serializer behaves as follows:
+`ClassName` accepts strings, `string[]`, numbers, booleans, nullish values, `0n`, and conditional objects. Arrays must contain strings: nested arrays and boolean array members are outside the declared type.
+
+The default serializer produces these values at runtime:
 
 | Input                                                | Serialized output                                    |
 | ---------------------------------------------------- | ---------------------------------------------------- |
@@ -44,11 +46,12 @@ The exported `ClassName` accepts strings, `string[]`, booleans, nullish values, 
 | `1n`                                                 | `''` (bigint values are not serialized)              |
 | `true`                                               | `''`                                                 |
 
-Non-zero bigints such as `1n` are not assignable to `ClassName`; only `0n` is included by the type. The runtime serializer also returns an empty string for bigint inputs. Set and Map are not assignable to the exported `ClassName` type. The default serializer nevertheless has runtime branches for them, so they work from untyped JavaScript or after a deliberate cast. Prefer the declared string-array or conditional-object forms in typed component APIs.
+> [!NOTE] Some runtime inputs aren't accepted by TypeScript
+> The serializer handles Set and Map, but the public `ClassName` type doesn't include them. Prefer string arrays and conditional objects in typed code. Non-zero bigints such as `1n` are also excluded; at runtime all bigints serialize to an empty string.
 
 ## Understand `cn` and the defaults
 
-`style(config?: StyleConfig)` returns `cn` and `vn`. The returned `cn` has the generic call shape `<const CN extends ClassName[]>(...classes: CN) => string`; it serializes each argument, then calls the composer with one string for each original argument. With the defaults, `defaultComposer(...strings: string[]): string` drops empty input, splits whitespace, removes exact duplicate tokens, and preserves first-seen order:
+`cn(...classes)` serializes each argument, then passes the resulting strings to the composer. With the default composer, empty inputs disappear and repeated class names appear only once, in their original order:
 
 ```ts
 cn('rounded px-2', 'px-2 text-sm') // 'rounded px-2 text-sm'
@@ -60,7 +63,7 @@ Exact-token deduplication is not CSS conflict resolution. `defaultComposer` keep
 
 ## Define a variant
 
-`vn<const V extends VariantsDefinition>(variants: V)` accepts a record whose values are supported class inputs, record-shaped conditionals, or arrays. It returns `Variant<V>`, a function from a key of that record to a class string, with `.infer` typed as `keyof V`:
+`vn(variants)` maps each key to a class string. Its return type, `Variant<V>`, is a callable function with an `.infer` property typed as the keys of your map:
 
 ```ts
 const $size = vn({ compact: 'px-2 text-sm', roomy: ['px-4', 'text-base'] })
@@ -68,7 +71,9 @@ type Size = typeof $size.infer // 'compact' | 'roomy'
 const classes = $size('compact')
 ```
 
-`.infer` is a type-level convenience whose runtime value is `undefined`; call the variant function to get classes. `vn()` has no default selection. Make the component prop optional and select its default in the component parameter when omission should choose a variant. Variant output passes through the same configured `cn` pipeline, so a custom serializer and composer affect it too.
+`.infer` exists for TypeScript and is `undefined` at runtime. Call the variant function to get classes.
+
+There is no default selection in `vn()`. Set a default in your component's props when callers can omit the choice. Variant classes use the same serializer and composer as `cn()`.
 
 ## Customize serialization and composition
 
@@ -85,6 +90,10 @@ const { cn } = style({
 cn('base', { active: true }) // 'BASE ACTIVE'
 ```
 
-A custom serializer receives **every** `cn` argument, including strings, and receives variant class input when a variant function runs. It should return a string for each input position. A custom composer receives those serialized strings in argument order; it decides whether to preserve duplicates, combine whitespace, or apply a merging policy. Both hooks are synchronous. `VariantsDefinition` describes variant maps, `Variant<V>` is the inferred key-to-string function with its `.infer` property, and `StyleConfig` holds the two optional hooks. See [Custom merging](/docs/style/custom-merging) for a tested Tailwind composer setup.
+A custom serializer receives **every** `cn` argument, including strings, and runs on variant input too. Return one string per input position.
+
+A custom composer receives those strings in order and decides how to combine them: preserve duplicates, normalize whitespace, or resolve conflicting utilities. Both hooks are synchronous.
+
+`VariantsDefinition` describes a variant map, `Variant<V>` types its callable function and `.infer`, and `StyleConfig` holds the two hooks. See [Custom merging](/docs/style/custom-merging) for a Tailwind example.
 
 The package exports `style(config?: StyleConfig)`, `defaultSerializer(input: ClassName): string`, `defaultComposer(...strings: string[]): string`, and the public types `ClassName`, `Serializer`, `Composer`, `VariantsDefinition`, `StyleConfig`, and `Variant`. The `Variant<V>` shape is `((prop: keyof V) => string) & { infer: keyof V }`.

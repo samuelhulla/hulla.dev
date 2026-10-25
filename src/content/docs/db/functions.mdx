@@ -94,13 +94,14 @@ export const list = authenticatedQuery((ctx) =>
 )
 ```
 
-Extensions execute in declaration order. Returned properties join `ctx`; reserved
-or duplicate context names throw. An extension may also declare `input` and use
-the validated second argument. Extension inputs and the final input share that
-argument; they do not live in another `locals` object. Each stage validates before
-its handler. Parsed input keys must be distinct across stages and the final
-declaration; duplicates reject even if the values are equal. Limits and output validation
-belong on the final declaration.
+Extensions run in declaration order. Each stage validates its input before running its handler, and returned properties become part of `ctx`.
+
+Keep these names distinct:
+
+- Context properties cannot duplicate earlier properties or use reserved names.
+- Parsed input keys cannot repeat across extensions or the final declaration, even when their values match.
+
+An extension's `input` schema validates fields from the same second argument the final handler receives. There is no separate `locals` object. Set limits and output validation on the final declaration.
 
 ## Validate or transform the result
 

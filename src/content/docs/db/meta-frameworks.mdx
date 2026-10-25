@@ -3,9 +3,9 @@ title: Full-stack framework recipes
 description: Render a database snapshot on the server, then keep the browser view live.
 ---
 
-Render the first database result on the server, then keep the browser view live.
-Your framework owns routing, server functions, authentication and serialization;
-`@hulla/db` owns database operations and live query results.
+Load the first rows on the server so the page can render immediately. Then subscribe in the browser to keep the view current as the database changes.
+
+Choose your framework below for the files and code to connect those two steps.
 
 | Framework               | UI package         | Recipe                                                                  |
 | ----------------------- | ------------------ | ----------------------------------------------------------------------- |
@@ -21,7 +21,7 @@ is required. For Astro, install its normal integration for the chosen UI framewo
 
 ## Set up the shared database example
 
-These recipes use the same **public** task table as the quickstart. Complete the [database setup](/docs/db/quick-start)
+These recipes use the same **public** task table as the quickstart. Complete the [database setup](/guides/db/quick-start)
 and [persistent browser service setup](/docs/db/runtime) first. Put `db/` and
 `db.config.ts` at the project root, including when the framework uses `src/` or
 Nuxt's `app/` directory. Keep `DATABASE_URL` private.

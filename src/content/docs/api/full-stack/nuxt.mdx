@@ -1,17 +1,15 @@
 ---
 title: 'Nuxt'
-description: 'Mount a Nitro route and use a request-aware client with useAsyncData and browser events.'
+description: 'Serve an API with Nitro and load its data in a Nuxt page.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-Mount an `@hulla/api` contract in a Nuxt/Nitro catch-all route, verify it over HTTP, and consume it from Nuxt's SSR-aware data lifecycle.
+Serve your API from a Nitro route and call it from a Nuxt page with `useAsyncData`. This lets your Nuxt app and other clients use the same API.
 
-Nuxt owns file routing, rendering, payload caching, hydration, invalidation, and deployment. `@hulla/api` owns contract matching, input validation, middleware, handler execution, and declared response decoding.
+Import the server adapter from `@hulla/api-nuxt/server` and the request-aware client transport from `@hulla/api-nuxt/client`.
 
-Use this integration when the API is shared with mobile applications, generated clients, other services, or an OpenAPI description. Keep one-off OAuth callbacks, signed webhooks, redirects, and raw file responses as native Nitro handlers. For transport choices beyond Nuxt, see [server and browser calls](/docs/api/full-stack/hybrid-rendering).
-
-The package has separate entrypoints: import the Nitro adapter from `@hulla/api-nuxt/server` and the request-aware transport from `@hulla/api-nuxt/client`. There is no mixed root entrypoint.
+For a one-off webhook, OAuth callback, or redirect, use a native Nitro handler. Those requests usually need custom handling rather than a shared contract.
 
 ## Install the integration
 
@@ -271,7 +269,9 @@ async function submit() {
 </template>
 ```
 
-The page renders this auto-imported component with the current route ID. After a successful mutation, the component refreshes the same `user:${id}` key used by `useAsyncData`, so the page reads the updated value. Nuxt's plain `$fetch` is likewise intended for interaction-driven requests. The `@hulla/api` transport retains that request behavior while adding contract input encoding and a typed response union. Optimistic state, notifications, and error presentation remain explicit application concerns. If server code does not need an HTTP-shaped boundary or contract validation, call the shared application service directly instead.
+After a successful mutation, the component refreshes the `user:${id}` key used by `useAsyncData`, so the page reads the updated value. It uses Nuxt's event-driven `$fetch` behavior with contract encoding and typed responses.
+
+Add optimistic state, notifications, and error messages in application code. If server code doesn't need contract validation or an HTTP-shaped boundary, call the shared application service directly.
 
 ## Native Nitro context
 

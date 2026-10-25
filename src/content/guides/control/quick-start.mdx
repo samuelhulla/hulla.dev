@@ -1,0 +1,89 @@
+---
+title: 'Handle a missing title'
+description: 'Return a title or an error and handle both in the caller.'
+usefulFor:
+  - You want to add Result values to a TypeScript package.
+  - You need one concrete function and caller to see the full flow.
+tutorial:
+  outcome: A title lookup that returns success or failure, with both branches handled by the caller.
+  prerequisites:
+    - title: Bun and a directory for a small TypeScript project.
+---
+
+import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
+
+You'll build a title lookup and a caller that handles a missing title. The return type makes both outcomes visible: a [Result](/docs/control/results) contains either the title or an error.
+
+## 1. Prepare a project
+
+Create an empty project directory and initialize it:
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun init -y',
+    npm: 'npm init -y',
+    pnpm: 'pnpm init',
+    yarn: 'yarn init -y',
+  }}
+/>
+
+Install `@hulla/control` in the TypeScript package that will define and call the function:
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun add @hulla/control',
+    npm: 'npm install @hulla/control',
+    pnpm: 'pnpm add @hulla/control',
+    yarn: 'yarn add @hulla/control',
+  }}
+/>
+
+## 2. Return both possible outcomes
+
+Create `src/titles.ts`. The function returns `ok()` with a title it finds, or `err()` with a message for a missing title:
+
+```ts filename="src/titles.ts"
+import { err, ok, type Result } from '@hulla/control'
+
+export function findTitle(id: string): Result<string, Error> {
+  if (id === 'welcome') {
+    return ok('Welcome')
+  }
+
+  return err(new Error(`No title for ${id}`))
+}
+```
+
+`findTitle('welcome')` returns `Ok('Welcome')`. Any other ID returns `Err`. Next, let the caller handle both.
+
+## 3. Handle the result
+
+Create `src/main.ts` to call the function. Check `isErr()` before reading `.error`; in the other branch, `.value` contains the title.
+
+```ts filename="src/main.ts"
+import { findTitle } from './titles'
+
+const title = findTitle('welcome')
+
+if (title.isErr()) {
+  console.error(title.error.message)
+} else {
+  console.log(title.value)
+}
+```
+
+## 4. Run both paths
+
+From the project root, run:
+
+```sh
+bun src/main.ts
+# Welcome
+```
+
+Change `findTitle('welcome')` to `findTitle('missing')` and run it again. It prints `No title for missing`. Both outcomes reach the caller without throwing.
+
+> [!TIP] Narrow before reading
+> `.value` belongs to the success branch and `.error` belongs to the failure branch. The type guard tells TypeScript which one you have. `unwrap()` returns either payload; it doesn't throw an error for you.
+
+Next, [build a config checker](/guides/control/config-checker) that combines parsing, validation, and a useful CLI error. Read [Results](/docs/control/results) to compare guards with `match()`.

@@ -1,0 +1,67 @@
+---
+title: Caching and copying
+description: Pick a freshness policy, copy a subdirectory, and keep snapshots separate.
+---
+
+A download has two destinations: the cache stores the whole repository; `outDir` receives the files you want to use. Keep them separate when a user will edit the copied files.
+
+Start with the script from the [template downloader tutorial](/guides/gittar/quick-start). Each example below changes its configuration.
+
+## Copy a folder
+
+Set `subpath` to a directory relative to the repository root. For this repository, `src` exists:
+
+```ts filename="download.ts"
+const snapshot = await gittar({
+  url: 'hulladev/gittar',
+  branch: 'master',
+  subpath: 'src',
+  cacheDir: resolve('.cache/gittar/master'),
+  outDir: resolve('downloaded-source'),
+})
+```
+
+The copy contains `index.ts` directly under `downloaded-source/`; it does not add a surrounding `src/` directory. The cache still contains the full repository. Filtering saves copying work, not download size.
+
+If you omit `outDir`, the returned paths point into the cache. Editing those files changes the snapshot future calls will reuse.
+
+## Decide when to check the remote
+
+| `update` | Cache hit                                             | Cache miss |
+| -------- | ----------------------------------------------------- | ---------- |
+| `commit` | Checks the branch; refreshes when its commit changed. | Downloads. |
+| `always` | Downloads again.                                      | Downloads. |
+| `never`  | Uses the snapshot without a remote check.             | Downloads. |
+
+> [!WARNING] Freshness checks can fall back to the cache
+> If the remote commit lookup fails, `commit` reuses an existing snapshot. A successful call therefore doesn't prove the remote was reachable or the files are current. Use `always` when a download failure should stop the operation.
+
+## Keep refs in separate caches
+
+The default location is `~/.cache/hulla/gittar/{owner}/{repo}`. It doesn't distinguish hosts, branches, or tags. Give each distinct source/ref its own `cacheDir`, especially with `never`:
+
+```ts
+cacheDir: resolve('.cache/gittar/github-hulladev-gittar-master'),
+```
+
+An explicit `branch` prevents the `main` → `master` download fallback. A tree URL can also specify a branch and subpath; an explicit config value takes priority. Prefer the config fields when a ref contains `/`, since tree URLs treat the next path segment as the ref.
+
+## Handle failures at the tool boundary
+
+Wrap the download when you need a useful CLI error. The [exported error classes](/docs/gittar/reference#errors) distinguish URL/download failures from filesystem failures:
+
+```ts
+import { FSError, URLError } from '@hulla/gittar'
+
+try {
+  await gittar({ url: 'hulladev/gittar', branch: 'master' })
+} catch (error) {
+  if (error instanceof FSError) console.error('Check destination permissions.')
+  else if (error instanceof URLError)
+    console.error('Check the source and network.')
+  else throw error
+  process.exitCode = 1
+}
+```
+
+The function copies files. It doesn't install packages, merge edits, or clean obsolete files. Build those decisions into your tool after reviewing the returned snapshot.

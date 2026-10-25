@@ -1,0 +1,188 @@
+---
+title: 'Build a task API'
+description: 'Create a task and call your API from TypeScript.'
+usefulFor:
+  - You want to try the API package in a small project.
+  - You are creating your first route with @hulla/api.
+tutorial:
+  outcome: A validated task API with a shared contract, a server handler, and a typed client call.
+  prerequisites:
+    - title: Bun and an empty directory for a TypeScript project.
+    - title: Learn what a contract, server, and client each do.
+      href: /docs/api/mental-model
+---
+
+import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
+import DocsStepperHeading from '@/components/docs/DocsStepperHeading.astro'
+import Stepper from '@/components/stepper/stepper.astro'
+import StepperContent from '@/components/stepper/stepper-content.astro'
+import StepperDescription from '@/components/stepper/stepper-description.astro'
+import StepperIndicator from '@/components/stepper/stepper-indicator.astro'
+import StepperItem from '@/components/stepper/stepper-item.astro'
+import StepperPanel from '@/components/stepper/stepper-panel.astro'
+
+Build a small API that creates a task from a title. You'll write the handler and call it from a TypeScript script, then see the new task printed in your terminal.
+
+Everything runs in that script for now, so there's no HTTP server to set up.
+
+## Prepare the project
+
+Start in an empty directory. Create a package and install the API with Zod for input validation:
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun init -y',
+    npm: 'npm init -y',
+    pnpm: 'pnpm init',
+    yarn: 'yarn init -y',
+  }}
+/>
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun add @hulla/api@2.0.0 zod',
+    npm: 'npm install @hulla/api@2.0.0 zod',
+    pnpm: 'pnpm add @hulla/api@2.0.0 zod',
+    yarn: 'yarn add @hulla/api@2.0.0 zod',
+  }}
+/>
+
+Create `src/api/` for the three files below. This guide uses Bun to run TypeScript; you can use any of the package managers above to install dependencies.
+
+<Stepper variant="ordered" aria-label="Build a task API">
+  <StepperItem id="1-describe-the-route" data-toc-section data-toc-label="Describe the route" class="scroll-mt-24">
+    <StepperIndicator>1</StepperIndicator>
+    <StepperContent>
+      <DocsStepperHeading for="1-describe-the-route">Describe the route</DocsStepperHeading>
+      <StepperDescription>Say what a task looks like and how to create one.</StepperDescription>
+    </StepperContent>
+    <StepperPanel>
+
+First, describe the route in a [contract](/docs/api/core/contracts). Both the client and server will import this file so they agree on what to send and what to return.
+
+```ts filename="src/api/contract.ts"
+import { defineContract, request, response, route } from '@hulla/api'
+import { z } from 'zod'
+
+const newTask = z.object({
+  title: z.string().min(1),
+})
+
+export const task = z.object({
+  id: z.string(),
+  title: z.string(),
+  completed: z.boolean(),
+})
+
+export const contract = defineContract({
+  basePath: '/api',
+  routes: {
+    createTask: route.post('/tasks', {
+      body: request.json(newTask),
+      responses: {
+        201: response.json(task),
+      },
+    }),
+  },
+})
+```
+
+`z.string().min(1)` rejects an empty title. The name `createTask` will also be the name of the client method, so keep it handy for step 3.
+
+    </StepperPanel>
+
+  </StepperItem>
+
+  <StepperItem id="2-add-the-server-behavior" data-toc-section data-toc-label="Add the server behavior" class="scroll-mt-24">
+    <StepperIndicator>2</StepperIndicator>
+    <StepperContent>
+      <DocsStepperHeading for="2-add-the-server-behavior">Add the server behavior</DocsStepperHeading>
+      <StepperDescription>Give the route a handler that creates a task.</StepperDescription>
+    </StepperContent>
+    <StepperPanel>
+
+Now write the handler. It receives a validated `body`, gives the task an ID, and returns it with status `201` (Created).
+
+```ts filename="src/api/implementation.ts"
+import { defineServer } from '@hulla/api/server'
+import { contract } from './contract'
+
+export const implementation = defineServer(contract).implement({
+  createTask: ({ body, response }) =>
+    response(201, {
+      id: crypto.randomUUID(),
+      title: body.title,
+      completed: false,
+    }),
+})
+```
+
+There is one route to implement, so we need one handler. If you add another route to the contract, TypeScript will ask you to implement that one too.
+
+    </StepperPanel>
+
+  </StepperItem>
+
+  <StepperItem id="3-call-the-api" data-toc-section data-toc-label="Call the API" class="scroll-mt-24">
+    <StepperIndicator>3</StepperIndicator>
+    <StepperContent>
+      <DocsStepperHeading for="3-call-the-api">Call the API</DocsStepperHeading>
+      <StepperDescription>Send a title and print the task you get back.</StepperDescription>
+    </StepperContent>
+    <StepperPanel>
+
+Create a client from the contract and connect it to the implementation with `inProcessTransport()`. This lets the script call your handler directly, so there is no web server to start.
+
+```ts filename="src/api/example.ts"
+import { createClient } from '@hulla/api/client'
+import { inProcessTransport } from '@hulla/api/in-process'
+import { contract } from './contract'
+import { implementation } from './implementation'
+
+const api = createClient(contract, {
+  transport: inProcessTransport(implementation),
+})
+
+const result = await api.createTask({
+  body: { title: 'Write the quick start' },
+})
+
+console.log(result.body)
+```
+
+Run it from the project root:
+
+```sh
+bun src/api/example.ts
+```
+
+The call prints a task shaped like this:
+
+```ts
+{
+  id: 'generated-id',
+  title: 'Write the quick start',
+  completed: false,
+}
+```
+
+Change the title and run it again. The response should contain your new text and a generated ID.
+
+> [!NOTE] This example does not save tasks
+> The handler returns a new task on each call. To keep tasks after the script exits, add a database or write them to a file.
+
+Try an empty title next. Validation should reject the call before your handler creates a task.
+
+    </StepperPanel>
+
+  </StepperItem>
+</Stepper>
+
+## Use it in an app
+
+You now have a working API call. Where you take it next depends on your app:
+
+- Use [HTTP calls with Fetch](/docs/api/transports/fetch) to call the API from a browser or another service.
+- Choose a [server adapter](/docs/api/servers) to serve the API with Express, Fastify, Hono, or another framework.
+- Read [Organizing server code](/docs/api/core/server-composition) when the contract grows beyond one module.
+- Read [Calling the API](/docs/api/core/clients) to handle responses and share client setup.

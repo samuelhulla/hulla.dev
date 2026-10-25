@@ -1,6 +1,6 @@
 ---
 title: 'Generate from OpenAPI'
-description: 'Generate a runtime contract and typed sidecar from a provider-owned OpenAPI document.'
+description: 'Create a typed client contract from an existing OpenAPI document.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
@@ -10,25 +10,9 @@ import AlertIcon from '@/components/alert/alert-icon.astro'
 import AlertTitle from '@/components/alert/alert-title.astro'
 import { TriangleAlert } from '@lucide/astro'
 
-Use `@hulla/api-openapi` when another team or service owns an OpenAPI document and the application needs a typed `@hulla/api` contract without translating every path, input, and response by hand.
+Generate an `@hulla/api` contract from an existing OpenAPI document. The command writes the contract and Zod schemas to `src/api.generated.ts`, with descriptions in `src/api.generated.openapi.ts`.
 
-The import creates two TypeScript files:
-
-- `src/api.generated.ts` contains the executable runtime contract and generated Zod schemas.
-- `src/api.generated.openapi.ts` contains the typed documentation sidecar.
-
-> Treat the OpenAPI document as the source of truth. Change the document, then regenerate the contract and sidecar.
-
-<Alert variant="warning" role="alert">
-  <AlertIcon>
-    <TriangleAlert />
-  </AlertIcon>
-  <AlertTitle>Import replaces both generated files</AlertTitle>
-  <AlertDescription>
-    The import command overwrites both targets without prompting. Do not put
-    application code or manual corrections in them.
-  </AlertDescription>
-</Alert>
+When the API changes, update the OpenAPI document and run the command again.
 
 ## Install the generator
 
@@ -96,6 +80,17 @@ components:
 Bundle external references before importing. The importer resolves references inside the document, primarily `#/components/schemas/...`; it does not fetch remote files or URLs.
 
 ## Generate the contract and sidecar
+
+<Alert variant="warning" role="alert">
+  <AlertIcon>
+    <TriangleAlert />
+  </AlertIcon>
+  <AlertTitle>Import replaces both generated files</AlertTitle>
+  <AlertDescription>
+    The import command overwrites both targets without prompting. Do not put
+    application code or manual corrections in them.
+  </AlertDescription>
+</Alert>
 
 Run the import from the project root:
 

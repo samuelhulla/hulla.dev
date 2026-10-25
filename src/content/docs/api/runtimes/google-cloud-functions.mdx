@@ -1,22 +1,15 @@
 ---
 title: 'Google Cloud Run functions'
-description: 'Mount a Functions Framework HTTP entrypoint with raw-body decoding, native context, and response streaming.'
+description: 'Register your API as a Google Cloud HTTP function.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-`@hulla/api-google-cloud-functions` turns a server implementation into an HTTP handler for the Node.js Functions
-Framework. The framework invokes that handler with its Express-compatible request and response; the adapter runs the
-matching contract route through the shared Web `Request`/`Response` executor and writes the result to the native
-response.
-
-Use this adapter for a Cloud Run function with an HTTP signature. Google Cloud and the application still own the
-function entrypoint, deployment, IAM, ingress, gateway rewrites, service limits, and non-HTTP triggers.
-
-> The adapter requires Node.js 22 or later and `@google-cloud/functions-framework` 5.x. It does not handle the
-> Functions Framework's CloudEvent or legacy event signatures.
+`@hulla/api-google-cloud-functions` serves your API through the Node.js Functions Framework. Register the mounted implementation as an HTTP function in your Cloud Run functions project.
 
 ## Install the adapter
+
+Use Node.js 22 or later and `@google-cloud/functions-framework` 5.x. This adapter handles HTTP functions; CloudEvent and legacy event signatures need their own handlers.
 
 This guide assumes a Functions Framework project already exists. The example uses Zod for its request and response
 schemas.

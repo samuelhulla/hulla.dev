@@ -1,0 +1,67 @@
+---
+title: API reference
+description: Look up download options, cache metadata, supported URL forms, and errors.
+---
+
+`gittar()` returns the downloaded files and cache metadata. Find its options, supported repository URLs, and error messages below. For a runnable script, follow [Build a template downloader](/guides/gittar/quick-start).
+
+## Download a snapshot
+
+The default export accepts a URL string or a `Config` object and returns `Promise<GittarResult>`:
+
+```ts
+import gittar, { type Config, type GittarResult } from '@hulla/gittar'
+
+const config: Config = { url: 'hulladev/gittar', branch: 'master' }
+const snapshot: GittarResult = await gittar(config)
+```
+
+| Option     | Default                                    | Meaning                                                                      |
+| ---------- | ------------------------------------------ | ---------------------------------------------------------------------------- |
+| `url`      | Required                                   | Repository URL or `owner/repo` shorthand.                                    |
+| `branch`   | URL ref, otherwise `main` then `master`    | Branch, tag, or commit used for the archive. Explicit refs disable fallback. |
+| `subpath`  | URL subpath, otherwise the full repository | Directory to copy and list. The full archive is still cached.                |
+| `cacheDir` | `~/.cache/hulla/gittar/{owner}/{repo}`     | Extracted repository and metadata.                                           |
+| `outDir`   | `cacheDir`                                 | Copy destination.                                                            |
+| `update`   | `commit`                                   | `commit`, `always`, or `never`. See [cache policies](/docs/gittar/caching).  |
+
+Paths beginning with `~/` expand to the user's home directory. Other relative paths stay relative; use `resolve()` when you need absolute returned paths.
+
+## Inspect the result
+
+| Field                | Meaning                                                          |
+| -------------------- | ---------------------------------------------------------------- |
+| `files: string[]`    | Sorted file paths in the selected output location.               |
+| `cacheDir: string`   | Full snapshot location.                                          |
+| `outDir: string`     | Copy destination, or the cache when no destination was supplied. |
+| `fromCache: boolean` | Whether the call reused an existing snapshot.                    |
+| `subpath?: string`   | Effective subpath filter.                                        |
+| `commit?: string`    | Commit from the remote lookup or cache metadata, when available. |
+| `branch?: string`    | Downloaded or cached ref, when available.                        |
+
+The file listing uses a Bun glob with its default dotfile behavior. Don't use `files` as an exhaustive manifest of hidden configuration files. Copying a directory can include dotfiles even when the returned list doesn't.
+
+## Resolve an archive URL
+
+`getTarUrl(input, branch?)` returns an HTTPS archive URL or `null`. It doesn't download anything or try a fallback branch:
+
+```ts
+import { getTarUrl } from '@hulla/gittar'
+
+getTarUrl('hulladev/gittar', 'master')
+// https://github.com/hulladev/gittar/archive/master.tar.gz
+```
+
+Recognized hosts include GitHub, GitLab, Bitbucket, Codeberg, Gitea, and Forgejo. Host detection uses hostname patterns; an arbitrary self-hosted domain may not be recognized. Azure DevOps is unsupported. Nested GitLab groups and provider-specific URL forms aren't general-purpose Git URL parsing.
+
+`owner/repo` selects GitHub. HTTPS repository URLs, recognized tree URLs, and `git@host:owner/repo.git` are accepted forms. SSH syntax selects the repository; the download still uses HTTPS and does not use your SSH authentication. There is no token or custom-header option.
+
+## Errors
+
+| Export        | Meaning                                               |
+| ------------- | ----------------------------------------------------- |
+| `GittarError` | Base class extending `Error`, with optional `cause`.  |
+| `URLError`    | Invalid source, unsupported host, or failed download. |
+| `FSError`     | Failed extraction, listing, or copying.               |
+
+`Config`, `GittarResult`, and `UpdateStrategy` are exported types. Handle failures around the awaited call, as shown in [Caching and copying](/docs/gittar/caching#handle-failures-at-the-tool-boundary).

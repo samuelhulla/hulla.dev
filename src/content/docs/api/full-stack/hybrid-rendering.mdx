@@ -1,63 +1,17 @@
 ---
 title: 'Server and browser calls'
-description: 'Choose local, framework-native, or HTTP calls without leaking server implementations into browser bundles.'
+description: 'Set up a client for the browser and another for code that runs on the server.'
 ---
 
-This guide is for applications that render in more than one place: a browser, a server-rendered
-page, a framework server function, or a separately deployed API. It explains where to construct an
-`@hulla/api` client and which transport to use at each boundary.
+A browser needs to send a request to call your API. Server code can call the implementation directly when it's already running in the same process.
 
-After reading, you should be able to keep the implementation out of browser bundles, avoid an
-unnecessary network hop for colocated server code, and deliberately choose HTTP when the HTTP
-endpoint itself is part of the contract.
+Both clients use the same [contract](/docs/api/core/contracts). Here's how to set up each one to load a user.
 
-The most common mistake is treating every server-side call as equivalent. A call from a server
-process may be a direct in-process invocation, a framework RPC call, or an HTTP request to another
-service. Those boundaries have different routing, credential, caching, and serialization owners.
+## Call from the browser
 
-## The four call paths
+Create a client with [`fetchTransport()`](/docs/api/transports/fetch). It sends requests to the paths in your contract:
 
-The contract and implementation stay the same. The caller chooses the boundary through its client
-transport:
-
-| Caller and topology                              | Transport                                                                                                   | What crosses the boundary                                                       | Choose it when                                                                                |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Browser code to an API endpoint                  | `fetchTransport()`                                                                                          | A Web `Request` and `Response` over the endpoint URL                            | The caller is a browser, or the HTTP endpoint must be exercised                               |
-| Server code and implementation share one process | `inProcessTransport(implementation)`                                                                        | Encoded contract values by route key; no URL or Fetch request                   | Server rendering or application code can safely import the implementation                     |
-| Framework server function or remote function     | A local client inside the server callback, or a framework-specific helper when the integration provides one | The framework's invocation protocol, then local contract dispatch on the server | The operation is owned by a framework function and does not need to be a public HTTP endpoint |
-| Any caller to a separately deployed server       | `fetchTransport({ baseUrl })`                                                                               | An HTTP request to the server's origin                                          | The API runs in another process, service, or deployment                                       |
-
-> Keep the framework responsible for rendering, hydration, caching, and navigation; keep
-> `@hulla/api` responsible for the contract lifecycle; and choose a transport based on the
-> boundary the caller actually needs.
-
-An in-process call, or a framework transport configured to execute the implementation locally, does
-not enter the mounted HTTP endpoint. It does not run endpoint-specific HTTP middleware, match the
-endpoint's URL, receive the page request's cookies automatically, or copy contract response headers
-onto a page response. Use an HTTP client when those effects are part of the operation you want to
-exercise.
-
-## Create separate server and browser clients
-
-Keep the contract in a module that both sides can import. Keep the implementation and any client
-that imports it in a server-only module. The following examples assume that `contract` and
-`implementation` already exist in the files shown; see [contract authoring](/docs/api/core/contracts)
-and [server implementations](/docs/api/core/servers) for those values.
-
-```ts
-// src/api/server-client.ts — server-only code
-import { createClient } from '@hulla/api/client'
-import { inProcessTransport } from '@hulla/api/in-process'
-import { contract } from './contract'
-import { implementation } from './implementation'
-
-export const api = createClient(contract, {
-  transport: inProcessTransport(implementation),
-})
-```
-
-```ts
-// src/api/browser-client.ts — browser-safe code
+```ts filename="src/api/browser-client.ts"
 import { createClient } from '@hulla/api/client'
 import { fetchTransport } from '@hulla/api/fetch'
 import { contract } from './contract'
@@ -67,14 +21,44 @@ export const api = createClient(contract, {
 })
 ```
 
-Both clients expose the same contract-shaped calls. The first dispatches by contract route in the
-current process. The second sends a Web request to the endpoint mounted by the server integration.
-The filename is descriptive, not protective: use the framework's server-only convention, such as a
-guard import, `.server` module, or dedicated server directory. Do not combine these modules in a
-shared barrel; importing `implementation` makes the server-only dependency reachable from any
-browser import that consumes that barrel.
+Import this client into your UI and call the route:
 
-For an API on another origin, configure an absolute origin in the Fetch transport:
+```ts
+import { api } from './api/browser-client'
+
+const result = await api.users.byId({ params: { id: 'ada' } })
+if (result.status === 200) console.log(result.body.name) // Ada
+```
+
+The server must expose the contract at an HTTP endpoint. The [framework pages](#connect-your-framework) below show where to mount it. For an API on another origin, set `baseUrl` to that origin.
+
+## Call directly from server code
+
+Use [`inProcessTransport()`](/docs/api/transports/in-process) when your server code can import the implementation. It calls the handler without making an HTTP request back to your own server.
+
+```ts filename="src/api/server-client.ts"
+import { createClient } from '@hulla/api/client'
+import { inProcessTransport } from '@hulla/api/in-process'
+import { contract } from './contract'
+import { implementation } from './server'
+
+export const api = createClient(contract, {
+  transport: inProcessTransport(implementation),
+})
+```
+
+This example uses `src/api/server.ts` from [Server implementations](/docs/api/core/servers). Import the local client into a server-rendered page or a background job and make the same `api.users.byId(...)` call.
+
+Validation and server middleware still run. HTTP route matching and endpoint middleware don't, because this call never reaches the HTTP endpoint.
+
+> [!WARNING] Keep the local client on the server
+> A filename alone doesn't prevent browser imports. Use your framework's server-only guard or directory convention. Avoid re-exporting this client from a shared module that UI code imports.
+
+## When server code still needs HTTP
+
+Use Fetch when the API runs in another process or deployment. Use it when you need the endpoint's HTTP middleware or response headers, too.
+
+In Node.js and other server runtimes, provide an absolute URL:
 
 ```ts
 const api = createClient(contract, {
@@ -82,79 +66,30 @@ const api = createClient(contract, {
 })
 ```
 
-In Node.js and server-rendering runtimes, a relative URL may not have an origin from which to build
-the native `Request`; provide an absolute `baseUrl` or use the framework's request-aware Fetch when
-the framework supplies one.
+Some frameworks supply a request-aware `fetch` that can resolve relative URLs. Follow the framework's integration page when using that API.
 
-## What changes at the boundary
+> [!IMPORTANT] Server requests need their own credentials
+> A server-side Fetch call doesn't automatically inherit the browser's cookies or authorization headers. Forward the credentials the call needs, or use a framework API that explicitly handles forwarding. A local call also needs the caller's identity supplied through context; it doesn't inherit a session by running on the server.
 
-The transport choice changes who owns the work around the contract call:
+## Call inside a framework server function
 
-- **Local calls** skip HTTP route matching and native Fetch objects. They still run the encoded
-  client/server boundary, server validation, middleware, handler, response decoding, and declared
-  statuses.
-- **Server-side Fetch** is still an HTTP request. It does not inherit the incoming browser
-  request's cookies or authorization headers unless the application or framework deliberately
-  forwards them.
-- **Framework server functions and remote functions** use the framework's own input, invocation,
-  and serialization rules, plus any caching or hydration around that function. A framework function
-  is not a replacement for a public HTTP endpoint when another process must call the API.
-- **Browser Fetch** reaches the mounted endpoint and therefore uses the endpoint's host routing,
-  middleware, response headers, and deployment behavior.
+A framework server function can use the local client inside its callback. The framework handles the browser-to-server request; the local client then runs your API implementation in that callback.
 
-If a server-rendered page needs the current user's identity, obtain it through the framework's
-request-aware APIs or explicitly forward the required credentials. Do not rely on the fact that the
-code happens to run on the server.
+Use this for operations within your app. Keep an HTTP endpoint when mobile apps, other services, or generated clients need to call the API independently.
 
-An implementation whose context is bound with a host adapter such as `nextAdapter().context()` can
-only run through that adapter. `inProcessTransport()` rejects the mismatch during setup. Keep the
-context portable when the same implementation must run locally and through HTTP, or use a
-framework-specific local transport that supplies the required native context.
+> [!NOTE] Check context before using a local client
+> An implementation created with a host-specific context factory, such as `nextAdapter().context()`, requires that adapter. `inProcessTransport()` rejects it during setup. Use portable context or a framework-specific local transport that supplies the required context.
 
-## Pick the framework guide
+## Connect your framework
 
-The framework pages show the host entrypoint, the server/browser module boundary, and the
-framework-native way to consume the result. Start with the page for the framework that owns your
-rendering lifecycle:
+| Framework                                             | Start here                                                                                |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| [Next.js](/docs/api/full-stack/next)                  | App Router Route Handlers; [caching and invalidation](/docs/api/full-stack/next-data)     |
+| [TanStack Start](/docs/api/full-stack/tanstack-start) | Server routes and server functions                                                        |
+| [React Router](/docs/api/full-stack/react-router)     | Resource routes, loaders, and actions                                                     |
+| [SolidStart](/docs/api/full-stack/solid-start)        | API routes, queries, and actions                                                          |
+| [SvelteKit](/docs/api/full-stack/sveltekit)           | Endpoints and `load`; [remote functions](/docs/api/full-stack/sveltekit-remote-functions) |
+| [Nuxt](/docs/api/full-stack/nuxt)                     | Nitro routes and `useAsyncData`                                                           |
+| [Astro](/docs/api/full-stack/astro)                   | Endpoints, components, and server islands                                                 |
 
-| Framework                                             | Use the guide for                                                                                                                                                      |
-| ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Next.js](/docs/api/full-stack/next)                  | App Router handlers and native context; [data and caching](/docs/api/full-stack/next-data) covers Server Components, Data Cache, Server Actions, and browser clients   |
-| [TanStack Start](/docs/api/full-stack/tanstack-start) | Wildcard server routes, loaders, server functions, and TanStack Query                                                                                                  |
-| [React Router](/docs/api/full-stack/react-router)     | Framework Mode resource routes, loaders, actions, and revalidation                                                                                                     |
-| [SolidStart](/docs/api/full-stack/solid-start)        | Catch-all API routes, Solid Router queries/actions, and native event context                                                                                           |
-| [SvelteKit](/docs/api/full-stack/sveltekit)           | Catch-all endpoints and enhanced Fetch; [remote functions](/docs/api/full-stack/sveltekit-remote-functions) cover application-local query, command, and form callbacks |
-| [Nuxt](/docs/api/full-stack/nuxt)                     | Nitro routes, request-aware Fetch, `useAsyncData`, and server handlers                                                                                                 |
-| [Astro](/docs/api/full-stack/astro)                   | Endpoints, in-process component calls, and deferred server islands                                                                                                     |
-
-Some frameworks provide a request-aware Fetch that can dispatch a relative request internally.
-That is still a framework-owned request path: use it when request forwarding or universal
-execution matters, and use `inProcessTransport()` when you want a direct call to a colocated
-implementation.
-
-## Common mistakes and next decisions
-
-- **The implementation is imported by browser code.** Create a browser client from the shared
-  contract only; keep the in-process client and implementation behind the framework's server-only
-  module boundary.
-- **A local call is expected to run endpoint middleware.** It does not. Use the framework adapter
-  and an HTTP client when endpoint routing or HTTP middleware must run.
-- **Server-side Fetch is expected to carry the browser session.** Forward only the credentials the
-  server call needs, or use the framework's request-aware Fetch when it explicitly provides that
-  behavior.
-- **A framework function is exposed to external clients.** Framework RPC is useful for
-  application-local operations. Mount and expose the HTTP contract when mobile clients, other
-  services, generated clients, or a separately deployed frontend need it.
-- **An ordinary function is wrapped only to avoid choosing a transport.** Use an ordinary
-  application function when contract validation, declared statuses, and middleware are not part of
-  the local boundary.
-
-Next steps:
-
-- Read [client authoring](/docs/api/core/clients) for response narrowing, client middleware, and
-  shared client setup.
-- Read [in-process transport](/docs/api/transports/in-process) when server and
-  implementation share a process.
-- Read the [Fetch transport guide](/docs/api/transports/fetch) when the HTTP
-  request itself is the boundary.
-- Choose the applicable framework guide above for the host-specific entrypoint and data lifecycle.
+For response handling and client middleware, continue to [Calling the API](/docs/api/core/clients).

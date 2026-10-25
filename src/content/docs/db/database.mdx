@@ -5,7 +5,7 @@ description: Use typed PostgreSQL builders in server code and inside query or mu
 
 Import the generated `db` in a server route, action, job or script. A query
 handler uses the same read builders through `ctx.db`; a mutation can also write.
-The examples extend the `tasks` table from the [quick start](/docs/db/quick-start).
+The examples extend the `tasks` table from the [quick start](/guides/db/quick-start).
 
 ```ts filename="server/tasks.ts"
 import { db } from '../db/_generated/server'
@@ -42,14 +42,15 @@ const tasks = await db
   )
 ```
 
-Text matching is case-sensitive by default. Literal text helpers accept
-`{ caseSensitive: false }`; SQL patterns use `like` or `ilike`. Equality with
-null becomes `IS NULL`, and inequality becomes `IS NOT NULL`. Undefined filter
-values throw rather than silently dropping a condition. For example, a literal
-case-insensitive search is `.where('title', 'contains', 'guide', { caseSensitive: false })`.
-`contains`, `startsWith` and `endsWith` treat text literally; `like` and `ilike`
-use SQL `%` and `_` wildcards. Negation stays in the operator position, such as
-`.where('title', 'not contains', 'draft')`, or uses callback `not(...)`.
+Text matching is case-sensitive by default. Use `{ caseSensitive: false }` with literal helpers when needed:
+
+```ts
+.where('title', 'contains', 'guide', { caseSensitive: false })
+```
+
+`contains`, `startsWith`, and `endsWith` match literal text. `like` and `ilike` interpret SQL `%` and `_` wildcards. Negate in the operator position, as in `.where('title', 'not contains', 'draft')`, or use callback `not(...)`.
+
+Equality with `null` becomes `IS NULL`; inequality becomes `IS NOT NULL`. Undefined filter values throw instead of silently dropping a condition.
 
 Use generated references when you want table-based field access:
 

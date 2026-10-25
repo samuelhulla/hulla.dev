@@ -3,11 +3,11 @@ title: Next.js
 description: Use Server Components for initial rows and React hooks for live results.
 ---
 
-Use an App Router Server Component for the first read and `@hulla/db-react` for
-the live browser view. Start with the [shared task setup](/docs/db/meta-frameworks#set-up-the-shared-database-example).
-This recipe uses Next 16 and React 19, with `app/` at the project root.
+Load tasks in an App Router Server Component, then keep the list up to date with `@hulla/db-react` in a client component.
 
 ## Set the public browser endpoint
+
+Complete the [shared task setup](/docs/db/meta-frameworks#set-up-the-shared-database-example) first. The example uses Next 16 and React 19, with `app/` at the project root.
 
 Set `database.client` in `db.config.ts` before generating the application:
 

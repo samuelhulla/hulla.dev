@@ -1,6 +1,6 @@
 ---
 title: Installation
-description: Install the validated core, then choose the server host and client transport independently.
+description: 'Install the core package and the integration for your server.'
 usefulFor:
   - You are starting a new TypeScript API.
   - You need to know which adapter or transport package belongs in each application.
@@ -20,7 +20,7 @@ import StepperItem from '@/components/stepper/stepper-item.astro'
 import StepperPanel from '@/components/stepper/stepper-panel.astro'
 import { Lightbulb } from '@lucide/astro'
 
-Install the shared contract first. Then make two separate choices: where the server receives requests, and how the client reaches it.
+Install `@hulla/api` to define a contract and create a client or server. Add an adapter package if you're serving the API through a framework or platform listed below.
 
 <Stepper variant="ordered" aria-label="Install @hulla/api">
   <StepperItem id="install-the-validated-core" data-toc-section data-toc-label="Install the validated core" class="scroll-mt-24">
@@ -142,7 +142,7 @@ Install the shared contract first. Then make two separate choices: where the ser
         implementation with the server adapter from step 2.
       </p>
 
-      [Build the task API quick start →](/docs/api/quick-start)
+      [Build the task API quick start →](/guides/api/quick-start)
     </StepperPanel>
 
   </StepperItem>

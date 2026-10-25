@@ -1,20 +1,11 @@
 ---
 title: 'Azure Functions'
-description: 'Register an Azure Functions v4 HTTP trigger while preserving invocation context and native response values.'
+description: 'Register your API as an Azure Functions v4 HTTP trigger.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-`@hulla/api-azure-functions` turns a server implementation into an Azure Functions Node.js v4 `HttpHandler`. Your
-function app registers that handler on a catch-all HTTP trigger; the adapter then matches the request URL against the
-contract, validates the inputs, runs the implementation, and returns an Azure-native response.
-
-Use this adapter for HTTP triggers. The application still owns `app.http()` registration, authorization, route and
-method selection, host configuration, bindings, deployment, and Azure service limits.
-
-> This adapter targets the Azure Functions **Node.js v4 programming model**, where functions are registered in code
-> with `app.http()`. It does not use the v3 `function.json` registration model. See Microsoft's [Node.js v4 migration
-> guide](https://learn.microsoft.com/en-us/azure/azure-functions/functions-node-upgrade-v4).
+`@hulla/api-azure-functions` turns your implementation into an Azure HTTP handler. Register it with `app.http()` in an Azure Functions Node.js v4 project.
 
 ## Install the adapter
 

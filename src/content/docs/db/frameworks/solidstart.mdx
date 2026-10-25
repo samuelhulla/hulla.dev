@@ -3,11 +3,11 @@ title: SolidStart
 description: Hand server-function results to live Solid query components.
 ---
 
-Use a SolidStart server function for the first read, then `@hulla/db-solid` for
-the browser subscription. Complete the [shared task setup](/docs/db/meta-frameworks#set-up-the-shared-database-example)
-first. This recipe uses SolidStart 2, Solid 1.9 and Solid Router's `createAsync`.
+Load tasks in a SolidStart server function, then keep the list live with `@hulla/db-solid` in the browser.
 
 ## Set the public browser endpoint
+
+Complete the [shared task setup](/docs/db/meta-frameworks#set-up-the-shared-database-example) first. The example uses SolidStart 2, Solid 1.9, and Solid Router’s `createAsync`.
 
 Set `database.client` in `db.config.ts` before generating the application:
 

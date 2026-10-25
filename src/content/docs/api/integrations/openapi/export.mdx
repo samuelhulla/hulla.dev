@@ -1,11 +1,11 @@
 ---
 title: 'Generate OpenAPI'
-description: 'Generate a JSON or YAML OpenAPI document from a runtime contract and typed documentation sidecar.'
+description: 'Generate an OpenAPI document that other tools and teams can use.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-Use `@hulla/api-openapi` when an existing typed contract must become an OpenAPI document for external consumers, client generators, or documentation tooling. The runtime contract remains the source of methods, paths, representations, and schemas; a separate sidecar supplies the descriptions and other OpenAPI metadata.
+Generate an OpenAPI JSON or YAML file from your contract with `@hulla/api-openapi`. Keep route definitions in the contract and add descriptions in a separate documentation file.
 
 ## Install the exporter
 

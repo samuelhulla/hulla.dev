@@ -1,23 +1,27 @@
 ---
 title: hulla CLI
-description: Initialize a project and copy editable UI component source into your application with the hulla CLI.
+description: 'Copy UI components into your project as editable source, then review updates through the same CLI.'
 usefulFor:
   - You want to install @hulla/ui components as application source.
   - You need repeatable component updates across local development and CI.
   - You are maintaining a project initialized by an earlier hulla CLI workflow.
 ---
 
+import PackageDemoFrame from '@/components/site/PackageDemoFrame.astro'
+
 import DocsConceptFlow from '@/components/docs/DocsConceptFlow.astro'
 
-The `hulla` CLI initializes project configuration and copies UI component source files into your application. Use it when you want to own and edit the components in your repository; the installed code does not need the CLI or registry at runtime.
+The `hulla` CLI copies UI components into your application. You can read, edit, and commit those files like the rest of your code.
 
-The CLI currently requires Bun. Its `api` commands target an older `@hulla/api` generation interface and are not compatible with the current `@hulla/api` 2.0 API. For new API work, use the [current API quick start](/docs/api/quick-start).
+The CLI requires Bun. Your installed components build with your app and don't need the CLI at runtime.
+
+<PackageDemoFrame kind="cli" class="my-8" />
 
 ## Choose a workflow
 
 | Goal                                                             | Page                                     |
 | ---------------------------------------------------------------- | ---------------------------------------- |
-| Install the pinned beta and set up your first UI component       | [Quick start](/docs/cli/quick-start)     |
+| Install the pinned beta and set up your first UI component       | [Quick start](/guides/cli/quick-start)   |
 | Understand `.hulla/hulla.json` and `.hulla/ui.json`              | [Configuration](/docs/cli/configuration) |
 | Configure registries and add, update, or remove component source | [UI components](/docs/cli/ui)            |
 | Understand the legacy API command boundary                       | [API commands](/docs/cli/api)            |

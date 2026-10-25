@@ -1,20 +1,11 @@
 ---
 title: 'Deno'
-description: 'Serve an @hulla/api contract through deno serve or an application-owned Deno listener.'
+description: 'Run your API with deno serve or Deno.serve().'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-Run an `@hulla/api` contract as a Deno HTTP server by mounting the implementation as a Web `Request` to `Response`
-handler. Deno owns the listener, permissions, and deployment; `@hulla/api` owns contract routing, validation, server
-context, middleware, and response serialization.
-
-This guide uses [`deno serve`](https://docs.deno.com/runtime/reference/cli/serve/) so the entrypoint stays a default
-export that Deno can run directly. Use `Deno.serve()` instead when your application needs to construct the listener
-itself or combine it with other startup work.
-
-> The example assumes a Deno project with TypeScript enabled and an existing `src/api` directory. The handler uses the
-> Web `Request` and `Response` types that Deno provides; no Deno-specific adapter package is required.
+Export a mounted Fetch handler to run your API with `deno serve`. The handler uses Deno's built-in `Request` and `Response` types, so no Deno-specific adapter is needed.
 
 ## Install the packages
 

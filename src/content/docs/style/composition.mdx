@@ -1,13 +1,13 @@
 ---
 title: Composition
-description: Combine a component's base classes, variant selections, and optional caller classes with cn.
+description: 'Join class names and add conditional styles with cn().'
 ---
 
-Components often have three class sources: a stable base, one or more selected variants, and an optional class supplied by the caller. `cn` puts those sources into one string while accepting conditional objects and arrays for optional pieces.
+Use `cn()` to join class names into one string. Pass conditional values to add a class only when you need it, then combine the result with your component's [variants](/docs/style/variants).
 
 ## Compose base classes and variants
 
-The following example belongs in an existing React application with its CSS utilities configured. Import `cn` and `vn` from the shared module created in the [quick start](/docs/style/quick-start). Declare each choice separately when callers may combine them: here size and tone are independent.
+The following example belongs in an existing React application with its CSS utilities configured. Import `cn` and `vn` from the shared module created in the [quick start](/guides/style/quick-start). Declare each choice separately when callers may combine them: here size and tone are independent.
 
 ```tsx filename="src/components/Tag.tsx"
 import type { ReactNode } from 'react'

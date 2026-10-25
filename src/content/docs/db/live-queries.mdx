@@ -7,9 +7,9 @@ usefulFor:
   - Your view needs clear loading, error, and disposal behavior.
 ---
 
-Subscribe to a query when a view should stay current. The server reevaluates the query after relevant database changes and sends a complete authorized result. You render snapshots; there is no local database to synchronize.
+Subscribe to a query to keep a view up to date. When relevant rows change, the server reruns the query and sends its new result to the browser.
 
-Use the [framework bindings](/docs/db/framework-bindings) to own query and paginated subscriptions in React, Vue, Svelte or Solid. The plain JavaScript API below uses the same cache and page lifecycle.
+Components can subscribe with a [framework binding](/docs/db/framework-bindings). The examples below use the plain JavaScript API.
 
 ## Keep a result current
 

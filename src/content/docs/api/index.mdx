@@ -1,22 +1,26 @@
 ---
 title: '@hulla/api'
-description: Declare an HTTP contract once. Implement it on the server and call it with a typed client.
+description: 'Type-check HTTP requests, handlers, and clients against one shared contract, across the hosts and transports your app uses.'
 usefulFor:
   - You want HTTP paths, inputs, statuses, and bodies to stay typed together.
   - Frontend and backend work should share a contract without sharing server code.
   - One API must fit several frameworks, runtimes, or process boundaries.
 ---
 
+import PackageDemoFrame from '@/components/site/PackageDemoFrame.astro'
+
 import DocsGuideLinks from '@/components/docs/DocsGuideLinks.astro'
 
 `@hulla/api` keeps methods, paths, inputs, and response types in one shared contract. Your server implements that contract; your client calls it through the transport you choose.
+
+<PackageDemoFrame kind="api" class="my-8" />
 
 <DocsGuideLinks
   label="Start with @hulla/api"
   items={[
     {
       title: 'Build your first route',
-      href: '/docs/api/quick-start',
+      href: '/guides/api/quick-start',
       description: 'Contract, handler, and client in one working example.',
     },
     {

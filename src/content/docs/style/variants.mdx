@@ -1,13 +1,13 @@
 ---
 title: Variants
-description: Map a finite set of component choices to class strings and let TypeScript infer the prop values.
+description: 'Define named style choices and infer their TypeScript types.'
 usefulFor:
   - Your component has named sizes, tones, or states.
   - You want component props to stay in sync with their class map.
   - You need to choose which variant props are required or have defaults.
 ---
 
-When a component offers a fixed set of visual choices, a `vn` map keeps the choice and its classes together. The returned function accepts only keys from that map, and its `.infer` property exposes those keys as a TypeScript union.
+Give a component choices such as `small` and `large` with `vn()`. Each choice maps to a class string, and TypeScript checks that callers use one of the names you defined.
 
 ## Define and type a choice
 
@@ -36,7 +36,8 @@ export function Notice({ tone, children }: NoticeProps) {
 
 `$tone.infer` is the union `"info" | "warning"`. A caller can pass `<Notice tone="warning">Check the date.</Notice>`, and TypeScript reports an error for a value such as `tone="success"` because that key is not in the map.
 
-Use `typeof $tone.infer` only in a type position. `.infer` is `undefined` at runtime; call `$tone('warning')` to get the class string. Keep the inferred union on the component prop, then pass the selected key to the variant function. An optional prop has type `typeof $tone.infer | undefined`, which cannot be passed to `$tone` until you provide a default or narrow away `undefined`.
+> [!NOTE] infer is a type helper
+> Use `typeof $tone.infer` in a type position. Its runtime value is `undefined`; call `$tone('warning')` for classes. Give an optional prop a default before passing it to the variant function.
 
 ## Choose required and defaulted props
 

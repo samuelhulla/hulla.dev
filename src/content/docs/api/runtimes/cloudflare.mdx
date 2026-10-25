@@ -1,20 +1,11 @@
 ---
 title: 'Cloudflare Workers'
-description: 'Mount contract routes in a Module Worker fetch handler with typed bindings and Web response ownership.'
+description: 'Serve your API from a Cloudflare Worker and use its bindings.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-`@hulla/api-cloudflare` exposes an `@hulla/api` server implementation through a Module Worker's
-`fetch(request, env, ctx)` entrypoint. Cloudflare supplies the Web `Request`, bindings, and execution context; the
-adapter matches a contract route, validates its inputs, runs the implementation, and returns a Web `Response`.
-
-Use this adapter for HTTP routes in a Cloudflare Worker. It does not configure Wrangler, deploy the Worker, or handle
-non-HTTP events.
-
-> Starting a new Cloudflare application? Cloudflare [recommends Workers for new
-> projects](https://developers.cloudflare.com/pages/get-started/). Use the [Pages Functions
-> guide](/docs/api/runtimes/cloudflare-pages) when maintaining an existing file-routed Pages application.
+`@hulla/api-cloudflare` connects your API to a Worker's `fetch()` entrypoint. Mount the implementation there to handle HTTP requests and access bindings such as KV from your handlers.
 
 ## Install the adapter
 

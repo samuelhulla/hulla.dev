@@ -1,9 +1,9 @@
 ---
 title: Validate CLI input
-description: Use Zod schemas to coerce and constrain values that users supplied, and handle omitted input explicitly.
+description: 'Validate command-line values with Zod and handle missing input.'
 ---
 
-`@hulla/args` validates supplied option and positional values with their Zod schemas. When either is omitted, the result has `detected: false` and `value: undefined`; its schema is not called. Your CLI must check for missing input explicitly. Flags always validate a boolean, including `false` when absent.
+Give an option or positional argument a Zod schema to check the value a user supplies. The schema can also convert text, such as turning `--count 3` into a number.
 
 ## Validate a supplied value
 
@@ -24,9 +24,21 @@ const port = portArg.detected ? portArg.value : 3000
 console.log(port)
 ```
 
-`bun src/cli.ts --port 8080` prints `8080`; running without `--port` prints the explicit fallback `3000`. `--port nope` throws a `ParserError` from Zod validation. The `raw` field retains the entered text. With default `caseSensitive: false`, positional and space-separated option values retain their original spelling, while an equals-form value such as `--label=Sam` is lowercased before validation. Set `caseSensitive: true` when equals-form values need exact casing; this also makes argument names case-sensitive.
+Try the command with three inputs:
+
+| Command                      | Result                                      |
+| ---------------------------- | ------------------------------------------- |
+| `bun src/cli.ts --port 8080` | Prints `8080`.                              |
+| `bun src/cli.ts`             | Prints the fallback, `3000`.                |
+| `bun src/cli.ts --port nope` | Throws a `ParserError` from Zod validation. |
+
+> [!WARNING] Equals-form values can lose their casing
+> With the default `caseSensitive: false`, `--label=Sam` becomes `sam` before validation. Space-separated values and positionals keep their spelling, and `raw` keeps the original token. Set `caseSensitive: true` to preserve equals-form values too; argument names will then be case-sensitive.
 
 ## Require a positional value
+
+> [!IMPORTANT] Schemas only check supplied input
+> An omitted option or positional has `detected: false` and `value: undefined`; its schema isn't called. Check `detected` to require it. Flags always validate a boolean, including `false` when absent.
 
 Use `detected` to require that the user supplied a positional. A schema such as `.min(1)` validates a present string, but it cannot reject an omitted positional because the schema is skipped in that case.
 

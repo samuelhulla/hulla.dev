@@ -1,0 +1,135 @@
+---
+title: 'Build a notes CLI'
+description: 'Save notes to a JSON file and read them back.'
+tutorial:
+  outcome: A notes command that saves JSON to disk and lists it on the next run.
+  prerequisites:
+    - title: Bun and a project with @hulla/args and Zod 3 installed.
+      href: /guides/args/quick-start
+---
+
+Build a notes CLI with two commands: `notes add` saves a title and priority to a JSON file, and `notes list` prints the saved notes. Run it again to check that your notes are still there.
+
+## 1. Declare the commands
+
+Create `src/cli.ts` with two commands. Keep case-sensitive parsing so titles and equals-form option values retain their casing:
+
+```ts filename="src/cli.ts"
+import { command, flag, option, parser, positional } from '@hulla/args'
+import { z } from 'zod'
+import { readNotes, saveNote } from './notes'
+
+const cli = parser({
+  name: 'notes',
+  settings: { caseSensitive: true },
+  commands: [
+    command({
+      name: 'add',
+      arguments: [
+        positional({ name: 'title', schema: z.string().trim().min(1) }),
+        option({ name: 'priority', schema: z.enum(['low', 'normal', 'high']) }),
+        flag({ name: 'quiet', short: 'q' }),
+      ],
+    }),
+    command({ name: 'list' }),
+  ],
+})
+```
+
+A supplied priority must match the enum. An omitted option skips its schema, so you'll provide the default in the command handler. The positional schema checks a supplied title; it can't make an absent title appear.
+
+## 2. Add a small store
+
+Create `src/notes.ts`. Bun resolves `notes.json` from the working directory. Both commands will use this same file:
+
+```ts filename="src/notes.ts"
+import { z } from 'zod'
+
+const note = z.object({
+  title: z.string(),
+  priority: z.enum(['low', 'normal', 'high']),
+})
+type Note = z.infer<typeof note>
+const file = Bun.file('notes.json')
+
+export async function readNotes(): Promise<Note[]> {
+  return (await file.exists()) ? note.array().parse(await file.json()) : []
+}
+
+export async function saveNote(value: Note): Promise<void> {
+  const notes = await readNotes()
+  notes.push(value)
+  await Bun.write(file, JSON.stringify(notes, null, 2))
+}
+```
+
+No file means an empty list. An invalid existing file throws instead of being silently replaced. Run the commands from one directory so they find the same store.
+
+> [!NOTE] This is a single-user demo
+> Each write reads and replaces the JSON file. Concurrent writers can lose updates. Use a database when several processes need to write; the parser doesn't manage storage or locking.
+
+## 3. Route the parsed result
+
+Append this to `src/cli.ts`. Check [`detected`](/docs/args/arguments) before using a command or required positional value:
+
+```ts filename="src/cli.ts"
+async function main() {
+  const result = cli.parse(process.argv.slice(2))
+  const add = result.commands.add
+
+  if (add.detected) {
+    if (!add.arguments.title.detected) throw new Error('A title is required')
+    const title = add.arguments.title.value!
+    const priority = add.arguments.priority.value ?? 'normal'
+    await saveNote({ title, priority })
+    if (!add.arguments.quiet.value) console.log(`Saved: ${title}`)
+  } else if (result.commands.list.detected) {
+    const notes = await readNotes()
+    if (notes.length === 0) console.log('No notes yet. Add one!')
+    for (const note of notes) console.log(`[${note.priority}] ${note.title}`)
+  } else {
+    throw new Error(
+      'Use: notes add <title> [--priority low|normal|high] [-q], or notes list'
+    )
+  }
+}
+```
+
+The quiet flag affects output, not whether a note is saved. A parser result doesn't run a handler for you; this branch is the routing logic.
+
+## 4. Report failures once
+
+Append the entrypoint to the same file:
+
+```ts filename="src/cli.ts"
+try {
+  await main()
+} catch (error) {
+  console.error(error instanceof Error ? error.message : String(error))
+  process.exitCode = 1
+}
+```
+
+Parser errors, invalid JSON, and a missing title all reach this boundary. Use [`ParserError`](/docs/args/validation) if you want distinct formatting for parser failures. Setting `exitCode` lets pending work finish before the process exits.
+
+## 5. Try the full loop
+
+From the project root, run:
+
+```sh
+bun src/cli.ts add 'Read docs'
+# Saved: Read docs
+
+bun src/cli.ts add 'Build demo' --priority high -q
+# No output; the note is still saved.
+
+bun src/cli.ts list
+# [normal] Read docs
+# [high] Build demo
+```
+
+Open `notes.json` and confirm both entries exist. Run `list` again in a new terminal from the same directory; both should still be there.
+
+Then try `bun src/cli.ts add` and `bun src/cli.ts add 'Read docs' --priority urgent`. Each should report an error, exit with status `1`, and leave the saved notes unchanged.
+
+Try adding a `done` command next. Decide what identifies a note before writing the handler, then use [nested commands](/docs/args/commands) or the [reference](/docs/args/reference) when you need more parser options.

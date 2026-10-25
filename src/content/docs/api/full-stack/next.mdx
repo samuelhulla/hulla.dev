@@ -1,13 +1,13 @@
 ---
 title: 'Next.js'
-description: 'Mount an @hulla/api implementation in an App Router Route Handler with native Next request context.'
+description: 'Serve your API from a Next.js App Router Route Handler.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-Use `@hulla/api-next/server` to expose an `@hulla/api` implementation through a Next.js App Router Route Handler. Next chooses the file route and runtime; the adapter matches the contract route, validates its input, runs the handler, and returns a Web `Response`.
+The `@hulla/api-next/server` adapter lets a Next.js Route Handler serve your API. Add it to an App Router project to make the contract's routes available over HTTP.
 
-This guide mounts one API at `/api`, calls it over HTTP, and then shows the Next-native context available to server code. For server-side fetch caching and invalidation, continue to [Next.js data and caching](/docs/api/full-stack/next-data).
+We'll mount an API at `/api` and try a request. To cache server-side Fetch calls, see [Next.js data and caching](/docs/api/full-stack/next-data).
 
 ## Install the integration
 

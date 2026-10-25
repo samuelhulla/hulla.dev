@@ -1,16 +1,13 @@
 ---
 title: 'Astro'
-description: 'Serve a contract from an Astro endpoint and choose in-process or Fetch calls for components and islands.'
+description: 'Add an API endpoint to Astro and call it from a page or browser island.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-By the end of this guide, you will serve a contract at `/api`, verify a real response, and choose
-between browser Fetch and a colocated server call from an Astro component or server island.
+Serve your API from an Astro endpoint, then call it from the browser or an Astro component. The example adds a route at `/api` and checks it with an HTTP request.
 
-Use this integration when browsers, mobile applications, generated clients, or other services need
-the same HTTP contract as your Astro application. Prefer Astro Actions or a native endpoint when an
-operation belongs only to that application and does not need the shared contract.
+This is useful when other apps also need your API. For a form or operation used only by your Astro site, [Astro Actions](https://docs.astro.build/en/guides/actions/) may be all you need.
 
 ## Install the integration
 

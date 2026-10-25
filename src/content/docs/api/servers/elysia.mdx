@@ -1,16 +1,11 @@
 ---
 title: 'Elysia'
-description: 'Register contract routes on a caller-owned Elysia app with native lifecycle hooks and typed extensions.'
+description: 'Add your API routes to an Elysia app.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-`@hulla/api-elysia` registers contract routes on an Elysia application that you create and own. Elysia keeps control of
-routing, lifecycle hooks, extensions, and deployment. `@hulla/api` decodes contract inputs, runs the server
-implementation, and serializes a declared response.
-
-Use this adapter when an existing Elysia app should host the API. If you only need a Web `Request` to `Response`
-handler, use `fetchHandler()` from `@hulla/api/fetch` instead.
+Add your contract's routes to an existing Elysia app with `@hulla/api-elysia`. They run alongside your other routes and use the app's hooks and plugins.
 
 ## Install the adapter
 

@@ -1,13 +1,13 @@
 ---
 title: 'SvelteKit remote functions'
-description: 'Run contract calls inside SvelteKit query, command, or form callbacks without a second Fetch request.'
+description: 'Call your API inside SvelteKit remote functions without an extra HTTP request.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-Use `@hulla/api-sveltekit/remote` when a SvelteKit `query`, `form`, or `command` should execute an `@hulla/api` implementation inside the current server process. SvelteKit still owns the remote-function protocol, browser-to-server request, serialization, caching, invalidation, and form lifecycle; the adapter owns the contract call inside the server callback.
+A SvelteKit remote function lets browser code ask the server to do work. With `@hulla/api-sveltekit/remote`, a `query`, `form`, or `command` can call your API implementation directly on the server.
 
-Use the [SvelteKit endpoint guide](/docs/api/full-stack/sveltekit) when another process, browser Fetch, a mobile client, a generated client, or OpenAPI needs a durable HTTP endpoint. Remote functions are application-local SvelteKit APIs, not replacements for that endpoint.
+Use this to reuse handlers inside your SvelteKit app. If a mobile app or another service needs to call them, [add an HTTP endpoint](/docs/api/full-stack/sveltekit) too.
 
 ## Prerequisites
 

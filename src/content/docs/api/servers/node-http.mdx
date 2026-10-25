@@ -1,17 +1,13 @@
 ---
 title: 'Node.js HTTP'
-description: 'Turn a contract implementation into a Node HTTP listener with explicit body, stream, and server ownership.'
+description: 'Run your API with Node’s built-in HTTP server.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-`@hulla/api-node/http` turns a complete `@hulla/api` server implementation or fragment into a listener for Node's
-built-in HTTP server. You create and configure the server. The adapter matches contract routes, decodes their inputs,
-runs the server implementation, and writes the declared response.
+Pass a mounted `@hulla/api-node/http` listener to Node's `createServer()` to serve your API without a framework.
 
-Use this adapter when an application should serve contract routes directly through `node:http`. If the application
-already uses Express, Fastify, Koa, or another supported framework, use that framework's adapter so the routes join
-its native router and middleware lifecycle.
+If your app already uses Express, Fastify, or Koa, use its [adapter](/docs/api/servers) to share the existing routes and middleware.
 
 ## Install the adapter
 

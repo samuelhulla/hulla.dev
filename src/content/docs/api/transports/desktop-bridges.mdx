@@ -1,6 +1,6 @@
 ---
 title: 'Desktop IPC bridges'
-description: 'Connect MessagePort semantics to Electron, Tauri, Dioxus, or a JSON-only desktop bridge.'
+description: 'Call your API through an Electron, Tauri, or Dioxus message bridge.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
@@ -10,11 +10,9 @@ import AlertIcon from '@/components/alert/alert-icon.astro'
 import AlertTitle from '@/components/alert/alert-title.astro'
 import { TriangleAlert } from '@lucide/astro'
 
-Use the desktop entrypoints from `@hulla/api-message-port` when a typed client and a TypeScript implementation communicate through Electron, Tauri, Dioxus, or another ordered desktop IPC relay.
+Call your API across an Electron, Tauri, or Dioxus bridge with the desktop entrypoints in `@hulla/api-message-port`. Your app connects the native message relay; the package matches each response to its client call.
 
-The package supplies JavaScript endpoint wrappers, request correlation, cancellation, pull-driven response streams, and tagged encoding for string relays. The application supplies native handoff, routing, lifetime, authentication, and capability policy.
-
-The examples below assume the `health` contract and implementation from the [MessagePort guide](/docs/api/transports/message-port).
+The examples build on the `health` contract from [MessagePort](/docs/api/transports/message-port).
 
 ## Install the package
 

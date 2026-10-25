@@ -3,9 +3,7 @@ title: Optimistic updates
 description: Show a predicted change while a mutation runs, then let the server result settle the view.
 ---
 
-Mutations normally show server-confirmed results. Use `.withOptimistic(...)` when
-the UI can predict a change to an already-loaded query result, such as marking
-a task completed. The wrapper keeps the mutation's normal input and result types.
+Show a task as completed as soon as the user clicks, while the mutation is still running. Use `.withOptimistic(...)` to predict that change in a loaded query result; the server's result settles the view afterward.
 
 ## Declare the real write first
 

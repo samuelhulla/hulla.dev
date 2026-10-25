@@ -12,68 +12,66 @@ const pages = {
   'architecture.md': {
     destination: 'reference/architecture.mdx',
     title: 'Contract compiler',
-    description:
-      'Inspect the immutable route manifest used by adapters and tooling.',
+    description: 'Inspect a contract as a flat list of routes.',
   },
   'contract-authoring.md': {
     destination: 'core/contracts.mdx',
     title: 'Contracts',
     description:
-      'Define the shared paths, inputs, and status-specific responses that type both servers and clients.',
+      'Define the routes, inputs, and responses that your server and client share.',
   },
   'server-authoring.md': {
     destination: 'core/servers.mdx',
     title: 'Server implementations',
     description:
-      'Implement every contract route, mount the result, and inspect a real response.',
+      'Write handlers for your contract and call the finished server.',
   },
   'server-context.md': {
     destination: 'core/server-context.mdx',
     title: 'Server context and middleware',
     description:
-      'Create request-scoped context and apply middleware globally or to selected routes.',
+      'Share request data between handlers and add checks with middleware.',
   },
   'server-composition.md': {
     destination: 'core/server-composition.mdx',
     title: 'Server fragments and composition',
     description:
-      'Split handlers into typed modules or independently mountable fragments, then compose a complete implementation.',
+      'Split a large API into smaller handler files or separately mounted fragments.',
   },
   'client-authoring.md': {
     destination: 'core/clients.mdx',
     title: 'Typed clients',
     description:
-      'Create a contract-shaped client, choose a transport, narrow declared responses, and add request middleware.',
+      'Call your API with typed input and handle the response by status.',
   },
   'request-transport.md': {
     destination: 'core/request-transport.mdx',
     title: 'Request representations',
     description:
-      'Understand how parameters, query values, headers, bodies, and native JSON cross a transport boundary.',
+      'Turn URL parameters, headers, and request bodies into values your handlers can use.',
   },
   'value-round-trips.md': {
     destination: 'core/value-round-trips.mdx',
     title: 'Values across boundaries',
     description:
-      'Choose native JSON, one-way schemas, transforms, or codecs based on the value each side should receive.',
+      'Choose how values such as dates and URLs travel between your client and server.',
   },
   'errors.md': {
     destination: 'core/errors.mdx',
     title: 'Errors',
-    description:
-      'Model declared application failures separately from validation, transport, implementation, and runtime failures.',
+    description: 'Handle expected API errors and diagnose unexpected failures.',
   },
   'control.md': {
     destination: 'integrations/control.mdx',
     title: 'Result-returning clients',
     description:
-      'Convert typed client outcomes into @hulla/control Result values without losing declared response types.',
+      'Handle client responses as Ok and Err values from @hulla/control.',
   },
   'migration.md': {
     destination: 'reference/migration.mdx',
     title: '2.0 migration reference',
     description:
-      'Look up removed APIs, package moves, client and server replacements, and runtime behavior changes in @hulla/api 2.0.',
+      'Find the 2.0 replacements for 1.x imports, methods, and behavior.',
   },
   // start/migration.mdx remains intentionally curated so it can provide a
   // short migration journey with an interactive before/after diff. The
@@ -82,229 +80,207 @@ const pages = {
     destination: 'integrations/query-libraries.mdx',
     title: 'Query library integrations',
     description:
-      'Choose who owns browser cache and query state around an existing typed client.',
+      'Add caching and loading states to your API client with TanStack Query or SWR.',
   },
   'tanstack-query.md': {
     destination: 'integrations/tanstack-query.mdx',
     title: 'TanStack Query',
     description:
-      'Create typed TanStack Query v5 keys and options, then invalidate the correct contract route.',
+      'Load API data with TanStack Query and invalidate it after a mutation.',
   },
   'swr.md': {
     destination: 'integrations/swr.mdx',
     title: 'SWR',
-    description:
-      'Create typed SWR keys and fetchers, run mutations, and revalidate the correct contract route.',
+    description: 'Load API data with SWR and refresh it after a mutation.',
   },
   'openapi.md': {
     destination: 'integrations/openapi.mdx',
     title: 'OpenAPI',
     description:
-      'Choose whether a code-first contract or an existing OpenAPI document owns the API description.',
+      'Export your contract to OpenAPI or generate a contract from an existing document.',
   },
   'openapi-export.md': {
     destination: 'integrations/openapi/export.mdx',
     title: 'Export a contract to OpenAPI',
     description:
-      'Generate a JSON or YAML OpenAPI document from a runtime contract and typed documentation sidecar.',
+      'Generate an OpenAPI document that other tools and teams can use.',
   },
   'openapi-import.md': {
     destination: 'integrations/openapi/import.mdx',
     title: 'Import an OpenAPI document',
     description:
-      'Generate a runtime contract and typed sidecar from a provider-owned OpenAPI document.',
+      'Create a typed client contract from an existing OpenAPI document.',
   },
   'message-port.md': {
     destination: 'transports/message-port.mdx',
     title: 'MessagePort',
     description:
-      'Run the same contract across workers, Electron, or another ordered IPC endpoint with cancellation and streaming.',
+      'Call your API in a worker or another process through a message channel.',
   },
   'websocket.md': {
     destination: 'transports/websocket.mdx',
     title: 'WebSocket',
-    description:
-      'Carry contract calls and response streams over a WebSocket while preserving typed responses and cancellation.',
+    description: 'Send typed API calls and response streams over a WebSocket.',
   },
   'desktop-bridges.md': {
     destination: 'transports/desktop-bridges.mdx',
     title: 'Desktop bridges',
     description:
-      'Connect MessagePort semantics to Electron, Tauri, Dioxus, or a JSON-only desktop bridge.',
+      'Call your API through an Electron, Tauri, or Dioxus message bridge.',
   },
   'hybrid-rendering.md': {
     destination: 'full-stack/hybrid-rendering.mdx',
     title: 'Choose a transport for each render boundary',
     description:
-      'Choose local, framework-native, or HTTP calls without leaking server implementations into browser bundles.',
+      'Set up a client for the browser and another for code that runs on the server.',
   },
   'adapter-conformance.md': {
     destination: 'reference/adapter-conformance.mdx',
     title: 'Adapter behavior',
     description:
-      'Compare how @hulla/api adapters handle routes, request bodies, responses, errors, and cancellation.',
+      'Compare routing, body parsing, errors, and cancellation across server adapters.',
   },
   'runtime-hosts.md': {
     destination: 'runtimes/runtime-hosts.mdx',
     title: 'Web-native runtimes',
-    description:
-      'Choose how Bun, Deno, or Vercel should expose the same Fetch-compatible contract handler.',
+    description: 'Connect a Fetch handler to Bun, Deno, or Vercel.',
   },
   'bun.md': {
     destination: 'runtimes/bun.mdx',
     title: 'Bun',
-    description:
-      'Serve an @hulla/api contract directly from Bun with a Web-standard request handler.',
+    description: 'Run your API with Bun.serve().',
   },
   'deno.md': {
     destination: 'runtimes/deno.mdx',
     title: 'Deno',
-    description:
-      'Serve an @hulla/api contract through deno serve or an application-owned Deno listener.',
+    description: 'Run your API with deno serve or Deno.serve().',
   },
   'vercel.md': {
     destination: 'runtimes/vercel.mdx',
     title: 'Vercel Functions',
-    description:
-      'Expose an @hulla/api contract from a standalone Vercel Function using the Web Handler API.',
+    description: 'Run your API as a standalone Vercel Function.',
   },
   'node-http.md': {
     destination: 'servers/node-http.mdx',
     title: 'Node.js HTTP',
-    description:
-      'Turn a contract implementation into a Node HTTP listener with explicit body, stream, and server ownership.',
+    description: 'Run your API with Node\u2019s built-in HTTP server.',
   },
   'express.md': {
     destination: 'servers/express.mdx',
     title: 'Express',
-    description:
-      'Mount contract routes on an existing Express app or Router with host-owned middleware and body parsing.',
+    description: 'Add your API routes to an Express app or Router.',
   },
   'fastify.md': {
     destination: 'servers/fastify.mdx',
     title: 'Fastify',
-    description:
-      'Mount contract routes in the Fastify plugin scope that owns their hooks, parsers, decorators, and prefix.',
+    description: 'Register your API routes in a Fastify app.',
   },
   'hono.md': {
     destination: 'servers/hono.mdx',
     title: 'Hono',
-    description:
-      "Mount contract routes in Hono's middleware flow with cached request bodies and typed native context.",
+    description: 'Add your API routes to a Hono app.',
   },
   'h3.md': {
     destination: 'servers/h3.mdx',
     title: 'H3',
-    description:
-      'Mount contract routes on an H3 v2 app with native middleware, event context, and explicit request-body ownership.',
+    description: 'Add your API routes to an H3 v2 app.',
   },
   'elysia.md': {
     destination: 'servers/elysia.mdx',
     title: 'Elysia',
-    description:
-      'Register contract routes on a caller-owned Elysia app with native lifecycle hooks and typed extensions.',
+    description: 'Add your API routes to an Elysia app.',
   },
   'koa.md': {
     destination: 'servers/koa.mdx',
     title: 'Koa',
-    description:
-      'Mount contract routes as terminal Koa middleware with typed state, native context, and host-owned parsing.',
+    description: 'Serve your API inside a Koa middleware stack.',
   },
   'nestjs.md': {
     destination: 'servers/nestjs.mdx',
     title: 'NestJS',
-    description:
-      'Integrate a contract with Nest controllers, dependency injection, and either Express or Fastify platforms.',
+    description: 'Register your API routes as Nest controller methods.',
   },
   'next.md': {
     destination: 'full-stack/next.mdx',
     title: 'Next.js',
-    description:
-      'Mount an @hulla/api implementation in an App Router Route Handler with native Next request context.',
+    description: 'Serve your API from a Next.js App Router Route Handler.',
   },
   'next-data.md': {
     destination: 'full-stack/next-data.mdx',
     title: 'Next.js data and caching',
     description:
-      'Apply typed Next Data Cache policy and tags, invalidate server data, and keep browser caches separate.',
+      'Cache API requests on the Next.js server and refresh them after a write.',
   },
   'tanstack-start.md': {
     destination: 'full-stack/tanstack-start.mdx',
     title: 'TanStack Start',
-    description:
-      'Mount contract-backed server routes and call them through loaders, server functions, or browser clients.',
+    description: 'Serve your API from a TanStack Start server route.',
   },
   'react-router.md': {
     destination: 'full-stack/react-router.mdx',
     title: 'React Router',
-    description:
-      'Mount a Framework Mode resource route and choose HTTP or colocated calls from loaders and actions.',
+    description: 'Expose your API through a React Router resource route.',
   },
   'solid-start.md': {
     destination: 'full-stack/solid-start.mdx',
     title: 'SolidStart',
     description:
-      'Mount a catch-all API route and consume the same contract through server queries or browser Fetch.',
+      'Add a SolidStart API route and call it from queries, actions, or the browser.',
   },
   'sveltekit.md': {
     destination: 'full-stack/sveltekit.mdx',
     title: 'SvelteKit',
     description:
-      'Mount catch-all endpoints, verify the HTTP boundary, and consume it with enhanced Fetch.',
+      'Serve your API from a SvelteKit endpoint and call it from load.',
   },
   'sveltekit-remote-functions.md': {
     destination: 'full-stack/sveltekit-remote-functions.mdx',
     title: 'SvelteKit remote functions',
     description:
-      'Run contract calls inside SvelteKit query, command, or form callbacks without a second Fetch request.',
+      'Call your API inside SvelteKit remote functions without an extra HTTP request.',
   },
   'nuxt.md': {
     destination: 'full-stack/nuxt.mdx',
     title: 'Nuxt',
-    description:
-      'Mount a Nitro route and use a request-aware client with useAsyncData and browser events.',
+    description: 'Serve an API with Nitro and load its data in a Nuxt page.',
   },
   'astro.md': {
     destination: 'full-stack/astro.mdx',
     title: 'Astro',
     description:
-      'Serve a contract from an Astro endpoint and choose in-process or Fetch calls for components and islands.',
+      'Add an API endpoint to Astro and call it from a page or browser island.',
   },
   'cloudflare.md': {
     destination: 'runtimes/cloudflare.mdx',
     title: 'Cloudflare Workers',
     description:
-      'Mount contract routes in a Module Worker fetch handler with typed bindings and Web response ownership.',
+      'Serve your API from a Cloudflare Worker and use its bindings.',
   },
   'cloudflare-pages.md': {
     destination: 'runtimes/cloudflare-pages.mdx',
     title: 'Cloudflare Pages Functions',
-    description:
-      'Mount a contract beneath a Pages file route while keeping API misses separate from asset fallback.',
+    description: 'Add your API to a Cloudflare Pages Functions project.',
   },
   'aws-lambda.md': {
     destination: 'runtimes/aws-lambda.mdx',
     title: 'AWS Lambda',
     description:
-      'Mount a buffered Lambda proxy handler for API Gateway payload v2 or a Function URL.',
+      'Serve your API through API Gateway HTTP API or a Lambda Function URL.',
   },
   'azure-functions.md': {
     destination: 'runtimes/azure-functions.mdx',
     title: 'Azure Functions',
-    description:
-      'Register an Azure Functions v4 HTTP trigger while preserving invocation context and native response values.',
+    description: 'Register your API as an Azure Functions v4 HTTP trigger.',
   },
   'google-cloud-functions.md': {
     destination: 'runtimes/google-cloud-functions.mdx',
     title: 'Google Cloud Run functions',
-    description:
-      'Mount a Functions Framework HTTP entrypoint with raw-body decoding, native context, and response streaming.',
+    description: 'Register your API as a Google Cloud HTTP function.',
   },
   'netlify-functions.md': {
     destination: 'runtimes/netlify-functions.mdx',
     title: 'Netlify Functions',
-    description:
-      'Mount a contract under a Netlify function path with native context and Web responses.',
+    description: 'Serve your API from a Netlify web request function.',
   },
 }
 

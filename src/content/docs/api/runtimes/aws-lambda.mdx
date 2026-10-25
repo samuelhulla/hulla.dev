@@ -1,24 +1,15 @@
 ---
 title: 'AWS Lambda'
-description: 'Mount a buffered Lambda proxy handler for API Gateway payload v2 or a Function URL.'
+description: 'Serve your API through API Gateway HTTP API or a Lambda Function URL.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-`@hulla/api-aws-lambda` exposes an `@hulla/api` server implementation as a buffered Lambda proxy handler. Use it with
-an API Gateway HTTP API configured for payload format 2.0 or with a Lambda Function URL. AWS turns the HTTP request
-into an event; the adapter matches a contract route, validates its inputs, runs the implementation, and returns the
-structured result that AWS turns back into an HTTP response.
-
-Use this adapter when the function receives an `APIGatewayProxyEventV2`. The application still owns the Lambda
-deployment, API Gateway or Function URL configuration, authorization, permissions, and service limits.
-
-> Configure an API Gateway Lambda proxy integration with **payload format 2.0**. Lambda Function URLs use the same v2
-> request and response schema. The adapter does not accept payload format 1.0 events. See AWS's guides to [HTTP API
-> Lambda proxy integrations](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html)
-> and [Function URL invocation](https://docs.aws.amazon.com/lambda/latest/dg/urls-invocation.html).
+Serve your API from AWS Lambda with `@hulla/api-aws-lambda`. It accepts API Gateway payload-v2 events or Function URL requests and returns the response format Lambda expects.
 
 ## Install the adapter
+
+Configure API Gateway with **payload format 2.0**. Payload-v1 events aren't supported. Lambda Function URLs already use the v2 format. See AWS's [HTTP API setup](https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html) or [Function URL setup](https://docs.aws.amazon.com/lambda/latest/dg/urls-invocation.html).
 
 This guide assumes the Lambda project and its HTTP trigger already exist. The example uses Zod for request and response
 schemas. `@types/aws-lambda` supplies the event and invocation-context types required by the adapter.

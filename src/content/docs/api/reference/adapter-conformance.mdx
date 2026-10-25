@@ -1,11 +1,11 @@
 ---
 title: 'Adapter requirements'
-description: 'Compare how @hulla/api adapters handle routes, request bodies, responses, errors, and cancellation.'
+description: 'Compare routing, body parsing, errors, and cancellation across server adapters.'
 ---
 
-Adapters connect a compiled `@hulla/api` implementation to a host such as Fetch, Express, or a serverless platform. The shared executor validates contract inputs and outputs and runs middleware. Depending on the adapter, route selection belongs to the shared executor or the host router; body parsing, request limits, and disconnect handling also depend on the host boundary.
+Adapters connect your implementation to a server or framework. They all run contract validation and server middleware, but they differ in how they match routes, read request bodies, and handle cancellation.
 
-Use this page to check whether an adapter's behavior fits your host. Follow the linked adapter guide for setup and framework-specific context.
+Compare those differences below. For installation and a working route, follow the linked adapter page.
 
 ## Choose an execution boundary
 

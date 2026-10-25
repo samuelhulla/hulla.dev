@@ -1,13 +1,9 @@
 ---
 title: Framework bindings and SSR
-description: Use reactive queries, mutations and live pages in React, Vue, Svelte and Solid.
+description: 'Keep React, Vue, Svelte, and Solid components up to date with live queries.'
 ---
 
-Install the core and the binding for your UI framework. These are separate
-packages; the core has no React, Vue, Svelte or Solid dependency. Each binding
-uses the application's existing framework and the same core runtime/cache.
-Install `@hulla/db` and the matching binding from npm; the
-[installation guide](/docs/db/installation) lists the package names.
+Use a framework binding to subscribe to a query from a component. The component receives updated results when the database changes, and the binding cleans up the subscription when the component unmounts.
 
 | Package            | Query result                                      | Mutation state                                   |
 | ------------------ | ------------------------------------------------- | ------------------------------------------------ |
@@ -16,23 +12,19 @@ Install `@hulla/db` and the matching binding from npm; the
 | `@hulla/db-svelte` | `createQuery(fn, () => input)` → reactive getters | `createMutation(fn)` → callable, `save.state`    |
 | `@hulla/db-solid`  | `createQuery(fn, () => input)` → accessor         | `createMutation(fn)` → callable, `save.state()`  |
 
-Configure the generated browser runtime once before mounting the application,
-using [the existing service setup](/docs/db/runtime#connect-browser-functions).
-Pass generated callables to the binding, without invoking them during render.
-Bindings subscribe after mount and unsubscribe on removal. Equivalent encoded
-inputs preserve the observation; changed inputs replace it and fence late replies.
-Query results retain the core `status`, `data`, `error`, `isStale` and
-`isOptimistic` properties. Vue/Svelte/Solid input getters follow framework reactivity.
-Read Svelte snapshot getters reactively rather than destructuring them into locals.
+Configure the generated browser runtime once before mounting the app; see [service setup](/docs/db/runtime#connect-browser-functions). Pass a generated callable to the binding without invoking it during render.
 
-Each mutation call returns its original awaitable handle. The binding's state
-starts as `idle`, then follows the most recently started invocation through the
-core pending/recovering/success/error states. Overlapping writes keep independent
-outcomes. Unmounting stops UI observation; it does not cancel a submitted write.
-Pass an [optimistic mutation wrapper](/docs/db/optimistic-writes) to the same
-mutation hook. No-input query targets need only `{ query, update }`; queries with
-input use an exact input mapper or a `match` predicate. Framework bindings use
-the wrapper unchanged.
+Bindings subscribe after mount and unsubscribe on removal. Equivalent encoded inputs keep the subscription; changed inputs replace it and ignore late replies. Query snapshots expose `status`, `data`, `error`, `isStale`, and `isOptimistic`.
+
+> [!TIP] Keep reactive getters reactive
+> In Vue, Svelte, and Solid, read changing inputs through getters. In Svelte, read snapshot properties reactively; destructuring them into local variables loses those later updates.
+
+A mutation call returns an awaitable handle. The binding's UI state starts at `idle` and follows the most recently started call through pending, recovery, and success or error. Concurrent writes still have their own results.
+
+> [!NOTE] Unmounting doesn't cancel a write
+> Leaving the page stops UI observation. A write you've already submitted can still finish.
+
+Pass an [optimistic mutation wrapper](/docs/db/optimistic-writes) to the same hook to show a predicted result while the write runs. For a query without input, the wrapper needs `{ query, update }`. For a query with input, also supply an exact input mapper or a `match` predicate.
 
 ## Load more pages in a component
 
@@ -135,26 +127,18 @@ export function Tasks({ initialTasks }: { initialTasks: Output<typeof list> }) {
 }
 ```
 
-No-input queries accept options as the second argument. For an input-bearing
-query, pass its input before the options, for example
-`useQuery(unfinished, { limit: 20 }, { initialData })` with the declaration from
-[queries and mutations](/docs/db/functions#validate-function-input). All four bindings accept
-the same query options. Rendering never starts a request, including during SSR.
-The server and first hydration render display the same initial data; after mount,
-the first live result replaces it. The fallback is `pending` with `isStale: true`,
-and never enters the shared authoritative cache or optimistic cache updates.
-It ends at the first result/error, an input change or an auth scope change.
-Returning to an earlier input/account cannot resurrect it. Changing `initialData`
-alone does not restart React's subscription or replace a live result.
+No-input queries take options as the second argument. Input-bearing queries take input first, for example `useQuery(unfinished, { limit: 20 }, { initialData })`; see [function input](/docs/db/functions#validate-function-input).
 
-For protected data, also pass `initialAuthKey`, obtained by the application from
-the server-verified session. It must match the key supplied to browser `setAuth`.
-Omitting it means anonymous data; it will not seed a signed-in scope. Neither
-this key nor the initial data supplies server credentials or grants access.
-Identity changes clear the old view and reattach subscriptions automatically;
-promised auth updates pause observation while identity resolves. Provider expiry
-and server rejection still clear protected results. Do not share private SSR
-responses across accounts in the application's routing/cache layer.
+All four bindings accept the same options. Rendering doesn't start a request, including during SSR. The server and first hydration render show `initialData`; after mount, a live result replaces it.
+
+The fallback has `status: 'pending'` and `isStale: true`. It stays outside the authoritative and optimistic caches. A result, error, input change, or auth change ends it. Returning to a previous input or account doesn't restore it; changing `initialData` alone doesn't restart a React subscription.
+
+For protected data, pass an `initialAuthKey` built from the server-verified session. It must match the key supplied to browser `setAuth`. Omitting it means anonymous data, so it won't seed a signed-in view.
+
+Identity changes clear the old view and reattach subscriptions. Promised auth updates pause observation while identity resolves; provider expiry and server rejection still clear protected results.
+
+> [!WARNING] Keep private SSR responses private
+> Neither `initialAuthKey` nor `initialData` grants access. Verify the request on the server, and don't share private responses across accounts through a framework or CDN cache.
 
 `keepPreviousDataOnError: true` retains previously successful live data on ordinary
 query errors. It never retains an unconfirmed SSR fallback or data after an

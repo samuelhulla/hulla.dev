@@ -1,16 +1,11 @@
 ---
 title: 'Hono'
-description: "Mount contract routes in Hono's middleware flow with cached request bodies and typed native context."
+description: 'Add your API routes to a Hono app.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-`@hulla/api-hono` registers contract routes on a Hono application that you create and own. Hono keeps control of
-route matching, middleware, bindings, variables, and deployment. The adapter validates the matched request, runs the
-server implementation, and returns the response declared by the contract.
-
-Use this adapter when contract routes should share a Hono router and its middleware. If you only need a Web
-`Request`-to-`Response` handler, use `fetchHandler()` from `@hulla/api/fetch` instead.
+Add your contract's routes to a Hono app with `@hulla/api-hono`. Register them after the middleware they need so handlers can use its variables and bindings.
 
 ## Install the adapter
 

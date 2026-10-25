@@ -1,9 +1,14 @@
 ---
-title: Quick start
-description: Install the pinned hulla CLI beta, initialize project settings, and add one UI component.
+title: 'Install your first component'
+description: 'Add editable UI components to an Astro project.'
+tutorial:
+  outcome: An Astro project with a pinned CLI, shared UI settings, and editable button source.
+  prerequisites:
+    - title: Bun installed, even if your project uses npm, pnpm, or Yarn.
+    - title: An Astro application with its dependencies installed.
 ---
 
-This path adds an editable button component to an existing Astro app. You need Bun installed and an Astro project with its dependencies installed.
+Add a Button to an Astro page using the `hulla` CLI. The command copies the component into your project, where you can edit its source.
 
 ## 1. Install the pinned beta
 
@@ -31,7 +36,7 @@ Verify the installed executable before changing the project. These equivalent co
   }}
 />
 
-The command prints `hulla v0.0.0-beta.1`. The beta channel is changing; keep the exact version in your project rather than installing an unqualified `latest` tag.
+The command prints `hulla v0.0.0-beta.1`. Keep that exact version in your project so another install uses the same CLI behavior.
 
 Package scripts can find a locally installed `hulla` executable automatically. For the terminal commands below, add the project's executable directory to your current shell's search path. Run this from the project root:
 
@@ -60,4 +65,11 @@ hulla ui add --framework astro button
 
 The add command copies the Astro button's files and any declared dependencies or support files into the configured paths. Review the changed files and run the application's build or type checks so missing peer setup is visible in your own project. Use [UI components](/docs/cli/ui) for other framework targets.
 
-Continue with [UI components](/docs/cli/ui) for source pinning and update behavior, or [Automation](/docs/cli/automation) to make a fully specified command non-interactive.
+## 4. Put the component on a page
+
+The files are installed; now use them. Follow [Build a reading counter](/guides/ui/quick-start) to compose Card and Button into a working Astro page. You can skip its UI initialization step because you've already done it here.
+
+> [!WARNING] Review before accepting overwrites
+> `--yes` accepts confirmations, including replacement or deletion where a command supports them. Leave it off while exploring a setup. In [automation](/docs/cli/automation), specify component names and framework targets explicitly.
+
+Use [UI components](/docs/cli/ui) for registry pinning and updates, or [Configuration](/docs/cli/configuration) to understand the generated settings.

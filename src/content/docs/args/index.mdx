@@ -1,13 +1,17 @@
 ---
 title: '@hulla/args'
-description: Define typed command-line arguments and inspect validated results in Node.js, Bun, Deno, or another JavaScript runtime.
+description: 'Parse flags, positionals, and nested commands into typed values, with Zod validation and access to the raw input.'
 ---
+
+import PackageDemoFrame from '@/components/site/PackageDemoFrame.astro'
 
 import DocsGuideLinks from '@/components/docs/DocsGuideLinks.astro'
 
-`@hulla/args` parses an argv array into typed, validated values. Define named options, positional input, and nested commands in one declaration.
+`@hulla/args` turns command-line input into typed values. Declare the options and commands your CLI accepts, then parse the arguments with Zod validation.
 
-Your application decides what commands do and how to show help or errors. Pass a `string[]` to keep runtime integration at the edge.
+Your code decides what to do with the result, including printing help and reporting errors.
+
+<PackageDemoFrame kind="args" class="my-8" />
 
 ## Choose a guide
 
@@ -16,7 +20,7 @@ Your application decides what commands do and how to show help or errors. Pass a
   items={[
     {
       title: 'Quick start',
-      href: '/docs/args/quick-start',
+      href: '/guides/args/quick-start',
       description: 'Build and run a small greeting command.',
     },
     {
@@ -40,9 +44,9 @@ Your application decides what commands do and how to show help or errors. Pass a
       description: 'Configure argv slicing and parsing behavior.',
     },
     {
-      title: 'Build a CLI',
-      href: '/docs/args/recipes',
-      description: 'Add required input and error handling.',
+      title: 'Build a notes CLI',
+      href: '/guides/args/recipes',
+      description: 'Save and list notes with validation and error handling.',
     },
     {
       title: 'Reference',

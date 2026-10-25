@@ -1,16 +1,11 @@
 ---
 title: 'Fastify'
-description: 'Mount contract routes in the Fastify plugin scope that owns their hooks, parsers, decorators, and prefix.'
+description: 'Register your API routes in a Fastify app.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-`@hulla/api-fastify` registers contract routes on a Fastify application that you create and own. Fastify keeps
-control of plugin scope, hooks, parsers, route matching, and server startup. The adapter validates the matched request,
-runs the server implementation, and sends its declared result through Fastify's reply pipeline.
-
-Use this adapter when contract routes should inherit Fastify plugins and lifecycle behavior. Mount it in the same
-encapsulation scope that owns the hooks, decorators, and prefix those routes need.
+Add your contract's routes to a Fastify app with `@hulla/api-fastify`. Register them in the plugin scope whose hooks and decorators you want the handlers to use.
 
 ## Install the adapter
 

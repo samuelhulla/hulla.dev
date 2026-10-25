@@ -1,0 +1,58 @@
+---
+title: Composition and themes
+description: 'Put component parts together and customize them with shared themes.'
+---
+
+Compose a page from component parts such as `CardHeader`, `CardContent`, and `Button`. Use their props for variants and shared theme tokens for colors, so the same choices work across the app.
+
+The examples build on the [reading counter](/guides/ui/quick-start).
+
+## 1. Change the layout around the control
+
+To put the counter beside another card on wide screens, change the wrapper rather than the Card internals:
+
+```astro
+<div class="grid gap-6 md:grid-cols-2">
+  <Card><!-- Reading counter --></Card>
+  <Card><!-- Reading goal --></Card>
+</div>
+```
+
+This snippet shows placement only; keep the counter's existing card content. The cards retain the same padding, border, and typography in both columns.
+
+## 2. Choose a variant before adding CSS
+
+Use the Button API for visual emphasis:
+
+```astro
+<Button>Save</Button>
+<Button variant="outline">Cancel</Button>
+<Button variant="danger">Delete</Button>
+<Button disabled>Saving…</Button>
+```
+
+The component supplies hover, active, disabled, and keyboard-focus states for each variant. A page-level background override would cover only one of those states.
+
+For your own component recipes, [`@hulla/style` variants](/docs/style/variants) keep allowed prop values and class maps together.
+
+## 3. Keep the theme in one place
+
+The optional [typography stylesheet](/docs/ui/components#keep-body-copy-consistent) styles native Markdown and HTML inside a `prose` region. hulla.dev uses that same stylesheet; there are no separate paragraph or list components.
+
+The CLI installs a global stylesheet and a shared [`style.ts` helper](/guides/style/quick-start). Import the stylesheet through your app's shared layout or entrypoint. Change shared tokens there when you want the whole application to change.
+
+| Change                             | Where it belongs              |
+| ---------------------------------- | ----------------------------- |
+| Two-column page, width, gaps       | Page wrapper.                 |
+| Button emphasis or size            | Component props.              |
+| Brand color, font, radius          | Shared theme tokens.          |
+| A new behavior used across the app | A shared component or helper. |
+
+> [!WARNING] Update source and theme together
+> A newer component can reference tokens or helpers absent from an older stylesheet. Select one registry revision, then refresh both through the [CLI UI workflow](/docs/cli/ui).
+
+## 4. Verify the states you changed
+
+Open the reading counter in both color themes. Tab through the controls, activate them with Enter and Space, and check the disabled state if you add one. At a narrow viewport, the buttons should wrap without horizontal scrolling.
+
+The [component guide](/docs/ui/components) groups the available parts by the job they do. Start with a primitive that already owns the behavior you need; fewer custom states means fewer states to repair later.

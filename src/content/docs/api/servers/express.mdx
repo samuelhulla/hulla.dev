@@ -1,16 +1,11 @@
 ---
 title: 'Express'
-description: 'Mount contract routes on an existing Express app or Router with host-owned middleware and body parsing.'
+description: 'Add your API routes to an Express app or Router.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-`@hulla/api-express` registers contract routes on an Express application or `Router` that you create and own.
-Express keeps control of middleware order, body parsing, route matching, and deployment. The adapter validates the
-matched request, runs the server implementation, and writes its declared response.
-
-Use this adapter when an existing Express stack should host the API. It does not create an application or parse the
-underlying Node request stream.
+Add your contract's routes to an Express app or `Router` with `@hulla/api-express`. Register your body parsers and middleware before mounting the routes.
 
 ## Install the adapter
 

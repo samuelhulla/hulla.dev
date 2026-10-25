@@ -1,50 +1,57 @@
 ---
 title: Code generation
-description: Generate schema-typed server access and browser callables from the declarations you write once.
+description: 'Generate typed database imports and browser functions from your schema.'
 ---
 
-Run generation after defining your schema, and again when declarations change.
-The generator binds the SDK to your schema and creates browser-safe callables.
-It does not open a database connection or start a listener.
+Run `hulla-db generate` to create typed imports from your schema and function declarations. Server code gets database builders, and browser code gets functions it can call without importing server handlers.
+
+Generation requires Bun and TypeScript 7.0.2. If they aren't installed yet, follow [installation](/docs/db/installation).
 
 ```sh
 bun --bun hulla-db generate
 ```
 
-By default it reads `db.config.ts`, loads `db/schema.ts`, and discovers exported
-query/mutation declarations beside the schema. A first run with no declarations
-creates the constructors you need to author them.
+A successful run prints `Generated database entrypoints.` By default, it reads `db.config.ts`, loads `db/schema.ts`, and discovers query and mutation declarations beside the schema.
+
+On a first run with no declarations, it creates the constructors you'll use to write them.
 
 ## Import the generated surface for your code
 
-| Import                           | Use it in                                                                 |
-| -------------------------------- | ------------------------------------------------------------------------- |
-| `./db/_generated/functions`      | Server declarations: schema-typed `query` and `mutation`                  |
-| `./db/_generated/server`         | Application server code: direct `db` access                               |
-| `./db/_generated/client/tasks`   | Browser code: call or observe exports from `db/tasks.ts`                  |
-| `./db/_generated/client/runtime` | Auth/lifecycle: `setAuth`, `setHeaders` and `dispose`                     |
-| `./db/_generated/tables`         | Database code: typed table and field references                           |
-| `./db/_generated/types`          | Schema-bound `Row`, `Insert`, `Patch`, `Id` and database capability types |
+Choose the module for where the importing file runs. These paths start at the project root; adjust them from nested files.
 
-Paths above are relative to the project root; adjust imports from nested files.
-Generated worker files are service artifacts, not another entrypoint to maintain.
-The client modules contain calling code and contracts; they do not ship your
-handlers to the browser. Package authoring imports stay separate:
-`@hulla/db/schema` defines storage and `@hulla/db/config` defines connection and
-service settings. The package root supplies shared helpers such as `Input`,
-`Output` and `DatabaseError`; it does not supply schema-bound constructors.
+| You want to                                    | Import                           |
+| ---------------------------------------------- | -------------------------------- |
+| Declare queries and mutations                  | `./db/_generated/functions`      |
+| Read or write directly on the server           | `./db/_generated/server`         |
+| Call functions from `db/tasks.ts` in a browser | `./db/_generated/client/tasks`   |
+| Configure browser auth and connection settings | `./db/_generated/client/runtime` |
+| Refer to tables and fields                     | `./db/_generated/tables`         |
+| Type rows, inserts, patches, and IDs           | `./db/_generated/types`          |
+
+Browser modules contain calling code and contracts. They do not ship server handlers to the browser. Generated worker files are service artifacts, not application entrypoints.
+
+### When to use a package import
+
+Use `@hulla/db/schema` to define storage and `@hulla/db/config` for connection and service settings. The package root supplies shared helpers such as `Input`, `Output`, and `DatabaseError`.
+
+For schema-typed `query` and `mutation` constructors, import `_generated/functions` instead of the package root.
 
 ## Let discovery follow your source tree
 
-An exported `query(...)` or `mutation(...)` is remotely callable. Ordinary exported
-functions are helpers, even when a declaration imports them. Generation recognizes
-declarations derived with `.extend(...)` as well.
+Export a `query(...)` or `mutation(...)` declaration to make it callable. Ordinary exported functions remain helpers, even when a declaration imports them. Declarations derived with `.extend(...)` are discovered too.
 
-Keep schema, config, generated files and helpers out of accidental export schemes.
-You do not need a manual function registry or a second `api.ts` file. Nested
-modules produce matching nested client modules.
+Nested modules keep their relative paths:
 
-If the default layout does not fit, configure source locations:
+```text
+db/tasks.ts         → db/_generated/client/tasks.ts
+db/admin/reports.ts → db/_generated/client/admin/reports.ts
+```
+
+You don't need a manual function registry or another `api.ts` file. Keep the schema, config, helpers, and generated files out of blanket declaration re-exports.
+
+### Use a different source directory
+
+Only set `functions` when discovery needs to start somewhere other than beside the schema:
 
 ```ts filename="db.config.ts"
 import { defineConfig } from '@hulla/db/config'
@@ -59,8 +66,7 @@ export default defineConfig({
 })
 ```
 
-Paths resolve relative to the config. Output remains beside the resolved schema
-in `_generated/`. Only set `functions` when you need another discovery root.
+Paths resolve relative to the config. Generated output stays beside the resolved schema in `_generated/`.
 
 ## Use the watcher during development
 
@@ -68,27 +74,29 @@ in `_generated/`. Only set `functions` when you need another discovery root.
 bun --bun hulla-db dev
 ```
 
-The watcher regenerates and restarts the service as source changes. It does not
-provision tables or erase existing storage. Use `init` explicitly for provisioning;
-an incompatible development schema needs an explicit recreation of disposable data.
+The watcher regenerates code and restarts the service when source files change.
 
-Generation and development require Bun and TypeScript 7.0.2. Keep module
-initialization free of database calls and request-specific effects: generation
-evaluates your trusted schema/declaration modules to inspect them. Unsupported
-handler imports fail with a diagnostic rather than gaining server capabilities.
+> [!NOTE] Generation does not provision tables
+> Run `init` explicitly to provision storage. The watcher does not erase existing data; an incompatible development schema needs an explicit recreation of disposable data.
+
+Generation evaluates your trusted schema and declaration modules. Keep database calls and request-specific work inside handlers, rather than at module initialization. Unsupported handler imports produce a diagnostic.
 
 ## Build once, serve prepared artifacts
 
+Generate during your build:
+
 ```sh
 bun --bun hulla-db generate
+```
+
+Then start the service from the prepared artifacts:
+
+```sh
 node node_modules/@hulla/db/dist/cli.js serve
 ```
 
-The second command loads existing artifacts under Node; it does not invoke the
-generator or watcher. Include the config, schema, generated files, runtime
-dependencies and native assets in your deployment.
+`serve` loads the existing output under Node. It does not run generation or start a watcher. Deploy the config, schema, generated files, runtime dependencies, and native assets together.
 
-Generated files carry ownership headers. Do not edit them or put application
-source in `_generated/`: the generator protects authored files and removes only
-its own obsolete outputs. Lower-level generation APIs are listed in the
-[reference](/docs/db/reference); most applications only need these CLI commands.
+Generated files have ownership headers. Keep application code outside `_generated/` and leave generated files unedited; the generator protects authored files and removes only its own obsolete output.
+
+See the [reference](/docs/db/reference#lower-level-entrypoints) for lower-level generation APIs. Most applications only need the commands on this page.

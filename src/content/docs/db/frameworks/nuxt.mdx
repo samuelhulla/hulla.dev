@@ -3,12 +3,11 @@ title: Nuxt
 description: Load rows through Nitro and keep Vue components live after hydration.
 ---
 
-Use a Nitro server route for direct `db` reads, Nuxt `useFetch` for the SSR
-handoff, and `@hulla/db-vue` for ongoing subscriptions. Complete the
-[shared task setup](/docs/db/meta-frameworks#set-up-the-shared-database-example) first.
-This recipe uses Nuxt 4's `app/` layout and Vue 3.5.
+Load tasks from a Nitro route with Nuxt’s `useFetch`, then subscribe with `@hulla/db-vue` to keep the list current in the browser.
 
 ## Set the public browser endpoint
+
+Complete the [shared task setup](/docs/db/meta-frameworks#set-up-the-shared-database-example) first. The example uses Nuxt 4’s `app/` layout and Vue 3.5.
 
 Set `database.client` in `db.config.ts` before generating the application:
 

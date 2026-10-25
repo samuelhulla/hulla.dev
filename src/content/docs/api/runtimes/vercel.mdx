@@ -1,19 +1,11 @@
 ---
 title: 'Vercel Functions'
-description: 'Expose an @hulla/api contract from a standalone Vercel Function using the Web Handler API.'
+description: 'Run your API as a standalone Vercel Function.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-Expose an `@hulla/api` contract as a standalone Vercel Function by exporting a Web `fetch` handler from the root
-`api` directory. Vercel owns file discovery, the Node.js runtime, deployment, access controls, and platform limits;
-`@hulla/api` owns contract routing, validation, server context, middleware, and response serialization.
-
-This guide uses Vercel's standalone Function layout. It is not a Next.js App Router route: do not place this entrypoint
-under `app/api`, and do not replace it with a Next.js `GET` or `POST` export.
-
-> The example maps `api/profile.ts` directly to `/api/profile`. No rewrite is required, so the pathname that Vercel
-> gives the handler is the pathname that the contract matches.
+Serve your API as a standalone Vercel Function by exporting a Web `fetch` handler from the root `api/` directory. If you're using Next.js, follow the [App Router setup](/docs/api/full-stack/next) instead.
 
 ## Install the packages
 

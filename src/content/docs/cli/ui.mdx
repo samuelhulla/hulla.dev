@@ -7,7 +7,7 @@ usefulFor:
   - You need to update or remove copied component files deliberately.
 ---
 
-The `hulla ui` commands copy registry files into your application, including declared support files and dependencies. The result is application-owned source: your app builds from the copied files and does not fetch from the registry at runtime.
+Use `hulla ui` to copy components from a registry into your app. It installs their source files and dependencies; your app builds from those files without contacting the registry.
 
 ## Configure the UI install
 
@@ -17,7 +17,12 @@ Run setup from the project root. The CLI reads sources from `.hulla/ui.json` (or
 hulla ui init
 ```
 
-Choose the framework and destination paths that match your app. The built-in `@hulla/ui` registry includes Astro, React, and Solid; other targets need a registry that supplies them. Setup also asks which class composer to write into the shared `lib/style.ts`: `cn` is the default and concatenates classes, while `tailwind-merge` also resolves conflicting Tailwind utilities. The choice and its dependency are recorded in the install; rerun `hulla ui init` to change it. For Astro, keep the activated global stylesheet import in a shared layout so every route receives it. The installer does not configure an MDX/Markdown component map; wire that through your renderer if needed.
+Choose the framework and destination paths that match your app. The built-in registry supports Astro, React, and Solid. Other targets need a registry that supplies them.
+
+Setup writes `lib/style.ts` with your chosen class composer. `cn` concatenates classes; `tailwind-merge` also resolves conflicting Tailwind utilities. Rerun `hulla ui init` to change the recorded choice.
+
+> [!TIP] Load shared styles on every route
+> In Astro, import the installed global stylesheet from a shared layout. The CLI doesn't configure your MDX component map; wire that through the renderer if you use Markdown.
 
 ## Add source files
 
@@ -33,7 +38,14 @@ The command requires one or more component names. It resolves each component's m
 
 To update copied files, select the intended registry tag or commit, rerun `hulla ui init`, then run `hulla ui add` for the components to update. Existing files are updated with visible diffs. See [Configuration](/docs/cli/configuration) for source settings.
 
-`hulla ui add` reuses a valid project cache entry without checking whether its remote branch moved. To refresh the same source URL, rerun `hulla ui init`, which resolves the selected source again, then run `hulla ui add` for the components you want to update. If the source record still points at the old framework path, remove only `<cli.cacheDir>/ui.cache.json` (by default `.hulla/.cache/ui.cache.json`) and retry. Remote Git downloads live separately under `~/.cache/hulla/gittar`; the project `ui.cache.json` and the download cache are different layers. Pinning the source makes both the cached and refreshed result predictable.
+`hulla ui add` can reuse a cached registry without checking whether its remote branch moved. To refresh it:
+
+1. Select the intended source tag or commit in [configuration](/docs/cli/configuration).
+2. Rerun `hulla ui init` to resolve that source.
+3. Rerun `hulla ui add` for the components you want to update.
+4. If the framework path is still stale, remove only `<cli.cacheDir>/ui.cache.json` and retry.
+
+The default project record is `.hulla/.cache/ui.cache.json`. Downloaded snapshots live separately under `~/.cache/hulla/gittar`; [the downloader's cache policy](/docs/gittar/caching) explains that layer.
 
 To remove one installed component, name it explicitly. The CLI asks before deleting its component directory; shared support files and dependencies may still serve other components and are retained conservatively.
 

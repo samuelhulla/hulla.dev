@@ -1,0 +1,104 @@
+---
+title: 'Build a config checker'
+description: 'Check a JSON config and tell the user what needs fixing.'
+tutorial:
+  outcome: A command that accepts JSON config and either prints a server URL or reports why it can't.
+  prerequisites:
+    - title: Bun and an empty TypeScript project.
+    - title: Install @hulla/control using the quick start.
+      href: /guides/control/quick-start
+---
+
+A config file can fail twice: the text might not be JSON, or the JSON might contain the wrong values. You'll give both failures one return type, then let the CLI decide how to report them.
+
+## 1. Catch the JSON boundary
+
+Create `src/config.ts`. `JSON.parse()` throws on malformed text, so wrap that call with [`tcf()`](/docs/control/attempts). Give its output type `unknown`: valid JSON isn't necessarily valid config.
+
+```ts filename="src/config.ts"
+import { err, ok, tcf, type Result } from '@hulla/control'
+
+type Config = { port: number }
+
+function parseJson(source: string): Result<unknown, Error> {
+  return tcf({
+    try: (): unknown => JSON.parse(source),
+    catch: () => new Error('Config must be valid JSON'),
+  })
+}
+```
+
+`parseJson('{')` returns an error result. `parseJson('null')` succeeds at this stage because `null` is valid JSON. The next step checks whether the value is useful.
+
+## 2. Validate the value
+
+Append `readConfig()` in the same file. Return an existing failure immediately; then check the successful value before reading its port:
+
+```ts filename="src/config.ts"
+export function readConfig(source: string): Result<Config, Error> {
+  const parsed = parseJson(source)
+  if (parsed.isErr()) return parsed
+  const value = parsed.value
+
+  if (typeof value !== 'object' || value === null || !('port' in value)) {
+    return err(new Error('Config needs a port'))
+  }
+  const port = value.port
+  if (
+    typeof port !== 'number' ||
+    !Number.isInteger(port) ||
+    port < 1 ||
+    port > 65535
+  ) {
+    return err(new Error('Port must be an integer from 1 to 65535'))
+  }
+  return ok({ port })
+}
+```
+
+The early return keeps parsing errors intact. Validation failures use `err()` directly: nothing has thrown, so there is nothing to catch.
+
+> [!WARNING] map does not flatten results
+> Don't replace the early return with `parsed.map(validateConfig)` if that validator returns another Result. You'd get a Result inside a Result. Narrow the branch when the next operation can fail.
+
+## 3. Transform success and handle failure
+
+Create `src/main.ts`. [`map()`](/docs/control/chaining) turns a valid config into a URL while leaving any error branch alone:
+
+```ts filename="src/main.ts"
+import { readConfig } from './config'
+
+const source = process.argv[2] ?? '{}'
+const address = readConfig(source).map(({ port }) => `http://localhost:${port}`)
+
+if (address.isErr()) {
+  console.error(address.error.message)
+  process.exitCode = 1
+} else {
+  console.log(address.value)
+}
+```
+
+The CLI owns the exit status and console output. The config module stays useful in a test, web server, or another command because it only returns values.
+
+## 4. Exercise every branch
+
+From the project root, try these inputs:
+
+```sh
+bun src/main.ts '{"port":3000}'
+# http://localhost:3000
+
+bun src/main.ts '{'
+# Config must be valid JSON
+
+bun src/main.ts '{}'
+# Config needs a port
+
+bun src/main.ts '{"port":0}'
+# Port must be an integer from 1 to 65535
+```
+
+The first command exits successfully. Each invalid input prints its message and exits with status `1`. No stack trace is needed to explain a missing port.
+
+Try returning an extra config field, such as `hostname`, and update the success mapping. The compiler points out which callers need the new value. Read [Results](/docs/control/results) for structured error payloads, or [Async results](/docs/control/async) before adding file or network reads.

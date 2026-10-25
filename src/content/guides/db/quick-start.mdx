@@ -1,6 +1,12 @@
 ---
-title: Quick start
-description: Create a task from React and watch the saved PostgreSQL rows update in two browser tabs.
+title: 'Build a live task list'
+description: 'Save tasks to PostgreSQL and see changes in two browser tabs.'
+tutorial:
+  outcome: A React task list that saves to PostgreSQL and updates in two browser tabs.
+  prerequisites:
+    - title: A React TypeScript Vite app.
+    - title: Database packages, a supported native platform, and PostgreSQL.
+      href: /docs/db/installation
 ---
 
 import DocsStepperHeading from '@/components/docs/DocsStepperHeading.astro'
@@ -14,7 +20,9 @@ import StepperPanel from '@/components/stepper/stepper-panel.astro'
 Build a React task list backed by PostgreSQL. Clicking **Add task** saves a row;
 every open copy of the page receives the updated list without reloading.
 
-Start in a React TypeScript Vite app with the local database packages, Zod and
+## Prepare the project
+
+Start in a React TypeScript Vite app with the database packages, Zod and
 TypeScript installed as described in [installation](/docs/db/installation).
 Keep the Vite entrypoints `src/main.tsx` and `src/App.tsx`. Put your PostgreSQL
 connection URL in the app's `.env` file:
@@ -23,8 +31,8 @@ connection URL in the app's `.env` file:
 DATABASE_URL=postgresql://user:password@localhost:5432/my_app
 ```
 
-This is a public development example. Authentication comes after the first working
-result; do not use these unguarded declarations for private data.
+> [!WARNING] Local demo, public functions
+> These declarations don't authenticate callers. Use a local development database with disposable data. Add [authentication](/docs/db/authentication) before using private data.
 
 <Stepper variant="ordered" aria-label="Build a live task list">
   <StepperItem id="define-the-table" data-toc-section data-toc-label="Define the table" class="scroll-mt-24">

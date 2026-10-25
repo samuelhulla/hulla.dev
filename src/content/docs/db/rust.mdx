@@ -3,14 +3,9 @@ title: Native Rust applications
 description: Use the hulladb facade for native schema authoring, typed functions and local or remote execution.
 ---
 
-Use the native `hulladb` crate when the application itself is written in Rust.
-The TypeScript SDK and the Rust facade share PostgreSQL storage contracts, but
-they have separate authoring and runtime APIs. Rust derives do not generate a
-browser TypeScript client.
+Use the `hulladb` crate to define schemas and database functions in a Rust application. It supports local and remote execution with PostgreSQL.
 
-For a TypeScript application, stay with `defineSchema`, generated `db` and
-[query/mutation declarations](/docs/db/functions). You do not need to learn the
-Rust host API to use the supplied TypeScript service.
+For a TypeScript app, use the [TypeScript SDK](/docs/db) instead; you don't need the Rust API.
 
 ## Install the crate
 

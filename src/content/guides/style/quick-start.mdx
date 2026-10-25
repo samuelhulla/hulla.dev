@@ -1,0 +1,134 @@
+---
+title: 'Style a button'
+description: 'Give a button a choice of sizes and colors with typed class recipes.'
+tutorial:
+  outcome: A rendered button whose tone and size come from typed class recipes.
+  prerequisites:
+    - title: Bun and a directory for a small TypeScript project.
+---
+
+import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
+
+Build a button with a choice of sizes and colors. Start by printing the class names, then use them on a web page with a little CSS.
+
+## 1. Install the package
+
+In an empty project directory, initialize a package, then install `@hulla/style`.
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun init -y',
+    npm: 'npm init -y',
+    pnpm: 'pnpm init',
+    yarn: 'yarn init -y',
+  }}
+/>
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun add @hulla/style@0.4.0',
+    npm: 'npm install @hulla/style@0.4.0',
+    pnpm: 'pnpm add @hulla/style@0.4.0',
+    yarn: 'yarn add @hulla/style@0.4.0',
+  }}
+/>
+
+## 2. Create shared helpers
+
+In `src/lib/style.ts`, create the `cn` and `vn` functions once and import them from components. `cn` accepts strings, arrays, and objects whose truthy keys should be included.
+
+```ts filename="src/lib/style.ts"
+import { style } from '@hulla/style'
+
+export const { cn, vn } = style()
+```
+
+With the default configuration, `cn('button', { disabled: false })` returns `button`. Repeated identical tokens are kept once, in their first-seen order.
+
+## 3. Add a component variant
+
+In `src/button.ts`, declare style choices and derive the function's input types from the maps. Here `tone` is required and `size` defaults to `small`.
+
+```ts filename="src/button.ts"
+import { cn, vn } from './lib/style'
+
+const $tone = vn({
+  primary: 'button-primary',
+  quiet: 'button-quiet',
+})
+const $size = vn({ small: 'button-small', large: 'button-large' })
+
+export function buttonClass(
+  tone: typeof $tone.infer,
+  size: typeof $size.infer = 'small'
+) {
+  return cn('button', $tone(tone), $size(size))
+}
+
+console.log(buttonClass('primary'))
+```
+
+Run `bun src/button.ts`. It prints `button button-primary button-small`. TypeScript rejects unknown tone and size names. Use the returned string as `class` in HTML or `className` in React.
+
+## 4. Render the recipe
+
+Create `index.html` in the project root. The CSS defines the classes; `@hulla/style` only selects and combines them:
+
+```html filename="index.html"
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Button recipes</title>
+    <style>
+      .button {
+        border: 1px solid currentColor;
+        border-radius: 0.5rem;
+        cursor: pointer;
+      }
+      .button-primary {
+        background: #1746a2;
+        color: white;
+      }
+      .button-quiet {
+        background: transparent;
+        color: #1746a2;
+      }
+      .button-small {
+        padding: 0.5rem 0.75rem;
+      }
+      .button-large {
+        padding: 0.75rem 1.25rem;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="demo" type="button">Try a recipe</button>
+  </body>
+  <script type="module" src="./src/preview.ts"></script>
+</html>
+```
+
+Create the module that uses the recipe:
+
+```ts filename="src/preview.ts"
+import { buttonClass } from './button'
+
+document.querySelector<HTMLButtonElement>('#demo')!.className = buttonClass(
+  'primary',
+  'large'
+)
+```
+
+Serve the HTML with Bun's development server:
+
+```sh
+bun --hot ./index.html
+```
+
+Open the local URL printed in the terminal. The button should have a blue background and the larger padding. Change `'primary'` to `'quiet'`: it becomes an outlined button. Change `'large'` to `'huge'` and your editor should report an invalid variant key.
+
+> [!NOTE] A class name is not a CSS rule
+> `@hulla/style` doesn't generate CSS. If the class string looks right but the button is unstyled, check that your stylesheet defines those classes and is loaded by the page.
+
+The [Variants guide](/docs/style/variants) explains inferred prop types. [Composition](/docs/style/composition) adds caller-provided classes, and [Custom merging](/docs/style/custom-merging) covers Tailwind conflict resolution.

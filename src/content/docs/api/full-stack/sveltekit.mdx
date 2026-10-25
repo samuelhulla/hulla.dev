@@ -1,17 +1,13 @@
 ---
 title: 'SvelteKit'
-description: 'Mount catch-all endpoints, verify the HTTP boundary, and consume it with enhanced Fetch.'
+description: 'Serve your API from a SvelteKit endpoint and call it from load.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-Mount an `@hulla/api` contract in a SvelteKit `+server.ts` endpoint, verify it over HTTP, and consume it from SvelteKit's request-aware `load` lifecycle.
+Serve your API from a SvelteKit `+server.ts` endpoint. We'll make an HTTP request to check it, then call it from a page's `load` function.
 
-SvelteKit owns file routing, hooks, rendering, form actions, remote functions, and deployment. `@hulla/api` owns contract matching, input decoding, server middleware, handler execution, and declared response serialization.
-
-Use this adapter when the contract is a shared HTTP boundary for generated clients, mobile applications, other services, or OpenAPI tooling. Prefer SvelteKit form actions or remote functions for application-local operations. For the remote-function lifecycle, see [SvelteKit remote functions](/docs/api/full-stack/sveltekit-remote-functions).
-
-The package has separate entrypoints: import endpoint APIs from `@hulla/api-sveltekit/server` and the server-only remote transport from `@hulla/api-sveltekit/remote`. There is no mixed root entrypoint because the remote entrypoint depends on SvelteKit's generated `$app/server` module.
+Import endpoint helpers from `@hulla/api-sveltekit/server`. For operations used only by your SvelteKit app, you can also use [remote functions](/docs/api/full-stack/sveltekit-remote-functions); their helpers live in `@hulla/api-sveltekit/remote`.
 
 ## Install the integration
 

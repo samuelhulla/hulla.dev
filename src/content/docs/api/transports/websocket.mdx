@@ -1,11 +1,11 @@
 ---
 title: 'WebSocket connections'
-description: 'Carry contract calls and response streams over a WebSocket while preserving typed responses and cancellation.'
+description: 'Send typed API calls and response streams over a WebSocket.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-Use `@hulla/api-websocket` for typed contract calls over a dedicated WebSocket connection. The package provides the request/response protocol; the application provides the WebSocket implementation, upgrade handling, authentication, reconnection policy, and socket lifetime.
+`@hulla/api-websocket` sends client calls and responses over a WebSocket connection. Connect it to your application's socket to make typed calls or read streamed responses.
 
 ## Install the transport
 

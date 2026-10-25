@@ -6,7 +6,7 @@ usefulFor:
   - You need async transformations without losing the Result wrapper.
 ---
 
-Sometimes a function should transform a successful value but leave failure handling to its caller. Unwrapping first would force an early branch; `map()` and `mapErr()` let each transformation apply only to its matching outcome.
+Use `map()` to change a successful value without touching an error. Use `mapErr()` to change the error instead. Both return a result, so the caller still decides how to handle failure.
 
 ## Transform the active payload
 
@@ -24,7 +24,10 @@ const displayName = loadUser()
   .mapErr((error) => `Could not load user: ${error.message}`)
 ```
 
-Only the active callback runs. Mapping a `Result` to another `Result` keeps the outer branch and nests the returned result as its payload. `map()` does not flatten or switch branches. It is for changing the value within an already selected success branch; to stop a caller when an inner operation fails, explicitly narrow or return that result. There is no `flatMap()` in `@hulla/control`, so flattening is not implicit.
+Only the callback for the active branch runs. If a mapper returns another `Result`, that value stays nested inside the outer branch.
+
+> [!IMPORTANT] map changes a payload, not the branch
+> There is no implicit flattening or `flatMap()`. When the next operation can fail, narrow the first result and return the second, as shown in the [config checker](/guides/control/config-checker).
 
 ## Keep asynchronous output inside the result
 
@@ -41,4 +44,11 @@ console.log(value) // 42
 
 `await doubled` alone does not resolve the payload because the result object is not a promise. If the source promise rejects, or a mapper throws or rejects, that exception propagates; `map()` does not turn it into `Err`. Put an explicit exception boundary around work that should become a result with [`tcf()`](/docs/control/attempts).
 
-The key distinction is where the promise sits. An async function commonly returns `Promise<Result<T, E>>`; await that function, then narrow the result. `ok(Promise<T>)` instead creates `Ok<Promise<T>>`; `.unwrap()` returns the promise payload and `await` resolves it, while `.match()` and `.pair()` resolve it as part of their own return. The result wrapper itself is not awaitable. See [async lifecycles](/docs/control/async) for these forms side by side.
+Two promise shapes mean different things:
+
+| Type                    | What to await                                                       |
+| ----------------------- | ------------------------------------------------------------------- |
+| `Promise<Result<T, E>>` | Await the operation, then narrow its result.                        |
+| `Ok<Promise<T>>`        | Await `.unwrap()`, `.match()`, or `.pair()` to resolve the payload. |
+
+The result wrapper isn't a promise. See [Async results](/docs/control/async) for both forms.

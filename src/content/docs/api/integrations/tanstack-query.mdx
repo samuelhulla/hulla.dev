@@ -1,13 +1,11 @@
 ---
 title: 'TanStack Query'
-description: 'Create typed TanStack Query v5 keys and options, then invalidate the correct contract route.'
+description: 'Load API data with TanStack Query and invalidate it after a mutation.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-Use `@hulla/api-tanstack-query` when an existing typed `@hulla/api` client should participate in TanStack Query. The package creates TanStack Query v5-shaped query and mutation options, plus keys derived from the client route tree. Your application still owns the `QueryClient`, React hooks, cache policy, retries, optimistic updates, SSR, and hydration.
-
-This guide assumes the contract and client belong in server-independent source files. The example places the contract in `src/api/contract.ts`, the browser client in `src/api/client.ts`, and the component in `src/components/UserPanel.tsx`.
+`@hulla/api-tanstack-query` creates query keys and options from your API client. Pass them to TanStack Query v5 to load data and invalidate the matching query after a write.
 
 <DocsPackageManagerCommand
   commands={{

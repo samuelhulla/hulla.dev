@@ -1,18 +1,13 @@
 ---
 title: 'Cloudflare Pages Functions'
-description: 'Mount a contract beneath a Pages file route while keeping API misses separate from asset fallback.'
+description: 'Add your API to a Cloudflare Pages Functions project.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-`@hulla/api-cloudflare/pages` exposes an `@hulla/api` server implementation through a file-routed Pages Function.
-Pages chooses the function from its path; the adapter then matches the request against the contract, validates its
-inputs, runs the implementation, and returns a Web `Response`.
+Serve your API from a file-routed Pages Function with `@hulla/api-cloudflare/pages`. The example adds a catch-all function to an existing Pages project.
 
-Use this adapter in an existing Pages project that keeps server code under `functions/`.
-
-> Cloudflare [recommends Workers for new projects](https://developers.cloudflare.com/pages/get-started/). For a new
-> application, or for Pages Advanced Mode with `_worker.js`, use the [Cloudflare Workers guide](/docs/api/runtimes/cloudflare).
+For a new project or Pages Advanced Mode, use the [Workers setup](/docs/api/runtimes/cloudflare).
 
 ## Install the adapter
 

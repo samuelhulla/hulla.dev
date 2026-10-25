@@ -1,6 +1,6 @@
 ---
 title: Mental model
-description: See how the contract, client, transport, adapter, and server implementation fit together—and which file owns each decision.
+description: 'Follow a request from the typed client to its server handler and back.'
 usefulFor:
   - You are deciding what belongs in shared, client, server, or host code.
   - You need to choose a transport or understand the request lifecycle.
@@ -9,11 +9,11 @@ usefulFor:
 import DocsApiArchitecture from '@/components/docs/DocsApiArchitecture.astro'
 import DocsConceptFlow from '@/components/docs/DocsConceptFlow.astro'
 
-`@hulla/api` has one shared description and two runtime halves. The contract types both halves, but it performs no I/O and contains no business logic.
+Define a route once in a shared contract. The server adds a handler for it, and the client turns it into a typed function you can call.
+
+A [transport](/docs/api/transports) connects the client to the server. Use HTTP for browser requests or another service, and a direct call when both run in the same process.
 
 <DocsApiArchitecture />
-
-The client side asks for a route. The server side implements it. A transport and adapter meet in the middle to carry that call across the boundary your application actually has.
 
 ## Put each decision in one place
 

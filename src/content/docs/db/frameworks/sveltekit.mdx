@@ -3,12 +3,11 @@ title: SvelteKit
 description: Combine server loaders with reactive Svelte queries and mutations.
 ---
 
-Use a server `load` function for the first rows and `@hulla/db-svelte` inside the
-page's component for live results. Complete the [shared task setup](/docs/db/meta-frameworks#set-up-the-shared-database-example)
-first. This recipe uses SvelteKit's server loaders/client init hook and Svelte 5
-runes, with `db/` at the project root.
+Load the first tasks in a server `load` function, then subscribe with `@hulla/db-svelte` to update the page when rows change.
 
 ## Set the public browser endpoint
+
+Complete the [shared task setup](/docs/db/meta-frameworks#set-up-the-shared-database-example) first. The example uses SvelteKit’s client init hook and Svelte 5 runes, with `db/` at the project root.
 
 Set `database.client` in `db.config.ts` before generating the application:
 

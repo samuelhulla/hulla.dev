@@ -1,11 +1,11 @@
 ---
 title: 'Result-based calls'
-description: 'Convert typed client outcomes into @hulla/control Result values without losing declared response types.'
+description: 'Handle client responses as Ok and Err values from @hulla/control.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-Use `@hulla/api-control` when an application already uses `Result` values from `@hulla/control` and wants every client call to resolve to `Ok` or `Err`. Use the standard `createClient()` from `@hulla/api/client` when declared non-2xx responses should remain status-discriminated values and transport failures should reject for the surrounding framework or query library to handle.
+`@hulla/api-control` makes client calls return a [Result](/docs/control/results). Successful responses become `Ok`; failures become `Err`, so you can handle both without a `try/catch` around each call.
 
 ## Install the integration
 

@@ -1,19 +1,17 @@
 ---
 title: 'Choosing a query cache'
-description: 'Choose who owns browser cache and query state around an existing typed client.'
+description: 'Add caching and loading states to your API client with TanStack Query or SWR.'
 ---
 
-Choose who owns browser cache and query state around an existing typed `@hulla/api` client. The client already
-performs transport, request encoding, response decoding, and status-discriminated results; add a query-library view
-when the application also needs shared cache state, revalidation, or mutation state.
+Your API client fetches data. Add a query library when several components need to share that data, show loading states, or refresh it after a change.
 
-You can use the client directly when a framework loader or ordinary application function already owns that state:
+Use the client directly when a framework loader or ordinary function already does what you need.
 
-| Choose                                                  | Best fit                                                                                      | Helper shape                                                                                                | Invalidation and cancellation                                                                                     |
-| ------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| [TanStack Query](/docs/api/integrations/tanstack-query) | Shared cache, query/mutation state, and explicit `QueryClient` invalidation                   | `createTanStackQuery(client)` returns typed `queryKey()`, `queryOptions()`, and `mutationOptions()` helpers | Invalidate router-prefix keys with TanStack Query; its query function receives the query `AbortSignal`.           |
-| [SWR](/docs/api/integrations/swr)                       | SWR's key, fetcher, revalidation, and `mutate` workflow                                       | `createSWR(client)` returns typed `[key, fetcher]` tuples plus mutation tuples                              | Revalidate or mutate the returned key with SWR; the helper does not provide an `AbortSignal` bridge.              |
-| Plain typed client                                      | A route loader, framework data API, or local function already owns cache and lifecycle policy | Call the client route directly and handle its promise                                                       | Use the host data API for revalidation; pass an `AbortSignal` through the client call when the host provides one. |
+| You use                              | Add                                                                  | The helper gives you                      |
+| ------------------------------------ | -------------------------------------------------------------------- | ----------------------------------------- |
+| TanStack Query v5                    | [`@hulla/api-tanstack-query`](/docs/api/integrations/tanstack-query) | Query keys and query/mutation options     |
+| SWR 2                                | [`@hulla/api-swr`](/docs/api/integrations/swr)                       | Keys and fetchers for reads and mutations |
+| A framework loader or plain function | Nothing extra                                                        | Call the client directly                  |
 
 ## The shared mental model
 

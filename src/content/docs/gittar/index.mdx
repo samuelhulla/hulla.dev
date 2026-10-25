@@ -1,0 +1,43 @@
+---
+title: '@hulla/gittar'
+description: 'Copy a repository folder into a starter project, with a separate cache and an explicit refresh policy.'
+---
+
+import PackageDemoFrame from '@/components/site/PackageDemoFrame.astro'
+
+`@hulla/gittar` downloads a repository's files over HTTPS and extracts them into a cache. Use it in a Bun script to fetch a starter project or a collection of templates.
+
+You get the files at one revision, without a `.git` directory or commit history.
+
+<PackageDemoFrame kind="gittar" class="my-8" />
+
+## Start with a working copy
+
+[Build a template downloader](/guides/gittar/quick-start) that copies a repository to a local folder, then run it again to observe the cache.
+
+```ts
+import gittar from '@hulla/gittar'
+
+const snapshot = await gittar({
+  url: 'hulladev/gittar',
+  branch: 'master',
+  outDir: './downloaded-template',
+})
+
+console.log(snapshot.files.length, snapshot.fromCache)
+```
+
+The full repository goes into the cache. A separate `outDir` receives a copy. Add a [`subpath`](/docs/gittar/caching#copy-a-folder) when you only need one directory.
+
+> [!NOTE] Bun is required
+> Extraction and copying use Bun APIs and system commands. Run these scripts with Bun in an environment with `tar`, `cp`, and `mkdir`. The default commit check also uses Git.
+
+## Choose a cache policy
+
+| Policy             | What a later call does                                                             |
+| ------------------ | ---------------------------------------------------------------------------------- |
+| `commit` (default) | Checks the remote branch and downloads if its commit changed.                      |
+| `always`           | Downloads again, even when cached files exist.                                     |
+| `never`            | Uses existing cached files without checking the remote. Downloads on a cache miss. |
+
+Read [Caching and copying](/docs/gittar/caching) before building an updater. Use the [reference](/docs/gittar/reference) to look up options, returned metadata, and error types.

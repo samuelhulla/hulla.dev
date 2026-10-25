@@ -16,7 +16,7 @@ priorities.
 
 1. Read the public implementation, types, tests, and existing examples that govern the page. Never infer behavior from names alone.
 2. Classify the page as introduction, quickstart, concept, task guide, integration, or reference.
-3. State the reader's problem and the feature's useful outcome before showing configuration or types.
+3. Write the title, description, and first two paragraphs as one opening. State what the reader can do and give them a useful starting point. Each sentence must add information.
 4. Decide whether the reader needs an explicit purpose cue. When it adds information, add two or three concrete `usefulFor` items to frontmatter and let the shared layout label them for the page type. Omit the cue when the title and opening already make the page's job obvious. Never repeat the items verbatim in the opening paragraph.
 5. Follow the page shape in [references/editorial-model.md](references/editorial-model.md).
 6. Use the smallest example that proves the page's first promise. Introduce advanced behavior only after the basic mechanism is understood.
@@ -29,7 +29,11 @@ priorities.
 - Refer to the ecosystem as `@hulla/*` and prefer the exact package name, such as `@hulla/api` or `@hulla/ui`, whenever it is known.
 - Never use “Hulla” as a standalone software noun or actor. Name the package, export, component, adapter, or command responsible for the behavior.
 - Reserve lowercase `hulla` for CLI commands, and call it the `hulla` CLI when prose could be ambiguous.
-- Prefer “Use X when…” and concrete outcomes over adjectives such as powerful, seamless, robust, frozen, or advanced.
+- Name the action or result instead of praising the tool. Use “Use X when…” for an actual choice, not as the opening template for every page.
+- Open with the main idea, not an inventory of topics. Introduce a concrete example before explaining several technical distinctions.
+- Keep prerequisites in the setup section or tutorial card. Put a caveat next to the code it affects. An opening warning belongs there only when it changes whether the reader should use the page at all, such as an incompatible legacy API.
+- Read the hero description and opening aloud together. Remove repeated promises, abstract lists, and sentences that only announce what the page will discuss.
+- Prefer “The browser sends an HTTP request” to “Choose the transport for the boundary that call actually crosses.” Explain what happens before naming its architectural category.
 - Make headings answer a reader question or mark a real stage in a workflow. Do not promote disconnected bullet points into sections.
 - Explain one new idea per section. Connect it to the previous section with cause and effect.
 - Keep most explanatory paragraphs to one point and two or three sentences. A longer paragraph needs one continuous causal argument; do not use paragraph length to hide a list of rules.
@@ -68,14 +72,37 @@ priorities.
 - Use real `@hulla/ui` components for compact lifecycle diagrams, comparisons, outcomes, and state changes when they teach a relationship more clearly than prose.
 - Use restrained motion to reveal sequence, causality, or state changes. Respect reduced-motion preferences and never animate decoration that does not teach.
 
+## Tutorial setup and callouts
+
+For a follow-along project, add `tutorial` frontmatter with an `outcome` and
+`prerequisites` (each item has `title` and an optional local `href`). The shared
+layout renders the setup card; the Markdown edition preserves the same information.
+Keep the outcome observable: a saved note, a printed response, or a rendered page.
+
+Use numbered stages, exact filenames, and commands that run the finished files.
+Explain whether later snippets replace or append to earlier code. Exercise success
+and failure paths against the documented package version. Don't treat a runtime
+pass as a substitute for checking inferred TypeScript types.
+
+For a short pitfall or checkpoint, author a Markdown callout:
+
+```md
+> [!WARNING] Keep implementation code on the server
+> A filename alone doesn't prevent a browser import. Use the framework's server-only guard.
+```
+
+`NOTE`, `TIP`, `IMPORTANT`, `WARNING`, `CAUTION`, and `SUCCESS` render through
+`DocsCallout`, a composition of the shared Alert parts. Links and inline code stay
+clickable. The Markdown export keeps the message's kind, title, and content.
+Use a warning where ignoring it changes the outcome; don't turn routine prose into
+an alert. Existing directly composed Alert examples remain valid.
+
 ## Quality gate
 
-Reject a page if a reader cannot answer all of these after its opening section:
+After the title, description, and opening, the reader should know what the page helps them do and where to start. They should not have to read several paragraphs of exceptions to discover its point.
 
-- What problem does this feature solve?
-- When should I choose it?
-- Where does the shown code live?
-- What happens after I run or call it?
-- Which concept should I understand next?
+Check the rest of the page separately: examples need file locations, enough setup to run, and an observable result. Link the next concept where the reader needs it. These are page requirements, not a checklist to squeeze into the introduction.
+
+Tutorials live in `src/content/guides` at `/guides/...`. Concept, integration, and reference pages live in `src/content/docs`. Link between them where useful, but list a page in only one sidebar area. A tutorial should build something; a documentation page should explain or answer a question.
 
 Reject empty flavor sections, unsupported claims, duplicate intros, unexplained advanced APIs, and examples that only demonstrate syntax.

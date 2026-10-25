@@ -1,11 +1,11 @@
 ---
 title: 'Workers and IPC'
-description: 'Run the same contract across workers, Electron, or another ordered IPC endpoint with cancellation and streaming.'
+description: 'Call your API in a worker or another process through a message channel.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-Use `@hulla/api-message-port` when a typed client must call an implementation across a browser `MessagePort`, Web Worker, Node.js worker-thread port, Electron port, or another ordered IPC channel. Choose `fetchTransport()` for an HTTP boundary and `inProcessTransport()` when both sides can safely share one JavaScript process.
+`@hulla/api-message-port` lets a client call an API running in a worker or another process through a message channel. Connect both ends of the channel, then use the client as you would over HTTP.
 
 ## Install the transport
 

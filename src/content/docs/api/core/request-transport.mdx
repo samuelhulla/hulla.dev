@@ -1,11 +1,11 @@
 ---
 title: 'Request and response data'
-description: 'Understand how parameters, query values, headers, bodies, and native JSON cross a transport boundary.'
+description: 'Turn URL parameters, headers, and request bodies into values your handlers can use.'
 ---
 
-Request data does not have the same shape everywhere. HTTP carries path parameters, query values, and headers as text; JSON bodies can also carry numbers, booleans, arrays, and objects.
+A query such as `?page=2` arrives as text, even if your handler needs a number. Request schemas describe how to turn that input into the value the handler receives.
 
-The contract decides where those wire values become application values. An ordinary schema can validate or transform data for the server. A codec adds the reverse direction so the client and server can share a richer type.
+Use a [codec](/docs/api/core/value-round-trips) when the client also needs to convert a value before sending it.
 
 ## URL and header values
 

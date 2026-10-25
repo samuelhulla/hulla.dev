@@ -1,0 +1,86 @@
+---
+title: 'Build a greeting command'
+description: 'Read a name and an optional greeting from the command line.'
+tutorial:
+  outcome: A greeting command with positional input, a named option, and explicit defaults.
+  prerequisites:
+    - title: Bun and a directory for a small TypeScript project.
+---
+
+import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
+
+Build a greeting command that reads a name and prints a message. Add a `--greeting` option so the person running it can choose what it says.
+
+## 1. Prepare the project
+
+In an empty project directory, initialize a package:
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun init -y',
+    npm: 'npm init -y',
+    pnpm: 'pnpm init',
+    yarn: 'yarn init -y',
+  }}
+/>
+
+## 2. Install the parser
+
+Install the parser and Zod in your project. Use Zod 3 for this release:
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun add @hulla/args@0.0.4 zod@3',
+    npm: 'npm install @hulla/args@0.0.4 zod@3',
+    pnpm: 'pnpm add @hulla/args@0.0.4 zod@3',
+    yarn: 'yarn add @hulla/args@0.0.4 zod@3',
+  }}
+/>
+
+> [!IMPORTANT] Use Zod 3 with this parser release
+> `@hulla/args@0.0.4` declares its schemas using Zod 3 types. Zod 4 schemas can fail TypeScript overload checks even when the runtime call works. Keep `zod@3` in this demo; the API package's Zod examples use a separate installation.
+
+## 3. Define and run the command
+
+Save this as `src/cli.ts`. Bun's `argv` includes the executable and script path, so `argv.slice(2)` leaves only the words supplied by the user. This parser opts into case-sensitive matching, so option names must match their declared casing.
+
+```ts filename="src/cli.ts"
+import { option, parser, positional } from '@hulla/args'
+import { argv } from 'node:process'
+
+const cli = parser({
+  name: 'greet',
+  arguments: [positional({ name: 'name' }), option({ name: 'greeting' })],
+  settings: { caseSensitive: true },
+})
+
+const result = cli.parse(argv.slice(2))
+const name = result.arguments.name.value ?? 'World'
+const greeting = result.arguments.greeting.value ?? 'Hello'
+console.log(`${greeting}, ${name}!`)
+```
+
+Run it with Bun, which executes TypeScript files directly:
+
+```sh
+$ bun src/cli.ts Alice --greeting Hi
+Hi, Alice!
+```
+
+With no arguments, the explicit fallbacks apply:
+
+```sh
+$ bun src/cli.ts
+Hello, World!
+```
+
+## 4. Try other input
+
+Try `bun src/cli.ts Alice --greeting=Hi`. It should still print `Hi, Alice!`. The parser accepts both a space and `=` between an option and its value.
+
+> [!WARNING] Preserve user text
+> The default parser is case-insensitive, and equals-form values such as `--greeting=Hi` are lowercased in that mode. This example sets `caseSensitive: true` to preserve the user's casing. See [Parser options](/docs/args/options) before changing it.
+
+To change the default message, edit the `?? 'Hello'` fallback and run the command without `--greeting`.
+
+Continue with [Build a notes CLI](/guides/args/recipes) for commands, persistence, validation, and exit codes. The [argument guide](/docs/args/arguments) explains the `value`, `raw`, `index`, and `detected` fields.

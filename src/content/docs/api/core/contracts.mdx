@@ -1,11 +1,11 @@
 ---
 title: 'API contracts'
-description: 'Describe the HTTP boundary once: paths, accepted inputs, concrete statuses, and the runtime work each value needs.'
+description: 'Define the routes, inputs, and responses that your server and client share.'
 ---
 
-A contract is the part of an API both sides are allowed to know. It contains no handlers, database access, framework state, or server startup.
+A [contract](/docs/api/mental-model) lists your API's routes and describes what each accepts and returns. The server uses it to check requests. The client uses it to type your calls.
 
-Put it in a shared module. Server code implements it; client code turns it into callable routes.
+Keep the contract in a shared file so both can import it. The handlers live separately on the server.
 
 ## Declare a small API
 

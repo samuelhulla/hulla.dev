@@ -1,11 +1,11 @@
 ---
 title: 'Contract internals'
-description: 'Inspect the immutable route manifest used by adapters and tooling.'
+description: 'Inspect a contract as a flat list of routes.'
 ---
 
-`compileContract()` gives integrations and tooling a flat, immutable view of a contract's routes. Most applications do not need to call it: `createClient()` and server adapters already use the same route manifest. Use this API when your own integration needs to inspect routes by key, method, path, or inherited path-parameter schema.
+`compileContract()` returns a flat list of routes with their keys, methods, and paths. Use it when building a tool or integration that needs to inspect a contract.
 
-For the request lifecycle and the roles of contracts, implementations, adapters, clients, and transports, start with the [mental model](/docs/api/mental-model).
+Clients and server adapters compile contracts for you. You don't need this API to make or handle a request.
 
 ## Read the compiled routes
 

@@ -1,0 +1,109 @@
+---
+title: 'Build a reading counter'
+description: 'Put Card and Button together on a working Astro page.'
+tutorial:
+  outcome: A working reading counter built from Card and Button, with a keyboard-friendly reset action.
+  prerequisites:
+    - title: An Astro application with its dependencies installed.
+    - title: Bun and the pinned hulla CLI from the CLI quick start.
+      href: /guides/cli/quick-start
+---
+
+You'll build a small page with **Read a page** and **Reset** buttons. The component files will live in your app, so you can read and edit the source as you go.
+
+## 1. Install the components
+
+From your app's root, initialize UI support if you haven't already, then add the Astro components:
+
+```sh
+hulla ui init
+hulla ui add --framework astro card button
+```
+
+Keep the generated global stylesheet import in your shared layout. It supplies the colors, typography, focus rings, and other tokens used by the components. Check [CLI configuration](/docs/cli/configuration) if your component paths differ from `src/components`.
+
+> [!TIP] Start with the default theme
+> Get the page working before changing tokens. Missing styles are easier to diagnose when the theme and components still match.
+
+## 2. Lay out the card
+
+Create `src/pages/reading.astro`. Import the installed parts and your app's layout; adjust the layout import to match your project:
+
+```astro filename="src/pages/reading.astro"
+---
+import Layout from '../layouts/Layout.astro'
+import Button from '@/components/button/button.astro'
+import Card from '@/components/card/card.astro'
+import CardHeader from '@/components/card/card-header.astro'
+import CardTitle from '@/components/card/card-title.astro'
+import CardDescription from '@/components/card/card-description.astro'
+import CardContent from '@/components/card/card-content.astro'
+---
+```
+
+Append the page markup below the closing `---` in the same file:
+
+```astro filename="src/pages/reading.astro"
+<Layout>
+  <main class="mx-auto max-w-md p-6">
+    <h1 class="mb-6 text-2xl font-semibold">Reading counter</h1>
+    <Card>
+      <CardHeader>
+        <CardTitle aria-level={2}>One page at a time</CardTitle>
+        <CardDescription>Small progress still counts.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <p role="status" class="mb-4">
+          <span id="page-count">0</span> pages read
+        </p>
+        <div class="flex flex-wrap gap-3">
+          <Button id="read-page">Read a page</Button>
+          <Button id="reset-count" variant="outline">
+            Reset
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  </main>
+</Layout>
+```
+
+The page chooses width, padding, and the gap between buttons. Card and Button choose their own appearance. The outline variant makes reset a quieter action without inventing a second button style.
+
+## 3. Make the buttons work
+
+Append this script after `</Layout>`. Astro bundles a normal `<script>`; a React or Solid island isn't needed for these two listeners.
+
+```astro filename="src/pages/reading.astro"
+<script>
+  const count = document.querySelector<HTMLSpanElement>('#page-count')!
+  let pages = 0
+  const render = () => {
+    count.textContent = String(pages)
+  }
+
+  document.querySelector('#read-page')!.addEventListener('click', () => {
+    pages += 1
+    render()
+  })
+  document.querySelector('#reset-count')!.addEventListener('click', () => {
+    pages = 0
+    render()
+  })
+</script>
+```
+
+The status region announces changes to assistive technology. The native buttons already support keyboard activation and focus styling; your script only changes the count.
+
+## 4. Try the finished page
+
+Start your app with its usual development command, then open `/reading`:
+
+1. Click **Read a page** twice. The count becomes `2`.
+2. Tab to **Reset** and press Enter. The count returns to `0`.
+3. Reload. It starts at `0` because this demo keeps state in memory.
+
+> [!NOTE] A button inside a form needs an explicit submit type
+> Button defaults to `type="button"`. Use `type="submit"` when it should submit a form. A button that looks right but never submits is a surprisingly quiet bug.
+
+Continue with [Composition and themes](/docs/ui/composition) to change the page without overriding component states. Use the [component guide](/docs/ui/components) to choose the next primitive.

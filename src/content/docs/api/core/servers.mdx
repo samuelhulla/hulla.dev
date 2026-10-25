@@ -1,11 +1,11 @@
 ---
 title: 'Implementing the server'
-description: 'Connect route handlers to a contract selection, mount the result, and inspect a real response.'
+description: 'Write handlers for your contract and call the finished server.'
 ---
 
-Starting from the `contract` in [contract authoring](/docs/api/core/contracts), connect its `health`, `users.byId`, and `users.rename` routes to application code, then mount that selection as a Fetch handler. The example keeps contract declarations in `src/api/contract.ts` and server logic in `src/api/server.ts`.
+`defineServer(contract).implement(...)` connects your [contract](/docs/api/core/contracts) to the code that handles each route. The contract checks the handler inputs and the responses you return.
 
-> `implement()` checks the contract node you selected. A route selection needs one handler; a router selection needs handlers for its descendant routes. Larger applications can implement smaller fragments and compose them later.
+Here, you'll implement the contract's three routes in `src/api/server.ts`, then call one to check the response.
 
 ## Connect the selected routes
 
@@ -63,6 +63,6 @@ console.log(result.status) // 200
 console.log(await result.json()) // { id: 'ada', name: 'Ada' }
 ```
 
-The mounted handler matches `GET /api/users/:id`, runs `byId`, and serializes the declared response. In an application, export the handler in the form expected by the host framework. Choose a host integration in [server adapters](/docs/api/servers). To call the same implementation inside one process, use the client and `inProcessTransport()` from the [quick start](/docs/api/quick-start).
+The mounted handler matches `GET /api/users/:id`, runs `byId`, and serializes the declared response. In an application, export the handler in the form expected by the host framework. Choose a host integration in [server adapters](/docs/api/servers). To call the same implementation inside one process, use the client and `inProcessTransport()` from the [quick start](/guides/api/quick-start).
 
 Next, read [server context and middleware](/docs/api/core/server-context) for request-scoped values and policies, [server fragments and composition](/docs/api/core/server-composition) for modular or independently mountable implementations, or [error handling](/docs/api/core/errors) for declared application failures.

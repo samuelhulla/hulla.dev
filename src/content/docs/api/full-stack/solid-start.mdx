@@ -1,15 +1,13 @@
 ---
 title: 'SolidStart'
-description: 'Mount a catch-all API route and consume the same contract through server queries or browser Fetch.'
+description: 'Add a SolidStart API route and call it from queries, actions, or the browser.'
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-Mount an `@hulla/api` contract in a SolidStart v2 API route, verify it over HTTP, and consume the same contract through Solid Router queries, actions, or browser Fetch.
+Serve your API from a SolidStart v2 API route, then call it with browser Fetch or a Solid Router query or action.
 
-SolidStart owns file routing, request middleware, rendering, server functions, and deployment. `@hulla/api` owns contract matching, input decoding, server middleware, handler execution, and declared response serialization.
-
-Use this adapter when the contract is a shared HTTP boundary for generated clients, mobile applications, other services, or OpenAPI tooling. For data used only by one SolidStart UI, prefer a server-only query or server function with an in-process client.
+The API route makes the contract available to other apps over HTTP. If an operation is used only by your SolidStart UI, you can use a server-only query with a [local client](/docs/api/transports/in-process) instead.
 
 ## Install the integration
 
