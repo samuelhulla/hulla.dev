@@ -5,11 +5,14 @@ import type { HTMLAttributes } from 'astro/types'
 type Props = HTMLAttributes<'ol'> & {
   orientation?: 'horizontal' | 'vertical'
   variant?: 'progress' | 'ordered'
+  /** Extend the ordered variant’s final connector through its content with a fading end. */
+  fadeLastStep?: boolean
 }
 const {
   class: className,
   orientation = 'horizontal',
   variant = 'progress',
+  fadeLastStep = true,
   ...props
 } = Astro.props as Props
 const resolvedOrientation = variant === 'ordered' ? 'vertical' : orientation
@@ -19,6 +22,7 @@ const resolvedOrientation = variant === 'ordered' ? 'vertical' : orientation
   {...props}
   data-orientation={resolvedOrientation}
   data-variant={variant}
+  data-fade-last-step={fadeLastStep}
   role="list"
   data-slot="stepper"
   class={cn(

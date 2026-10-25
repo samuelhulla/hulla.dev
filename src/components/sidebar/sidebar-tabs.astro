@@ -1,0 +1,15 @@
+---
+import { cn } from '@/lib/style'
+import Tabs from '../tabs/tabs.astro'
+import type { ComponentProps } from 'astro/types'
+
+type Props = Omit<ComponentProps<typeof Tabs>, 'orientation'>
+
+const { class: className, ...props } = Astro.props as Props
+---
+
+<Tabs
+  {...props}
+  class={cn('[&]:flex min-h-0 flex-1 flex-col [&]:gap-0', className)}>
+  <slot />
+</Tabs>

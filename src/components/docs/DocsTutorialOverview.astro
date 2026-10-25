@@ -1,0 +1,39 @@
+---
+import Card from '@/components/card/card.astro'
+import CardHeader from '@/components/card/card-header.astro'
+import CardTitle from '@/components/card/card-title.astro'
+import CardContent from '@/components/card/card-content.astro'
+import { ListChecks } from '@lucide/astro'
+
+type Props = {
+  outcome: string
+  prerequisites: { title: string; href?: string }[]
+}
+const { prerequisites } = Astro.props
+---
+
+<div class="docs-example" data-tutorial-overview data-component-boundary>
+  <Card>
+    <CardHeader>
+      <CardTitle aria-level={2} class="flex items-center gap-2 text-base">
+        <ListChecks size={18} aria-hidden="true" />
+        Before you start
+      </CardTitle>
+    </CardHeader>
+    <CardContent>
+      <ul class="m-0 grid list-disc gap-2 pl-5 text-sm leading-6 text-muted-foreground">
+        {prerequisites.map((item) => (
+          <li>
+            {item.href ? (
+              <a class="text-link" href={item.href}>
+                {item.title}
+              </a>
+            ) : (
+              item.title
+            )}
+          </li>
+        ))}
+      </ul>
+    </CardContent>
+  </Card>
+</div>

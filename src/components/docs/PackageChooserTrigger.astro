@@ -1,0 +1,23 @@
+---
+import Button from '@/components/button/button.astro'
+import PackageIcon from '@/components/site/PackageIcon.astro'
+import { ChevronsUpDown } from '@lucide/astro'
+import type { DocPackage } from '@/data/docs'
+
+type Props = { activePackage: DocPackage }
+const { activePackage } = Astro.props
+---
+
+<Button
+  variant="ghost"
+  size="lg"
+  class="w-full justify-start"
+  aria-label={`Choose package, current package ${activePackage.title}`}
+  aria-haspopup="dialog"
+  aria-controls="package-explorer"
+  aria-expanded="false"
+  data-package-chooser-open>
+  <PackageIcon kind={activePackage.kind} />
+  <span class="text-foreground font-mono text-sm">{activePackage.title}</span>
+  <ChevronsUpDown class="ml-auto" aria-hidden="true" />
+</Button>

@@ -1,0 +1,32 @@
+---
+import { toastClassNames } from '@/lib/toast'
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+import Progress from '../progress/progress.astro'
+
+type Props = Omit<HTMLAttributes<'progress'>, 'style'> & {
+  duration?: number
+  style?: string
+}
+
+const {
+  class: className,
+  duration = 5000,
+  max = 100,
+  style,
+  value = 100,
+  ...props
+} = Astro.props as Props
+---
+
+{duration > 0 && (
+  <Progress
+    {...props}
+    aria-hidden="true"
+    data-slot="toast-progress"
+    max={max}
+    value={value}
+    class={cn(toastClassNames.progress, className)}
+    style={`--hulla-toast-duration:${duration}ms;${style ?? ''}`}
+  />
+)}

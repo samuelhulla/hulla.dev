@@ -1,9 +1,19 @@
 ---
 import type { HTMLAttributes } from 'astro/types'
+import DocsCopyLink from '@/components/docs/DocsCopyLink.astro'
 type Props = HTMLAttributes<'h3'>
-const props = Astro.props
+const { id, ...props } = Astro.props
 ---
 
-<h3 {...props} class:list={['md-h3', props.class]}>
-  <slot />
+<h3 id={id} {...props} class:list={['md-h3 group/docs-heading', props.class]}>
+  {id ? (
+    <a
+      href={`#${id}`}
+      class="text-inherit no-underline hover:underline hover:decoration-primary-text hover:underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring">
+      <slot />
+    </a>
+  ) : (
+    <slot />
+  )}
+  {id && <DocsCopyLink target={id} />}
 </h3>

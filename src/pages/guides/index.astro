@@ -1,0 +1,43 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import SiteHeader from '@/components/site/SiteHeader.astro'
+import SiteFooter from '@/components/site/SiteFooter.astro'
+import DocsGuideLinks from '@/components/docs/DocsGuideLinks.astro'
+import { docPackages } from '@/data/docs'
+import { guides } from '@/data/guides'
+---
+
+<BaseLayout
+  title="Guides"
+  description="Build a small app while learning the @hulla/* packages."
+  markdownUrl="/guides.md">
+  <SiteHeader />
+  <main id="main" class="home-frame py-16" data-pagefind-body>
+    <p class="eyebrow">Learn by building</p>
+    <h1 class="docs-title" data-pagefind-meta="title">
+      Guides
+    </h1>
+    <p class="docs-description mb-8">
+      Pick a project and build it from the first file to the finished result.
+    </p>
+    <p class="mb-12 text-muted-foreground">
+      Looking up an API?{' '}
+      <a class="text-link" href="/docs">
+        Browse the documentation
+      </a>
+      .
+    </p>
+    {docPackages.map((pkg) => {
+      const items = guides.filter((guide) => guide.packageKind === pkg.kind)
+      return (
+        items.length > 0 && (
+          <section id={pkg.kind} class="mb-12 scroll-mt-24">
+            <h2 class="mb-4 text-xl font-semibold">{pkg.title}</h2>
+            <DocsGuideLinks label={`${pkg.title} guides`} items={items} />
+          </section>
+        )
+      )
+    })}
+  </main>
+  <SiteFooter />
+</BaseLayout>

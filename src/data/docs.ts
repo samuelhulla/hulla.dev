@@ -1,3 +1,5 @@
+import { packagePreviews } from './package-previews'
+
 export type DocEntry = {
   title: string
   href: `/docs/${string}`
@@ -17,7 +19,7 @@ export type DocGroup = {
 }
 
 export type DocPackage = {
-  kind: 'api' | 'ui' | 'cli' | 'control' | 'style' | 'db' | 'args'
+  kind: 'api' | 'ui' | 'cli' | 'control' | 'style' | 'db' | 'args' | 'gittar'
   title: `@hulla/${string}` | 'hulla CLI'
   href: `/docs/${string}`
   description: string
@@ -37,33 +39,30 @@ export const apiDocs: readonly DocGroup[] = [
     title: 'Start here',
     href: '/docs/api/start-here',
     description:
-      'Understand the contract-first model, install the smallest boundary, and migrate from the retired procedure API.',
+      'Get to know the API package and install it, or migrate an existing 1.x app.',
     entries: [
       {
         title: 'Introduction',
         href: '/docs/api',
-        description: 'Why choose @hulla/api and how it compares.',
+        description:
+          'Declare an HTTP contract once. Implement it on the server and call it with a typed client.',
       },
       {
         title: 'Installation',
         href: '/docs/api/installation',
-        description: 'Validated core, server adapters, and client transports.',
-      },
-      {
-        title: 'Quick start',
-        href: '/docs/api/quick-start',
-        description: 'Build a small task API and make the first typed call.',
+        description:
+          'Install the core package and the integration for your server.',
       },
       {
         title: 'Mental model',
         href: '/docs/api/mental-model',
         description:
-          'Architecture, request flow, ownership, and file boundaries.',
+          'Follow a request from the typed client to its server handler and back.',
       },
       {
         title: 'Migration guide',
         href: '/docs/api/start/migration',
-        description: 'Move a stable 1.x procedure to the 2.0 contract model.',
+        description: 'Migrate a 1.x procedure to a working 2.0 API route.',
       },
     ],
   },
@@ -71,53 +70,55 @@ export const apiDocs: readonly DocGroup[] = [
     title: 'Fundamentals',
     href: '/docs/api/core',
     description:
-      'Define what crosses the API boundary, implement it on the server, and consume it from application code.',
+      'Define a contract, write its handlers, and make your first client call.',
     entries: [
       {
         title: 'API contracts',
         href: '/docs/api/core/contracts',
         description:
-          'Shared paths, request inputs, and status-specific responses.',
+          'Define the routes, inputs, and responses that your server and client share.',
       },
       {
         title: 'Implementing the server',
         href: '/docs/api/core/servers',
         description:
-          'Write a handler for every route and produce declared responses.',
+          'Write handlers for your contract and call the finished server.',
       },
       {
         title: 'Server context & middleware',
         href: '/docs/api/core/server-context',
         description:
-          'Request-scoped values, policy, scopes, and execution order.',
+          'Share request data between handlers and add checks with middleware.',
       },
       {
         title: 'Organizing server code',
         href: '/docs/api/core/server-composition',
         description:
-          'Split handlers into modules and compose independently owned routes.',
+          'Split a large API into smaller handler files or separately mounted fragments.',
       },
       {
         title: 'Request and response data',
         href: '/docs/api/core/request-transport',
         description:
-          'Path parameters, query values, headers, bodies, and native JSON.',
+          'Turn URL parameters, headers, and request bodies into values your handlers can use.',
       },
       {
         title: 'Validation and serialization',
         href: '/docs/api/core/value-round-trips',
-        description: 'One-way schemas, transforms, and bidirectional codecs.',
+        description:
+          'Choose how values such as dates and URLs travel between your client and server.',
       },
       {
         title: 'Error handling',
         href: '/docs/api/core/errors',
-        description: 'Declared application failures and operational errors.',
+        description:
+          'Handle expected API errors and diagnose unexpected failures.',
       },
       {
         title: 'Calling the API',
         href: '/docs/api/core/clients',
         description:
-          'Create a callable API client, send requests, and handle each declared response.',
+          'Call your API with typed input and handle the response by status.',
       },
     ],
   },
@@ -130,49 +131,42 @@ export const apiDocs: readonly DocGroup[] = [
       {
         title: 'Node.js HTTP',
         href: '/docs/api/servers/node-http',
-        description:
-          'A contract-backed listener for the built-in Node HTTP server.',
+        description: 'Run your API with Node’s built-in HTTP server.',
       },
       {
         title: 'Express',
         href: '/docs/api/servers/express',
-        description:
-          'Existing Express apps and routers with host-owned middleware and parsing.',
+        description: 'Add your API routes to an Express app or Router.',
       },
       {
         title: 'Fastify',
         href: '/docs/api/servers/fastify',
-        description:
-          'Plugin-scoped contract routes with Fastify hooks, parsers, and context.',
+        description: 'Register your API routes in a Fastify app.',
       },
       {
         title: 'Hono',
         href: '/docs/api/servers/hono',
-        description:
-          'Contract routes with Hono middleware, cached bodies, and typed context.',
+        description: 'Add your API routes to a Hono app.',
       },
       {
         title: 'H3',
         href: '/docs/api/servers/h3',
-        description:
-          'Contract routes on H3 v2 with native middleware and event context.',
+        description: 'Add your API routes to an H3 v2 app.',
       },
       {
         title: 'Elysia',
         href: '/docs/api/servers/elysia',
-        description:
-          'Contract routes with native lifecycle hooks and typed extensions.',
+        description: 'Add your API routes to an Elysia app.',
       },
       {
         title: 'Koa',
         href: '/docs/api/servers/koa',
-        description:
-          'Terminal Koa middleware with typed state and native context.',
+        description: 'Serve your API inside a Koa middleware stack.',
       },
       {
         title: 'NestJS',
         href: '/docs/api/servers/nestjs',
-        description: 'Nest controllers, DI, and Express or Fastify platforms.',
+        description: 'Register your API routes as Nest controller methods.',
       },
     ],
   },
@@ -180,59 +174,64 @@ export const apiDocs: readonly DocGroup[] = [
     title: 'Full-stack frameworks',
     href: '/docs/api/full-stack',
     description:
-      'Keep server-only code out of browser bundles and choose local or HTTP calls at each render boundary.',
+      'Serve your API from a framework and call it from pages and browser components.',
     entries: [
       {
         title: 'Server and browser calls',
         href: '/docs/api/full-stack/hybrid-rendering',
-        description: 'Choose local, framework-native, or HTTP boundaries.',
+        description:
+          'Set up a client for the browser and another for code that runs on the server.',
       },
       {
         title: 'Next.js',
         href: '/docs/api/full-stack/next',
-        description: 'App Router Route Handlers and native request context.',
+        description: 'Serve your API from a Next.js App Router Route Handler.',
       },
       {
         title: 'Next.js data and caching',
         href: '/docs/api/full-stack/next-data',
-        description: 'Data Cache policy, invalidation, and browser boundaries.',
+        description:
+          'Cache API requests on the Next.js server and refresh them after a write.',
       },
       {
         title: 'TanStack Start',
         href: '/docs/api/full-stack/tanstack-start',
-        description: 'Server routes, loaders, and server-function boundaries.',
+        description: 'Serve your API from a TanStack Start server route.',
       },
       {
         title: 'React Router',
         href: '/docs/api/full-stack/react-router',
-        description:
-          'Resource routes, colocated loaders, and revalidation boundaries.',
+        description: 'Expose your API through a React Router resource route.',
       },
       {
         title: 'SolidStart',
         href: '/docs/api/full-stack/solid-start',
-        description: 'API routes, server queries, and native event context.',
+        description:
+          'Add a SolidStart API route and call it from queries, actions, or the browser.',
       },
       {
         title: 'SvelteKit',
         href: '/docs/api/full-stack/sveltekit',
         description:
-          'Catch-all endpoints, enhanced Fetch, and RequestEvent context.',
+          'Serve your API from a SvelteKit endpoint and call it from load.',
       },
       {
         title: 'SvelteKit remote functions',
         href: '/docs/api/full-stack/sveltekit-remote-functions',
-        description: 'Application-local query, command, and form callbacks.',
+        description:
+          'Call your API inside SvelteKit remote functions without an extra HTTP request.',
       },
       {
         title: 'Nuxt',
         href: '/docs/api/full-stack/nuxt',
-        description: 'Nitro routes, request-aware clients, and useAsyncData.',
+        description:
+          'Serve an API with Nitro and load its data in a Nuxt page.',
       },
       {
         title: 'Astro',
         href: '/docs/api/full-stack/astro',
-        description: 'Endpoints, browser Fetch, and server-side reuse.',
+        description:
+          'Add an API endpoint to Astro and call it from a page or browser island.',
       },
     ],
   },
@@ -240,58 +239,59 @@ export const apiDocs: readonly DocGroup[] = [
     title: 'Serverless',
     href: '/docs/api/runtimes',
     description:
-      'Deploy through serverless functions, edge workers, or runtime-managed Fetch hosts.',
+      'Run your API on a serverless platform or a host with Fetch support.',
     entries: [
       {
         title: 'Choose a web runtime',
         href: '/docs/api/runtimes/runtime-hosts',
-        description: 'Choose a Fetch-compatible host boundary.',
+        description: 'Connect a Fetch handler to Bun, Deno, or Vercel.',
       },
       {
         title: 'Bun',
         href: '/docs/api/runtimes/bun',
-        description: 'Run a Fetch handler with Bun.serve().',
+        description: 'Run your API with Bun.serve().',
       },
       {
         title: 'Deno',
         href: '/docs/api/runtimes/deno',
-        description: 'Run a Fetch handler with deno serve or Deno.serve().',
+        description: 'Run your API with deno serve or Deno.serve().',
       },
       {
         title: 'Vercel Functions',
         href: '/docs/api/runtimes/vercel',
-        description: 'Export a standalone Web Handler from api/.',
+        description: 'Run your API as a standalone Vercel Function.',
       },
       {
         title: 'Cloudflare Workers',
         href: '/docs/api/runtimes/cloudflare',
-        description: 'Contract routes in a Module Worker fetch handler.',
+        description:
+          'Serve your API from a Cloudflare Worker and use its bindings.',
       },
       {
         title: 'Cloudflare Pages Functions',
         href: '/docs/api/runtimes/cloudflare-pages',
-        description: 'Contract routes in a file-routed Pages Function.',
+        description: 'Add your API to a Cloudflare Pages Functions project.',
       },
       {
         title: 'AWS Lambda',
         href: '/docs/api/runtimes/aws-lambda',
-        description: 'Buffered HTTP API v2 and Function URL handlers.',
+        description:
+          'Serve your API through API Gateway HTTP API or a Lambda Function URL.',
       },
       {
         title: 'Azure Functions',
         href: '/docs/api/runtimes/azure-functions',
-        description: 'Node.js v4 HTTP triggers and invocation context.',
+        description: 'Register your API as an Azure Functions v4 HTTP trigger.',
       },
       {
         title: 'Google Cloud Run functions',
         href: '/docs/api/runtimes/google-cloud-functions',
-        description:
-          'HTTP entrypoints, raw bodies, and native response streaming.',
+        description: 'Register your API as a Google Cloud HTTP function.',
       },
       {
         title: 'Netlify Functions',
         href: '/docs/api/runtimes/netlify-functions',
-        description: 'Function paths, native context, and Web responses.',
+        description: 'Serve your API from a Netlify web request function.',
       },
     ],
   },
@@ -299,7 +299,7 @@ export const apiDocs: readonly DocGroup[] = [
     title: 'Client connections',
     href: '/docs/api/transports',
     description:
-      'Choose how application code reaches the server: HTTP, the same process, IPC, or WebSocket.',
+      'Connect your client to the server over HTTP, a message channel, or a direct call.',
     chooserColumnTitle: 'Connection',
     chooserTitle: 'Choose how the client connects',
     entries: [
@@ -307,7 +307,7 @@ export const apiDocs: readonly DocGroup[] = [
         title: 'HTTP calls with Fetch',
         href: '/docs/api/transports/fetch',
         description:
-          'Call an HTTP API with web-standard Request, Response, and fetch.',
+          'Send API calls over HTTP and handle them with Fetch APIs.',
         chooseWhen:
           'The caller reaches the server over HTTP or already uses Fetch APIs.',
         applicationOwns: 'Authentication, cookies, retries, and the base URL.',
@@ -316,7 +316,7 @@ export const apiDocs: readonly DocGroup[] = [
         title: 'Same-process calls',
         href: '/docs/api/transports/in-process',
         description:
-          'Call server code directly without opening a network connection.',
+          'Call your API directly when the client and server run in the same process.',
         chooseWhen: 'The caller can safely import the server implementation.',
         applicationOwns: 'Server-only module placement and process lifetime.',
       },
@@ -324,7 +324,7 @@ export const apiDocs: readonly DocGroup[] = [
         title: 'Workers and IPC',
         href: '/docs/api/transports/message-port',
         description:
-          'Connect workers, Electron processes, or another MessagePort endpoint.',
+          'Call your API in a worker or another process through a message channel.',
         chooseWhen:
           'The caller and server communicate through MessagePort-style IPC.',
         applicationOwns: 'Port transfer, access policy, and port lifetime.',
@@ -333,7 +333,7 @@ export const apiDocs: readonly DocGroup[] = [
         title: 'WebSocket connections',
         href: '/docs/api/transports/websocket',
         description:
-          'Send requests, responses, streams, and cancellation over a socket.',
+          'Send typed API calls and response streams over a WebSocket.',
         chooseWhen: 'Calls need a dedicated long-lived network connection.',
         applicationOwns:
           'Upgrades, authentication, origin checks, and reconnects.',
@@ -342,7 +342,7 @@ export const apiDocs: readonly DocGroup[] = [
         title: 'Desktop IPC bridges',
         href: '/docs/api/transports/desktop-bridges',
         description:
-          'Connect Electron, Tauri, Dioxus, or a JSON-only native bridge.',
+          'Call your API through an Electron, Tauri, or Dioxus message bridge.',
         chooseWhen:
           'A desktop host must hand calls between web and native processes.',
         applicationOwns:
@@ -354,28 +354,30 @@ export const apiDocs: readonly DocGroup[] = [
     title: 'Integrations',
     href: '/docs/api/integrations',
     description:
-      'Connect @hulla/api to result types, query caches, and other ecosystem tools.',
+      'Use your API client with a query cache or Result-based error handling.',
     entries: [
       {
         title: 'Result-based calls',
         href: '/docs/api/integrations/control',
         description:
-          'Represent typed client outcomes with @hulla/control Result values.',
+          'Handle client responses as Ok and Err values from @hulla/control.',
       },
       {
         title: 'Choosing a query cache',
         href: '/docs/api/integrations/query-libraries',
-        description: 'Compare TanStack Query, SWR, and direct API calls.',
+        description:
+          'Add caching and loading states to your API client with TanStack Query or SWR.',
       },
       {
         title: 'TanStack Query',
         href: '/docs/api/integrations/tanstack-query',
-        description: 'Typed option objects, cancellation, and invalidation.',
+        description:
+          'Load API data with TanStack Query and invalidate it after a mutation.',
       },
       {
         title: 'SWR',
         href: '/docs/api/integrations/swr',
-        description: 'Typed key/fetcher tuples, mutations, and revalidation.',
+        description: 'Load API data with SWR and refresh it after a mutation.',
       },
     ],
   },
@@ -389,19 +391,19 @@ export const apiDocs: readonly DocGroup[] = [
         title: 'OpenAPI overview',
         href: '/docs/api/integrations/openapi',
         description:
-          'Choose whether the contract or OpenAPI document is the source of truth.',
+          'Export your contract to OpenAPI or generate a contract from an existing document.',
       },
       {
         title: 'Generate OpenAPI',
         href: '/docs/api/integrations/openapi/export',
         description:
-          'Generate a JSON or YAML document from a contract and typed sidecar.',
+          'Generate an OpenAPI document that other tools and teams can use.',
       },
       {
         title: 'Generate from OpenAPI',
         href: '/docs/api/integrations/openapi/import',
         description:
-          'Generate a runtime contract and sidecar from an existing document.',
+          'Create a typed client contract from an existing OpenAPI document.',
       },
     ],
   },
@@ -410,31 +412,30 @@ export const apiDocs: readonly DocGroup[] = [
     area: 'reference',
     href: '/docs/api/reference',
     description:
-      'Inspect compiled route metadata, host-owned behavior, and public package boundaries.',
+      'Look up imports, inspect routes, and compare adapter behavior.',
     entries: [
       {
         title: 'Contract internals',
         href: '/docs/api/reference/architecture',
-        description:
-          'Flat route manifests, inherited paths, selections, and compiler types.',
+        description: 'Inspect a contract as a flat list of routes.',
       },
       {
         title: '2.0 migration reference',
         href: '/docs/api/reference/migration',
         description:
-          'Removed APIs, package moves, and behavior changes in @hulla/api 2.0.',
+          'Find the 2.0 replacements for 1.x imports, methods, and behavior.',
       },
       {
         title: 'Adapter requirements',
         href: '/docs/api/reference/adapter-conformance',
         description:
-          'Routing, request bodies, streaming, cancellation, and host ownership.',
+          'Compare routing, body parsing, errors, and cancellation across server adapters.',
       },
       {
         title: 'Package exports',
         href: '/docs/api/reference/exports',
         description:
-          'Core subpaths, integration packages, and import boundaries.',
+          'Find the import path for a core API or integration package.',
       },
     ],
   },
@@ -492,7 +493,7 @@ export const apiPackage: DocPackage = {
   title: '@hulla/api',
   href: '/docs/api',
   description:
-    'Declare one HTTP contract, then bind typed clients and exhaustive servers to the boundaries your application chooses.',
+    'Declare an HTTP contract once. Implement it on the server and call it with a typed client.',
   groups: apiDocs,
   status: 'Beta',
 }
@@ -502,27 +503,25 @@ export const dbGuides: readonly DocGroup[] = [
     title: 'Get started',
     href: '/docs/db/guides',
     description:
-      'Typed PostgreSQL access and live browser queries, from setup to a working app.',
+      'Set up PostgreSQL access and learn how browser queries stay up to date.',
     entries: [
       {
         title: 'Introduction',
         href: '/docs/db',
-        description: 'Choose direct server access or a live browser view.',
+        description:
+          'Read and write PostgreSQL with a typed SDK, and keep browser queries up to date automatically.',
       },
       {
         title: 'Installation',
         href: '/docs/db/installation',
-        description: 'Prepare packages, tools and PostgreSQL.',
-      },
-      {
-        title: 'Quick start',
-        href: '/docs/db/quick-start',
-        description: 'Save a task and watch two browser tabs update.',
+        description:
+          'Choose the database package and prepare the tools needed to run it locally.',
       },
       {
         title: 'Mental model',
         href: '/docs/db/mental-model',
-        description: 'Understand the server, service and browser boundaries.',
+        description:
+          'Understand where your schema, server code and live browser functions run.',
       },
     ],
   },
@@ -535,38 +534,44 @@ export const dbGuides: readonly DocGroup[] = [
       {
         title: 'Schemas and constraints',
         href: '/docs/db/schemas',
-        description: 'Declare fields, keys, relationships and storage rules.',
+        description:
+          'Define tables once, infer application types and enforce storage rules in PostgreSQL.',
       },
       {
         title: 'Data types and codecs',
         href: '/docs/db/data-types',
-        description: 'Choose precise numbers, dates, JSON and conversions.',
+        description:
+          'Choose application representations for PostgreSQL values without losing precision or hiding conversions.',
       },
       {
         title: 'Read and write data',
         href: '/docs/db/database',
-        description: 'Filter, select, insert and group transactional writes.',
+        description:
+          'Use typed PostgreSQL builders in server code and inside query or mutation handlers.',
       },
       {
         title: 'Queries and mutations',
         href: '/docs/db/functions',
-        description: 'Declare validated browser-callable reads and writes.',
+        description:
+          'Declare browser-callable reads and atomic writes, with typed input and server-side validation.',
       },
       {
         title: 'Live queries and pagination',
         href: '/docs/db/live-queries',
         description:
-          'Observe results, append stable pages and handle reconnects.',
+          'Observe server query results and load more pages without shifting the rows you already loaded.',
       },
       {
         title: 'Optimistic updates',
         href: '/docs/db/optimistic-writes',
-        description: 'Predict an existing query result while a write runs.',
+        description:
+          'Show a predicted change while a mutation runs, then let the server result settle the view.',
       },
       {
         title: 'Code generation',
         href: '/docs/db/code-generation',
-        description: 'Know what is discovered, generated and imported.',
+        description:
+          'Generate typed database imports and browser functions from your schema.',
       },
     ],
   },
@@ -574,70 +579,80 @@ export const dbGuides: readonly DocGroup[] = [
     title: 'Integrations',
     href: '/docs/db/integrations',
     description:
-      'Connect framework lifecycles, server rendering and your existing auth provider.',
+      'Load database results in your framework and connect your login system.',
     entries: [
       {
         title: 'Frameworks & SSR',
         href: '/docs/db/framework-bindings',
-        description: 'Use framework reactivity and authorized initial data.',
+        description:
+          'Keep React, Vue, Svelte, and Solid components up to date with live queries.',
       },
       {
         title: 'Full-stack recipes',
         href: '/docs/db/meta-frameworks',
-        description: 'Choose a complete framework setup.',
+        description:
+          'Render a database snapshot on the server, then keep the browser view live.',
       },
       {
         title: 'Next.js',
         href: '/docs/db/frameworks/next',
-        description: 'Use Server Components and React live hooks.',
+        description:
+          'Use Server Components for initial rows and React hooks for live results.',
       },
       {
         title: 'Nuxt',
         href: '/docs/db/frameworks/nuxt',
-        description: 'Connect Nitro reads and Vue components.',
+        description:
+          'Load rows through Nitro and keep Vue components live after hydration.',
       },
       {
         title: 'SvelteKit',
         href: '/docs/db/frameworks/sveltekit',
-        description: 'Connect server loaders and reactive Svelte views.',
+        description:
+          'Combine server loaders with reactive Svelte queries and mutations.',
       },
       {
         title: 'SolidStart',
         href: '/docs/db/frameworks/solidstart',
-        description: 'Connect server functions and Solid resources.',
+        description:
+          'Hand server-function results to live Solid query components.',
       },
       {
         title: 'Astro',
         href: '/docs/db/frameworks/astro',
-        description: 'Hydrate a live island over request-time rows.',
+        description:
+          'Render request-time rows and hydrate an island for live database updates.',
       },
       {
         title: 'Authentication',
         href: '/docs/db/authentication',
-        description: 'Verify credentials and scope data to the caller.',
+        description:
+          'Verify credentials with your auth provider and scope every browser database operation to the caller.',
       },
       {
         title: 'Better Auth storage',
         href: '/docs/db/better-auth',
-        description: 'Store provider users and sessions in PostgreSQL.',
+        description:
+          'Store Better Auth users and sessions in the same PostgreSQL database as your application.',
       },
     ],
   },
   {
     title: 'Run and deploy',
     href: '/docs/db/operations',
-    description:
-      'Run the supplied service and package it for a compatible host.',
+    description: 'Configure the query service and prepare it for deployment.',
     entries: [
       {
         title: 'Database service',
         href: '/docs/db/runtime',
-        description: 'Configure listeners, browser connections and budgets.',
+        description:
+          'Start the supplied query service, connect browser functions and configure the limits your app needs.',
       },
       {
         title: 'Deployment',
         href: '/docs/db/deployment',
-        description: 'Deploy the app, persistent service and PostgreSQL.',
+        description:
+          'Deploy your application, persistent query service and PostgreSQL without choosing a specific cloud provider.',
       },
     ],
   },
@@ -653,35 +668,32 @@ const packageGuides: readonly DocGroup[] = [
       {
         title: 'Introduction',
         href: '/docs/control',
-        description: 'Choose when to return a Result.',
-      },
-      {
-        title: 'Quick start',
-        href: '/docs/control/quick-start',
-        description: 'Return and handle your first success or failure.',
+        description:
+          'Return typed success and failure values from TypeScript functions.',
       },
       {
         title: 'Results',
         href: '/docs/control/results',
         description:
-          'Construct results, narrow outcomes, and read values safely.',
+          'Create success and error branches, narrow their payloads, and choose error values that fit the caller.',
       },
       {
         title: 'Chaining operations',
         href: '/docs/control/chaining',
-        description: 'Transform successful values and stop on failures.',
+        description:
+          'Transform success and error payloads with map and mapErr while preserving the selected result branch.',
       },
       {
         title: 'Catching exceptions',
         href: '/docs/control/attempts',
         description:
-          'Convert throwing functions and promises to Result values.',
+          'Turn thrown exceptions and rejected promises into Result values.',
       },
       {
         title: 'Asynchronous results',
         href: '/docs/control/async',
         description:
-          'Choose between promises of results and results containing promises.',
+          'Return results from async functions or keep a promise inside a result.',
       },
     ],
   },
@@ -694,27 +706,24 @@ const packageGuides: readonly DocGroup[] = [
       {
         title: 'Introduction',
         href: '/docs/style',
-        description: 'Choose a class composer and reusable variant recipes.',
-      },
-      {
-        title: 'Quick start',
-        href: '/docs/style/quick-start',
-        description: 'Create a button recipe and use its class string.',
+        description: 'Join class names and define typed style variants.',
       },
       {
         title: 'Variants',
         href: '/docs/style/variants',
-        description: 'Add named choices, defaults, and conditional classes.',
+        description:
+          'Define named style choices and infer their TypeScript types.',
       },
       {
         title: 'Composition',
         href: '/docs/style/composition',
-        description: 'Reuse and extend class recipes.',
+        description: 'Join class names and add conditional styles with cn().',
       },
       {
         title: 'Custom merging',
         href: '/docs/style/custom-merging',
-        description: 'Configure the class composer for your CSS system.',
+        description:
+          'Resolve conflicting Tailwind classes with a custom composer.',
       },
     ],
   },
@@ -729,34 +738,31 @@ const packageGuides: readonly DocGroup[] = [
         title: 'Introduction',
         href: '/docs/cli',
         description:
-          'Choose a project workflow and understand beta compatibility.',
-      },
-      {
-        title: 'Quick start',
-        href: '/docs/cli/quick-start',
-        description: 'Initialize a project and install a source component.',
+          'Initialize a project and copy editable UI component source into your application with the hulla CLI.',
       },
       {
         title: 'Configuration',
         href: '/docs/cli/configuration',
-        description: 'Understand project config, subsystem paths, and caches.',
+        description:
+          'Understand the project settings and UI install records that the hulla CLI reads and writes.',
       },
       {
         title: 'UI components',
         href: '/docs/cli/ui',
         description:
-          'Initialize a registry, add components, and inspect updates.',
+          'Configure a UI registry, copy editable component files into your application, and review updates safely.',
       },
       {
         title: 'API generation',
         href: '/docs/cli/api',
         description:
-          'Understand the legacy generator boundary and compatibility limits.',
+          'Look up API generation commands for projects using the legacy API.',
       },
       {
         title: 'CI and troubleshooting',
         href: '/docs/cli/automation',
-        description: 'Run without prompts and diagnose installation failures.',
+        description:
+          'Run specified hulla CLI tasks without prompts in CI and project scripts.',
       },
     ],
   },
@@ -769,39 +775,32 @@ const packageGuides: readonly DocGroup[] = [
       {
         title: 'Introduction',
         href: '/docs/args',
-        description: 'Understand declarations and parsed argument results.',
-      },
-      {
-        title: 'Quick start',
-        href: '/docs/args/quick-start',
-        description: 'Build and invoke a small command-line program.',
+        description:
+          'Define typed command-line arguments and inspect validated results in Node.js, Bun, Deno, or another JavaScript runtime.',
       },
       {
         title: 'Arguments',
         href: '/docs/args/arguments',
-        description: 'Read named values, switches, and positional input.',
+        description:
+          'Match the shape of user input with flags, options, positional values, or sequences.',
       },
       {
         title: 'Parser options',
         href: '/docs/args/options',
         description:
-          'Control argument slicing, name matching, and shared arguments.',
+          'Control which argv entries are read and how names, aliases, and command arguments are matched.',
       },
       {
         title: 'Commands',
         href: '/docs/args/commands',
-        description: 'Organize subcommands and read their parsed results.',
+        description:
+          'Give each CLI command its own arguments, including nested commands.',
       },
       {
         title: 'Validation',
         href: '/docs/args/validation',
-        description: 'Validate input and handle parser errors.',
-      },
-      {
-        title: 'Build a CLI',
-        href: '/docs/args/recipes',
         description:
-          'Implement command routing, required input, validation, and exit codes.',
+          'Validate command-line values with Zod and handle missing input.',
       },
     ],
   },
@@ -818,7 +817,8 @@ const packageReferences: readonly DocGroup[] = [
       {
         title: 'API reference',
         href: '/docs/control/reference',
-        description: 'Constructors, tags, methods, and public result types.',
+        description:
+          'Look up the constructors, result types, methods, tags, and callback signatures exported by @hulla/control.',
       },
     ],
   },
@@ -833,7 +833,7 @@ const packageReferences: readonly DocGroup[] = [
         title: 'API reference',
         href: '/docs/style/reference',
         description:
-          'Supported class inputs, helpers, serializers, and composers.',
+          'Look up supported class inputs, variant types, defaults, and customization signatures in @hulla/style.',
       },
     ],
   },
@@ -848,12 +848,13 @@ const packageReferences: readonly DocGroup[] = [
         title: 'API reference',
         href: '/docs/db/reference',
         description:
-          'Schema, server, generation, runtime, and lifecycle contracts.',
+          'Look up the entrypoints, result states, configuration defaults and execution limits used by the TypeScript SDK.',
       },
       {
         title: 'Native Rust applications',
         href: '/docs/db/rust',
-        description: 'Use the native facade and its own runtime lifecycle.',
+        description:
+          'Use the hulladb facade for native schema authoring, typed functions and local or remote execution.',
       },
     ],
   },
@@ -868,7 +869,7 @@ const packageReferences: readonly DocGroup[] = [
         title: 'Command reference',
         href: '/docs/cli/reference',
         description:
-          'Implemented command behavior and exact configuration defaults.',
+          'Look up implemented hulla CLI commands, flags, config fields, and their exact defaults.',
       },
     ],
   },
@@ -883,25 +884,103 @@ const packageReferences: readonly DocGroup[] = [
         title: 'API reference',
         href: '/docs/args/reference',
         description:
-          'Constructors, settings, parsed metadata, and ParserError fields.',
+          'Look up argument constructors, parsed result fields, parser settings, and error metadata.',
       },
     ],
   },
 ]
 
-export const docPackages: readonly DocPackage[] = [
+const packageDefinitions: readonly DocPackage[] = [
   apiPackage,
   {
     kind: 'ui',
     title: '@hulla/ui',
     href: '/docs/ui',
-    description: 'Source-owned components for Astro, React, and Solid.',
-    groups: [],
+    description:
+      'Composable components for Astro, React, and Solid, with shared design tokens and source you own.',
+    groups: [
+      {
+        title: 'Get started',
+        href: '/docs/ui/guides',
+        description: 'Install components and build a page from shared parts.',
+        entries: [
+          {
+            title: 'Introduction',
+            href: '/docs/ui',
+            description:
+              'Composable components for Astro, React, and Solid, with shared design tokens and source you own.',
+          },
+          {
+            title: 'Composition and themes',
+            href: '/docs/ui/composition',
+            description:
+              'Put component parts together and customize them with shared themes.',
+          },
+        ],
+      },
+      {
+        title: 'Reference',
+        area: 'reference',
+        href: '/docs/ui/reference-overview',
+        description: 'Find a component for the page you are building.',
+        entries: [
+          {
+            title: 'Choose a component',
+            href: '/docs/ui/components',
+            description:
+              'Find a shared primitive for content, navigation, forms, overlays, and feedback.',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    kind: 'gittar',
+    title: '@hulla/gittar',
+    href: '/docs/gittar',
+    description:
+      'Download repository files into a cache, then copy the files your tool needs.',
+    groups: [
+      {
+        title: 'Get started',
+        href: '/docs/gittar/guides',
+        description:
+          'Copy a repository snapshot and choose when to refresh it.',
+        entries: [
+          {
+            title: 'Introduction',
+            href: '/docs/gittar',
+            description:
+              'Download repository files into a cache, then copy the files your tool needs.',
+          },
+          {
+            title: 'Caching and copying',
+            href: '/docs/gittar/caching',
+            description:
+              'Pick a freshness policy, copy a subdirectory, and keep snapshots separate.',
+          },
+        ],
+      },
+      {
+        title: 'Reference',
+        area: 'reference',
+        href: '/docs/gittar/reference-overview',
+        description: 'Download options, metadata, URL forms, and errors.',
+        entries: [
+          {
+            title: 'API reference',
+            href: '/docs/gittar/reference',
+            description:
+              'Look up download options, cache metadata, supported URL forms, and errors.',
+          },
+        ],
+      },
+    ],
   },
   ...packageGuides.map((group): DocPackage => {
     const kind = group.href.split('/')[2] as Exclude<
       DocPackage['kind'],
-      'api' | 'ui'
+      'api' | 'ui' | 'gittar'
     >
     return {
       kind,
@@ -909,7 +988,32 @@ export const docPackages: readonly DocPackage[] = [
       href: `/docs/${kind}`,
       description: group.description,
       groups: [
-        group,
+        {
+          ...group,
+          title: 'Start here',
+          entries: group.entries.filter(
+            (entry) => kind === 'db' || entry.href === `/docs/${kind}`
+          ),
+        },
+        ...(kind === 'db'
+          ? []
+          : [
+              {
+                title: kind === 'cli' ? 'Workflows' : 'Concepts',
+                href: `/docs/${kind}/concepts` as const,
+                description:
+                  kind === 'cli'
+                    ? 'Configure the CLI and manage copied source.'
+                    : kind === 'control'
+                      ? 'Handle results, transform their values, and catch exceptions.'
+                      : kind === 'style'
+                        ? 'Combine classes, define variants, and resolve conflicting utilities.'
+                        : 'Declare arguments, configure parsing, and validate user input.',
+                entries: group.entries.filter(
+                  (entry) => entry.href !== `/docs/${kind}`
+                ),
+              },
+            ]),
         ...(kind === 'db' ? dbGuides.slice(1) : []),
         ...packageReferences.filter((reference) =>
           reference.href.startsWith(`/docs/${kind}/`)
@@ -923,6 +1027,13 @@ export const docPackages: readonly DocPackage[] = [
     }
   }),
 ]
+
+export const docPackages: readonly DocPackage[] = packageDefinitions.map(
+  (pkg) => ({
+    ...pkg,
+    description: packagePreviews[pkg.kind].summary,
+  })
+)
 
 export const docGroups = docPackages.flatMap((pkg) => pkg.groups)
 

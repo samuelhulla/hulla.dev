@@ -2,56 +2,34 @@
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import SiteHeader from '@/components/site/SiteHeader.astro'
 import SiteFooter from '@/components/site/SiteFooter.astro'
-import Card from '@/components/card/card.astro'
-import CardHeader from '@/components/card/card-header.astro'
-import CardTitle from '@/components/card/card-title.astro'
-import CardDescription from '@/components/card/card-description.astro'
-import CardContent from '@/components/card/card-content.astro'
-import PackageIcon from '@/components/site/PackageIcon.astro'
-import { docPackages } from '@/data/docs'
-
-const packages = docPackages
+import PackageDirectory from '@/components/site/PackageDirectory.astro'
 ---
 
 <BaseLayout
   title="Documentation"
-  description="Guides and references for the @hulla/* packages."
+  description="Try the @hulla packages: typed HTTP contracts, live PostgreSQL queries, shared UI components, and TypeScript tools."
   markdownUrl="/docs.md">
   <SiteHeader />
   <main id="main" class="home-frame py-16">
-    <p class="eyebrow">Developer resources</p>
+    <p class="eyebrow">@hulla packages</p>
     <h1 class="docs-title">Documentation</h1>
-    <p class="docs-description mb-12">
-      Pick a package. Start with a working example.
+    <p class="docs-description mb-8">
+      Choose a package to open its documentation. Each introduction explains the
+      package, with a working example and a path to your first project.
     </p>
-    <div class="grid gap-5 md:grid-cols-3">
-      {packages.map((pkg) => (
-        <Card>
-          <>
-            <CardHeader>
-              <>
-                <CardTitle aria-level={2}>
-                  <span class="flex items-center gap-2.5">
-                    <PackageIcon
-                      kind={pkg.kind}
-                      size={20}
-                      class="text-primary-text"
-                    />
-                    <span>{pkg.title}</span>
-                  </span>
-                </CardTitle>
-                <CardDescription>{pkg.description}</CardDescription>
-              </>
-            </CardHeader>
-            <CardContent>
-              <a class="text-link text-sm" href={pkg.href}>
-                Open documentation →
-              </a>
-            </CardContent>
-          </>
-        </Card>
-      ))}
-    </div>
+    <p class="mb-10 text-muted-foreground">
+      Prefer to start with a project?{' '}
+      <a class="text-link" href="/guides">
+        Follow a guide
+      </a>
+      .
+    </p>
+    <section aria-labelledby="package-docs">
+      <h2 id="package-docs" class="mb-5 text-2xl font-semibold tracking-tight">
+        Package documentation
+      </h2>
+      <PackageDirectory />
+    </section>
   </main>
   <SiteFooter />
 </BaseLayout>

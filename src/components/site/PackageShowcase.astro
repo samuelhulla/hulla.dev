@@ -1,0 +1,275 @@
+---
+import PackageDemo from './PackageDemo'
+import NavigationLink from '@/components/navigation-menu/navigation-menu-link.astro'
+import LinkDescription from '@/components/navigation-menu/navigation-menu-link-description.astro'
+import { ArrowRight } from '@lucide/astro'
+import { docPackages, type DocPackage } from '@/data/docs'
+import { packagePreviews } from '@/data/package-previews'
+import { guides } from '@/data/guides'
+
+const features: {
+  kind: DocPackage['kind']
+  title: string
+  description: string
+  prompt: string
+  layout: string
+}[] = [
+  {
+    kind: 'api',
+    title: 'Rename a field. Find every broken consumer.',
+    description:
+      'Your handler and your UI should agree on what comes back from an API. Change the shared contract below: TypeScript points to both places that need updating, before you send a request.',
+    prompt:
+      'Edit any project file below, or load a breaking change with a shortcut.',
+    layout: 'wide',
+  },
+  {
+    kind: 'db',
+    title: 'Buy in the app. Watch the database change.',
+    description:
+      'Your app writes through the server; subscribed queries publish the committed result. Keep your own PostgreSQL database and let the client follow changes from either side.',
+    prompt:
+      'Edit a table cell, rename a product in the app, or buy one. This workspace models the database and server locally.',
+    layout: 'wide',
+  },
+  {
+    kind: 'style',
+    title: 'An override should mean the same thing everywhere.',
+    description:
+      'A variant builder and a class helper can quietly apply different merging rules. Give cn() and vn() the same processor, compose independent style maps, and carry one policy through every component.',
+    prompt:
+      'Edit the styling code. Watch the three consumers and the composed class output follow.',
+    layout: 'split',
+  },
+  {
+    kind: 'ui',
+    title: 'Change frameworks. Keep your component API.',
+    description:
+      'A React app, a Solid app, and an Astro site can share the same tokens, variants, and interaction rules. Install the source into each project and make the implementation your own.',
+    prompt:
+      'Use the shipped components below. Add a task or navigate the form with your keyboard.',
+    layout: 'split',
+  },
+]
+const tools = ['control', 'args', 'gittar', 'cli'] as const
+---
+
+<div class="package-showcase">
+  {features.map((feature, index) => {
+    const pkg = docPackages.find((item) => item.kind === feature.kind)!
+    const guide = guides.find((item) => item.packageKind === feature.kind)!
+    return (
+      <section
+        id={`showcase-${feature.kind}`}
+        class="showcase-feature"
+        data-layout={feature.layout}
+        aria-labelledby={`showcase-title-${feature.kind}`}>
+        <div class="showcase-copy">
+          <p class="showcase-kicker">
+            <span aria-hidden="true">0{index + 1} /</span> {pkg.title}
+          </p>
+          <h3 id={`showcase-title-${feature.kind}`}>{feature.title}</h3>
+          <p class="showcase-description">{feature.description}</p>
+          <div class="showcase-actions">
+            <NavigationLink href={pkg.href} class="items-center font-semibold">
+              <span>Read {pkg.title} docs</span>
+              <ArrowRight size={17} aria-hidden="true" />
+            </NavigationLink>
+            <NavigationLink href={guide.href} class="items-center">
+              <LinkDescription>{guide.title}</LinkDescription>
+            </NavigationLink>
+          </div>
+        </div>
+        <figure class="showcase-proof">
+          <figcaption class="showcase-prompt">{feature.prompt}</figcaption>
+          <div class="showcase-stage" data-component-boundary>
+            <PackageDemo
+              kind={feature.kind}
+              presentation="showcase"
+              client:visible
+            />
+          </div>
+        </figure>
+      </section>
+    )
+  })}
+
+  <section class="showcase-tools" aria-labelledby="showcase-tools-title">
+    <div class="showcase-tools-heading">
+      <p class="showcase-kicker">Parsing, failures, templates & source</p>
+      <h3 id="showcase-tools-title">
+        The work around your application deserves better tools, too.
+      </h3>
+    </div>
+    <div class="showcase-tools-grid">
+      {tools.map((kind) => {
+        const pkg = docPackages.find((item) => item.kind === kind)!
+        const preview = packagePreviews[kind]
+        return (
+          <section
+            aria-labelledby={`showcase-title-${kind}`}
+            class="showcase-tool">
+            <p class="showcase-kicker">{pkg.title}</p>
+            <h4 id={`showcase-title-${kind}`}>{preview.headline}</h4>
+            <p class="showcase-description">{preview.summary}</p>
+            <NavigationLink
+              href={pkg.href}
+              class="mb-5 w-fit items-center font-semibold">
+              <span>Read {pkg.title} docs</span>
+              <ArrowRight size={16} aria-hidden="true" />
+            </NavigationLink>
+            <div class="showcase-stage" data-component-boundary>
+              <PackageDemo kind={kind} client:visible />
+            </div>
+          </section>
+        )
+      })}
+    </div>
+  </section>
+</div>
+
+<style>
+  .package-showcase {
+    margin-top: 3rem;
+  }
+  .showcase-feature {
+    display: grid;
+    gap: 2rem;
+    padding-block: clamp(3rem, 4vw, 5rem);
+    border-top: 1px solid var(--color-border);
+    scroll-margin-top: 4.5rem;
+  }
+  .showcase-kicker {
+    display: flex;
+    gap: 1rem;
+    color: var(--color-muted-foreground);
+    font: 0.75rem/1.5 var(--font-mono);
+  }
+  .showcase-kicker span {
+    opacity: 0.5;
+  }
+  .showcase-copy h3 {
+    max-width: 18ch;
+    margin-top: 1rem;
+    font-size: clamp(2rem, 4.4vw, 4.5rem);
+    line-height: 1.06;
+    font-weight: 550;
+    letter-spacing: -0.055em;
+    text-wrap: balance;
+  }
+  .showcase-description {
+    max-width: 44rem;
+    color: var(--color-muted-foreground);
+    font-size: 1rem;
+    line-height: 1.8;
+  }
+  .showcase-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1.5rem;
+    margin-left: -0.75rem;
+  }
+  .showcase-actions > a:last-child {
+    margin-left: 0.75rem;
+  }
+  .showcase-feature[data-layout='wide'] .showcase-copy {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+    gap: 1rem 4rem;
+    align-items: start;
+  }
+  .showcase-feature[data-layout='wide'] .showcase-kicker {
+    grid-column: 1 / -1;
+  }
+  .showcase-feature[data-layout='wide'] h3 {
+    grid-row: 2 / 4;
+    margin-top: 0;
+  }
+  .showcase-feature[data-layout='wide'] .showcase-actions {
+    grid-column: 2;
+  }
+  .showcase-proof {
+    min-width: 0;
+  }
+  .showcase-prompt {
+    margin-bottom: 1rem;
+    color: var(--color-muted-foreground);
+    font-size: 0.875rem;
+    line-height: 1.7;
+  }
+  .showcase-stage {
+    min-width: 0;
+    padding: clamp(1.25rem, 3vw, 2.5rem);
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-border);
+    overflow-wrap: anywhere;
+  }
+  .showcase-feature[data-layout='split'] {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 3rem;
+    align-items: center;
+  }
+  .showcase-feature[data-layout='split'] .showcase-description {
+    margin-top: 1.5rem;
+  }
+  .showcase-feature[data-layout='split'] .showcase-actions {
+    margin-top: 1rem;
+  }
+  .showcase-feature[data-layout='split'] h3 {
+    font-size: clamp(2rem, 3.2vw, 3.5rem);
+  }
+  .showcase-tools {
+    padding-top: 3rem;
+    border-top: 1px solid var(--color-border);
+  }
+  .showcase-tools-heading {
+    max-width: 46rem;
+    margin-bottom: 3rem;
+  }
+  .showcase-tools-heading h3 {
+    margin-top: 1rem;
+    font-size: clamp(1.75rem, 3.4vw, 3.25rem);
+    line-height: 1.15;
+    letter-spacing: -0.04em;
+  }
+  .showcase-tools-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4rem 3rem;
+  }
+  .showcase-tool {
+    min-width: 0;
+  }
+  .showcase-tool h4 {
+    max-width: 28ch;
+    margin: 1rem 0;
+    font-size: clamp(1.4rem, 2vw, 2rem);
+    line-height: 1.2;
+    letter-spacing: -0.035em;
+  }
+  .showcase-tool .showcase-stage {
+    padding: 1.5rem 0;
+    background: transparent;
+  }
+  @media (max-width: 899px) {
+    .showcase-feature[data-layout='wide'] .showcase-copy,
+    .showcase-feature[data-layout='split'],
+    .showcase-tools-grid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .showcase-feature[data-layout='wide'] h3 {
+      grid-row: auto;
+    }
+    .showcase-feature[data-layout='wide'] .showcase-actions {
+      grid-column: 1;
+    }
+    .showcase-copy h3 {
+      max-width: 24ch;
+    }
+    .showcase-feature[data-layout='split'] {
+      gap: 2rem;
+    }
+  }
+</style>

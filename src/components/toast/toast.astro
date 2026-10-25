@@ -1,0 +1,30 @@
+---
+import {
+  toastClassNames,
+  toastVariantClassNames,
+  type ToastVariant,
+} from '@/lib/toast'
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'li'> & {
+  variant?: ToastVariant
+}
+
+const {
+  class: className,
+  role,
+  variant = 'note',
+  ...props
+} = Astro.props as Props
+---
+
+<li
+  {...props}
+  aria-atomic="true"
+  role={role ?? (variant === 'danger' ? 'alert' : 'status')}
+  data-slot="toast"
+  data-variant={variant}
+  class={cn(toastClassNames.toast, toastVariantClassNames[variant], className)}>
+  <slot />
+</li>

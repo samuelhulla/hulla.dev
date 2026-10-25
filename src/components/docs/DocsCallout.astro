@@ -1,0 +1,49 @@
+---
+import Alert from '@/components/alert/alert.astro'
+import AlertIcon from '@/components/alert/alert-icon.astro'
+import AlertTitle from '@/components/alert/alert-title.astro'
+import AlertDescription from '@/components/alert/alert-description.astro'
+import {
+  CircleAlert,
+  CircleCheck,
+  Info,
+  Lightbulb,
+  OctagonAlert,
+  TriangleAlert,
+} from '@lucide/astro'
+
+type Props = {
+  kind: 'note' | 'tip' | 'important' | 'warning' | 'caution' | 'success'
+  title?: string
+}
+const { kind, title } = Astro.props
+const variants = {
+  note: 'note',
+  tip: 'important',
+  important: 'important',
+  warning: 'warning',
+  caution: 'danger',
+  success: 'success',
+} as const
+const icons = {
+  note: Info,
+  tip: Lightbulb,
+  important: CircleAlert,
+  warning: TriangleAlert,
+  caution: OctagonAlert,
+  success: CircleCheck,
+}
+const Icon = icons[kind]
+---
+
+<div class="docs-example" data-component-boundary>
+  <Alert variant={variants[kind]}>
+    <AlertIcon>
+      <Icon />
+    </AlertIcon>
+    <AlertTitle>{title ?? kind[0]!.toUpperCase() + kind.slice(1)}</AlertTitle>
+    <AlertDescription>
+      <slot />
+    </AlertDescription>
+  </Alert>
+</div>

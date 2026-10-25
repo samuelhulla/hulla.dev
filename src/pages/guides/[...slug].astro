@@ -1,0 +1,19 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content'
+import DocsLayout from '@/layouts/DocsLayout.astro'
+import { components } from '@/components/mdx/components'
+
+export async function getStaticPaths() {
+  return (await getCollection('guides')).map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }))
+}
+type Props = { entry: CollectionEntry<'guides'> }
+const { entry } = Astro.props
+const { Content } = await render(entry)
+---
+
+<DocsLayout frontmatter={entry.data}>
+  <Content components={components} />
+</DocsLayout>

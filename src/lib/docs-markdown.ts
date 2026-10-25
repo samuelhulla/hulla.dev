@@ -16,6 +16,7 @@ import remarkMdx from 'remark-mdx'
 import remarkParse from 'remark-parse'
 import remarkStringify from 'remark-stringify'
 import { unified } from 'unified'
+import { packagePreviews } from '@/data/package-previews'
 
 const DOCS_ORIGIN = 'https://hulla.dev'
 
@@ -42,6 +43,10 @@ export type MarkdownDocument = {
   title: string
   description: string
   usefulFor?: readonly string[]
+  tutorial?: {
+    outcome: string
+    prerequisites: { title: string; href?: string }[]
+  }
   body: string
 }
 
@@ -49,6 +54,7 @@ export function renderMarkdownDocument({
   title,
   description,
   usefulFor = [],
+  tutorial,
   body,
 }: MarkdownDocument): string {
   const sections = [
@@ -56,6 +62,9 @@ export function renderMarkdownDocument({
     `> ${description}`,
     usefulFor.length
       ? `## Useful when\n\n${usefulFor.map((item) => `- ${item}`).join('\n')}`
+      : '',
+    tutorial
+      ? `## What you'll build\n\n${tutorial.outcome}\n\n### Before you start\n\n${tutorial.prerequisites.map((item) => `- ${item.href ? `[${item.title}](${markdownDocsUrl(item.href)})` : item.title}`).join('\n')}`
       : '',
     cleanMdxForAgents(body),
   ]
@@ -84,6 +93,32 @@ function transformChildren(children: readonly LooseNode[]): LooseNode[] {
   return children.flatMap((node): LooseNode[] => {
     if (node.type === 'mdxjsEsm') return []
 
+    if (node.type === 'blockquote') {
+      const first = node.children?.[0]?.children?.[0]
+      const marker =
+        first?.type === 'text'
+          ? first.value?.match(
+              /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION|SUCCESS)\](?: ([^\n]+))?(?:\n|$)/
+            )
+          : undefined
+      if (marker && first) {
+        first.value = first.value!.slice(marker[0].length)
+        const kind = marker[1]!.toLowerCase()
+        const label = kind[0]!.toUpperCase() + kind.slice(1)
+        return [
+          {
+            type: 'blockquote',
+            children: [
+              paragraph([
+                strong([text(`${label}${marker[2] ? `: ${marker[2]}` : ''}`)]),
+              ]),
+              ...transformChildren(node.children ?? []),
+            ],
+          },
+        ]
+      }
+    }
+
     if (node.type === 'mdxJsxFlowElement') {
       return renderFlowComponent(node)
     }
@@ -97,6 +132,9 @@ function transformChildren(children: readonly LooseNode[]): LooseNode[] {
         return [text(componentText(node))]
       }
       if (node.name === 'DocsStepperHeading') {
+        return [strong([text(componentText(node))])]
+      }
+      if (node.name === 'CollapsibleTrigger') {
         return [strong([text(componentText(node))])]
       }
       if (node.name === 'StepperContent') return stepperContent(node)
@@ -155,10 +193,16 @@ function renderFlowComponent(node: LooseNode): LooseNode[] {
       return projectBoundary()
     case 'DocsApiArchitecture':
       return apiArchitecture()
+    case 'PackageDemoFrame':
+      return packageDemo(node)
     case 'Stepper':
     case 'StepperItem':
     case 'StepperPanel':
+    case 'Collapsible':
+    case 'CollapsibleContent':
       return transformChildren(node.children ?? [])
+    case 'CollapsibleTrigger':
+      return [paragraph([strong([text(componentText(node))])])]
     case 'StepperIndicator':
       return []
     case 'StepperContent':
@@ -181,6 +225,42 @@ function renderFlowComponent(node: LooseNode): LooseNode[] {
       }
       return transformChildren(node.children ?? [])
   }
+}
+
+function packageDemo(node: LooseNode): LooseNode[] {
+  const kind = componentProp(node, 'kind')
+  if (typeof kind !== 'string' || !Object.hasOwn(packagePreviews, kind))
+    throw new Error('PackageDemoFrame requires a known package kind.')
+  const preview = packagePreviews[kind as keyof typeof packagePreviews]
+  const sample: Code[] = preview.code
+    ? [{ type: 'code', lang: preview.language, value: preview.code }]
+    : []
+  const boundaries: Record<string, string> = {
+    api: 'The browser runs a real TypeScript compiler against a checked-in snapshot of @hulla/api declarations. It makes no network request to an API; the repair is a preset edit, not a live AI agent.',
+    db: 'The browser models an editable database table, server write validation, and a separate subscribed client connected by message ports. Both sides can edit; it does not connect to PostgreSQL.',
+    style:
+      'The browser executes the editable TypeScript style module in a disposable worker using installed @hulla/style helpers and cn. Failed edits retain the last working preview. Its 10,000-composition timing is a local measurement, not a comparison benchmark.',
+    ui: 'The live form uses installed Solid components and their shipped keyboard, focus, and disabled behavior.',
+    control:
+      'The browser runs @hulla/control to convert a JSON exception and invalid deployment config into explicit failure results. Nothing is deployed.',
+    args: 'The browser runs @hulla/args and Zod on whitespace-separated tokens. Invalid input and omitted options remain distinct. No shell command or preview server runs.',
+    gittar:
+      'A local filesystem model shows separate editable project copies and an unchanged cached template. No repository is downloaded or files written.',
+    cli: 'An install-plan preview shows framework-specific commands and component source paths. No CLI command is executed or files written.',
+  }
+  const boundary = boundaries[kind]!
+  return [
+    paragraph([strong([text('Interactive example: ')]), text(preview.caption)]),
+    paragraph([text(boundary)]),
+    ...sample,
+    paragraph([
+      {
+        type: 'link',
+        url: `${DOCS_ORIGIN}/guides/${kind}/quick-start.md`,
+        children: [text('Build the working example')],
+      },
+    ]),
+  ]
 }
 
 function alert(node: LooseNode): LooseNode[] {
@@ -541,9 +621,9 @@ function staticExpression(expression: Record<string, unknown>): unknown {
 }
 
 function markdownDocsUrl(url: string): string {
-  const match = url.match(/^\/docs(\/[^#?]*)?([#?].*)?$/)
-  if (!match || match[1]?.endsWith('.md')) return url
-  return `${DOCS_ORIGIN}/docs${match[1] ?? ''}.md${match[2] ?? ''}`
+  const match = url.match(/^(\/(?:docs|guides))(\/[^#?]*)?([#?].*)?$/)
+  if (!match || match[2]?.endsWith('.md')) return url
+  return `${DOCS_ORIGIN}${match[1]}${match[2] ?? ''}.md${match[3] ?? ''}`
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

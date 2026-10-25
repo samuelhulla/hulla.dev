@@ -3,7 +3,7 @@ import Table from '@/components/table/table.astro'
 import TableContainer from '@/components/table/table-container.astro'
 ---
 
-<div class="md-table">
+<div class="md-table" data-component-boundary>
   <TableContainer tabindex="0" role="group" aria-label="Scrollable table">
     <Table {...Astro.props}>
       <slot />

@@ -2,19 +2,16 @@
 import { cn } from '@/lib/style'
 import type { HTMLAttributes } from 'astro/types'
 
-type Props = HTMLAttributes<'details'> & {
-  scope?: 'default' | 'nested'
-}
+type Props = HTMLAttributes<'details'>
 
-const { class: className, scope = 'default', ...props } = Astro.props as Props
+const { class: className, ...props } = Astro.props as Props
 ---
 
 <details
   {...props}
   data-slot="collapsible"
   class={cn(
-    scope === 'nested' ? 'group/nested-collapsible' : 'group/collapsible',
-    'min-w-0 [interpolate-size:allow-keywords] [&::details-content]:overflow-hidden [&::details-content]:[block-size:0] [&::details-content]:transition-[block-size,content-visibility] [&::details-content]:duration-180 [&::details-content]:ease-[cubic-bezier(0.22,1,0.36,1)] [&::details-content]:[transition-behavior:allow-discrete] open:[&::details-content]:[block-size:auto] motion-reduce:[&::details-content]:transition-none [&:not([data-collapsible-animating])::details-content]:transition-none [&:not([data-collapsible-animating])>summary::after]:transition-none [&:not([data-collapsible-animating])>[data-slot=collapsible-content]]:transition-none',
+    'group/collapsible min-w-0 [interpolate-size:allow-keywords] [&::details-content]:overflow-hidden [&::details-content]:[block-size:0] [&::details-content]:transition-[block-size,content-visibility] [&::details-content]:duration-180 [&::details-content]:ease-[cubic-bezier(0.22,1,0.36,1)] [&::details-content]:[transition-behavior:allow-discrete] open:[&::details-content]:[block-size:auto] motion-reduce:[&::details-content]:transition-none [&:not([data-collapsible-animating])::details-content]:transition-none [&:not([data-collapsible-animating])>summary::after]:transition-none [&:not([data-collapsible-animating])>[data-slot=collapsible-content]]:transition-none',
     className
   )}>
   <slot />

@@ -1,0 +1,311 @@
+---
+import Button from '@/components/button/button.astro'
+import { Input } from '@/components/input'
+import Dialog from '@/components/dialog/dialog.astro'
+import DialogTitle from '@/components/dialog/dialog-title.astro'
+import DialogDescription from '@/components/dialog/dialog-description.astro'
+import NavigationLink from '@/components/navigation-menu/navigation-menu-link.astro'
+import PackageExplorer from '@/components/site/PackageExplorer.astro'
+import PackageIcon from '@/components/site/PackageIcon.astro'
+import { ArrowLeft, ArrowRight, BookOpen, X } from '@lucide/astro'
+import { docPackages, type DocPackage } from '@/data/docs'
+import { packagePreviews } from '@/data/package-previews'
+
+type Props = { activePackage: DocPackage; guide?: boolean }
+const { activePackage } = Astro.props
+---
+
+<Dialog
+  id="package-explorer"
+  class="package-chooser"
+  hidden
+  data-mode="quick"
+  contentClass="max-w-(--package-dialog-width) max-h-[calc(100dvh-2rem)] overflow-y-auto p-0"
+  aria-labelledby="package-explorer-title"
+  aria-describedby="package-explorer-description"
+  data-package-chooser-dialog>
+  <header class="border-border bg-surface-raised sticky top-0 z-10 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b px-5 py-4">
+    <div class="grid gap-1">
+      <DialogTitle id="package-explorer-title">Switch package</DialogTitle>
+      <DialogDescription id="package-explorer-description">
+        Choose a package to open its documentation.
+      </DialogDescription>
+    </div>
+    <div class="ml-auto flex items-center gap-2">
+      <div hidden data-package-primary-docs>
+        <NavigationLink
+          href={activePackage.href}
+          class="items-center font-semibold">
+          <BookOpen size={16} aria-hidden="true" />
+          <span data-package-docs-label>Read {activePackage.title} docs</span>
+          <ArrowRight size={16} aria-hidden="true" />
+        </NavigationLink>
+      </div>
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-label="Close package chooser"
+        data-package-chooser-close>
+        <X aria-hidden="true" />
+      </Button>
+    </div>
+  </header>
+
+  <div data-package-quick-view>
+    <div class="px-5 pt-4 pb-2">
+      <Input
+        client:load
+        controlSize="md"
+        type="search"
+        aria-label="Find a package"
+        placeholder="Find a package by name or purpose…"
+        autocomplete="off"
+        data-package-filter
+      />
+    </div>
+    <nav class="px-3 py-2" aria-label="Switch package documentation">
+      {docPackages.map((pkg) => (
+        <div
+          class="package-switch-row"
+          data-package-row
+          data-package-kind={pkg.kind}
+          data-search={`${pkg.title} ${packagePreviews[pkg.kind].purpose} ${packagePreviews[pkg.kind].summary}`}>
+          <NavigationLink
+            href={pkg.href}
+            aria-current={activePackage.kind === pkg.kind ? 'page' : undefined}
+            class="items-center gap-3"
+            data-package-quick-link>
+            <PackageIcon
+              kind={pkg.kind}
+              size={16}
+              class="text-muted-foreground"
+            />
+            <span class="grid min-w-0 gap-0.5 sm:flex sm:items-baseline sm:gap-3">
+              <strong class="font-mono text-sm font-medium">{pkg.title}</strong>
+              <span class="text-muted-foreground text-xs">
+                {packagePreviews[pkg.kind].purpose}
+              </span>
+            </span>
+            <ArrowRight
+              size={14}
+              class="text-muted-foreground ml-auto shrink-0"
+              aria-hidden="true"
+            />
+          </NavigationLink>
+          <Button
+            size="sm"
+            variant="ghost"
+            aria-label={`Preview ${pkg.title}`}
+            data-package-preview={pkg.kind}>
+            Preview
+          </Button>
+        </div>
+      ))}
+    </nav>
+    <p
+      class="text-muted-foreground px-6 py-3 text-sm"
+      hidden
+      data-package-no-results
+      role="status">
+      No packages match. Try a different name or purpose.
+    </p>
+    <footer class="border-border text-muted-foreground flex flex-wrap justify-between gap-2 border-t px-5 py-3 text-xs">
+      <span>Enter opens docs · ↑ ↓ move between packages</span>
+      <span>Preview to try a package first</span>
+    </footer>
+  </div>
+
+  <div hidden data-package-preview-view>
+    <div class="border-border border-b px-4 py-2">
+      <Button size="sm" variant="ghost" data-package-back>
+        <ArrowLeft size={14} aria-hidden="true" /> All packages
+      </Button>
+    </div>
+    <PackageExplorer {activePackage} compact />
+  </div>
+</Dialog>
+
+<style>
+  .package-chooser {
+    --package-dialog-width: 42rem;
+  }
+  .package-chooser[data-mode='preview'] {
+    --package-dialog-width: 72rem;
+  }
+  .package-switch-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .package-switch-row[hidden] {
+    display: none;
+  }
+</style>
+
+<script>
+  import { DIALOG_DISMISS_EVENT } from '@/lib/dialog'
+  import {
+    TABS_VALUE_CHANGE_EVENT,
+    type TabsValueChangeDetail,
+  } from '@/lib/tabs'
+
+  const dialog = document.querySelector<HTMLElement>(
+    '[data-package-chooser-dialog]'
+  )!
+  const triggers = document.querySelectorAll<HTMLButtonElement>(
+    '[data-package-chooser-open]'
+  )
+  const quick = dialog.querySelector<HTMLElement>('[data-package-quick-view]')!
+  const preview = dialog.querySelector<HTMLElement>(
+    '[data-package-preview-view]'
+  )!
+  const input = dialog.querySelector<HTMLInputElement>('[data-package-filter]')!
+  const content = dialog.querySelector<HTMLElement>('[data-slot="dialog"]')!
+  const primary = dialog.querySelector<HTMLElement>(
+    '[data-package-primary-docs]'
+  )!
+  const primaryLink = primary.querySelector<HTMLAnchorElement>('a')!
+  const primaryLabel = primary.querySelector<HTMLElement>(
+    '[data-package-docs-label]'
+  )!
+  const title = dialog.querySelector<HTMLElement>('#package-explorer-title')!
+  const description = dialog.querySelector<HTMLElement>(
+    '#package-explorer-description'
+  )!
+  const rows = [...dialog.querySelectorAll<HTMLElement>('[data-package-row]')]
+  const empty = dialog.querySelector<HTMLElement>('[data-package-no-results]')!
+  let previewTrigger: HTMLButtonElement | undefined
+
+  const filter = () => {
+    const query = input.value.trim().toLocaleLowerCase()
+    const words = query.split(/\s+/).filter(Boolean)
+    const named = rows.find(
+      (row) =>
+        row.dataset.packageKind === query.replace(/^@hulla\//, '') ||
+        row.querySelector('strong')!.textContent!.toLocaleLowerCase() === query
+    )
+    for (const row of rows)
+      row.hidden = named
+        ? row !== named
+        : !words.every((word) =>
+            row.dataset.search!.toLocaleLowerCase().includes(word)
+          )
+    empty.hidden = rows.some((row) => !row.hidden)
+  }
+  const docsFor = (kind: string) => {
+    const row = rows.find((item) => item.dataset.packageKind === kind)
+    const link = row?.querySelector<HTMLAnchorElement>(
+      '[data-package-quick-link]'
+    )
+    if (!link) return
+    primaryLink.href = link.href
+    primaryLabel.textContent = `Read ${link.querySelector('strong')!.textContent} docs`
+  }
+  const showQuick = () => {
+    dialog.dataset.mode = 'quick'
+    quick.hidden = false
+    preview.hidden = true
+    primary.hidden = true
+    title.textContent = 'Switch package'
+    description.textContent = 'Choose a package to open its documentation.'
+    content.scrollTop = 0
+  }
+  const close = () => {
+    dialog.hidden = true
+    for (const trigger of triggers)
+      trigger.setAttribute('aria-expanded', 'false')
+  }
+  for (const trigger of triggers)
+    trigger.addEventListener('click', () => {
+      showQuick()
+      input.value = ''
+      filter()
+      dialog.hidden = false
+      trigger.setAttribute('aria-expanded', 'true')
+      requestAnimationFrame(() => input.focus({ preventScroll: true }))
+    })
+  dialog
+    .querySelector('[data-package-chooser-close]')
+    ?.addEventListener('click', close)
+  dialog.addEventListener(DIALOG_DISMISS_EVENT, close)
+  quick.addEventListener('input', filter)
+  quick.addEventListener('keydown', (event) => {
+    if (
+      !(event instanceof KeyboardEvent) ||
+      event.isComposing ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.altKey
+    )
+      return
+    const target = event.target
+    if (!(target instanceof HTMLElement)) return
+    const isInput = target === input
+    const isLink = target.matches('[data-package-quick-link]')
+    if (!isInput && !isLink) return
+    const links = rows
+      .filter((row) => !row.hidden)
+      .map((row) =>
+        row.querySelector<HTMLAnchorElement>('[data-package-quick-link]')!
+      )
+    if (isInput && event.key === 'Enter') {
+      if (links[0]) {
+        event.preventDefault()
+        links[0].click()
+      }
+      return
+    }
+    if (
+      !['ArrowDown', 'ArrowUp', ...(isLink ? ['Home', 'End'] : [])].includes(
+        event.key
+      ) ||
+      !links.length
+    )
+      return
+    event.preventDefault()
+    const current = links.indexOf(target as HTMLAnchorElement)
+    const index =
+      event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? links.length - 1
+          : current === -1
+            ? event.key === 'ArrowDown'
+              ? 0
+              : links.length - 1
+            : (current + (event.key === 'ArrowDown' ? 1 : -1) + links.length) %
+              links.length
+    links[index]?.focus()
+  })
+  for (const trigger of dialog.querySelectorAll<HTMLButtonElement>(
+    '[data-package-preview]'
+  ))
+    trigger.addEventListener('click', async () => {
+      previewTrigger = trigger
+      await customElements.whenDefined('hulla-tabs')
+      const tabs = preview.querySelector<HTMLElement & { value: string }>(
+        'hulla-tabs'
+      )!
+      tabs.value = trigger.dataset.packagePreview!
+      docsFor(tabs.value)
+      dialog.dataset.mode = 'preview'
+      quick.hidden = true
+      preview.hidden = false
+      primary.hidden = false
+      title.textContent = 'Package preview'
+      description.textContent = 'Try the example, or go straight to the docs.'
+      content.scrollTop = 0
+      preview
+        .querySelector<HTMLElement>('[role="tabpanel"]:not([hidden]) h3')
+        ?.focus({ preventScroll: true })
+    })
+  preview.addEventListener(TABS_VALUE_CHANGE_EVENT, (event) => {
+    if (event.target !== preview.querySelector('hulla-tabs')) return
+    docsFor((event as CustomEvent<TabsValueChangeDetail>).detail.value)
+  })
+  dialog.querySelector('[data-package-back]')?.addEventListener('click', () => {
+    showQuick()
+    previewTrigger?.focus({ preventScroll: true })
+  })
+</script>

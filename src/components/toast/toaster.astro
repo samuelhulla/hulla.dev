@@ -1,0 +1,270 @@
+---
+import { toastClassNames, type ToastPosition } from '@/lib/toast'
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+import Toast from './toast.astro'
+import ToastAction from './toast-action.astro'
+import ToastClose from './toast-close.astro'
+import ToastDescription from './toast-description.astro'
+import ToastProgress from './toast-progress.astro'
+import ToastTitle from './toast-title.astro'
+
+type Props = Omit<HTMLAttributes<'ol'>, 'children'> & {
+  duration?: number
+  limit?: number
+  position?: ToastPosition
+}
+
+const {
+  'aria-label': ariaLabel = 'Notifications',
+  class: className,
+  duration = 5000,
+  limit = 4,
+  position = 'bottom-right',
+  ...props
+} = Astro.props as Props
+---
+
+<hulla-toaster
+  {...props}
+  aria-label={ariaLabel}
+  data-duration={duration}
+  data-limit={limit}
+  data-position={position}
+  data-slot="toast-viewport"
+  role="region"
+  class={cn(toastClassNames.viewport, className)}>
+  <template data-toast-template>
+    <Toast>
+      <div class="min-w-0">
+        <ToastTitle data-toast-template-title />
+        <ToastDescription data-toast-template-description hidden />
+      </div>
+      <ToastClose data-toast-template-close />
+      <ToastAction data-toast-template-action hidden />
+      <ToastProgress data-toast-template-progress />
+    </Toast>
+  </template>
+</hulla-toaster>
+
+<script>
+  import {
+    dismissToast,
+    subscribeToasts,
+    toastClassNames,
+    toastVariantClassNames,
+    type ToastRecord,
+  } from '@/lib/toast'
+
+  type TimerState = {
+    deadline: number
+    handle?: ReturnType<typeof setTimeout>
+    remaining: number
+  }
+
+  const elementName = 'hulla-toaster'
+
+  if (!customElements.get(elementName)) {
+    class HullaToasterElement extends HTMLElement {
+      unsubscribe?: () => void
+      timers = new Map<string, TimerState>()
+
+      get defaultDuration() {
+        const value = Number(this.dataset.duration)
+        return Number.isFinite(value) && value >= 0 ? value : 5000
+      }
+
+      get visibleLimit() {
+        const value = Number(this.dataset.limit)
+        return Number.isFinite(value) && value > 0 ? Math.floor(value) : 4
+      }
+
+      connectedCallback() {
+        this.unsubscribe ??= subscribeToasts((records) =>
+          this.renderRecords(records)
+        )
+      }
+
+      disconnectedCallback() {
+        this.unsubscribe?.()
+        this.unsubscribe = undefined
+        this.timers.forEach((timer) => {
+          if (timer.handle !== undefined) clearTimeout(timer.handle)
+        })
+        this.timers.clear()
+      }
+
+      renderRecords(records: readonly ToastRecord[]) {
+        const visibleRecords = records.slice(0, this.visibleLimit)
+        const visibleIds = new Set(visibleRecords.map((record) => record.id))
+
+        this.querySelectorAll<HTMLElement>('[data-toast-id]').forEach(
+          (element) => {
+            const id = element.dataset.toastId
+            if (id && !visibleIds.has(id)) element.remove()
+          }
+        )
+
+        this.timers.forEach((timer, id) => {
+          if (visibleIds.has(id)) return
+          if (timer.handle !== undefined) clearTimeout(timer.handle)
+          this.timers.delete(id)
+        })
+
+        let previousElement: HTMLElement | undefined
+
+        visibleRecords.forEach((record) => {
+          const signature = JSON.stringify({
+            action: record.action?.label,
+            description: record.description,
+            duration: record.duration,
+            title: record.title,
+            variant: record.variant,
+          })
+          let element = this.querySelector<HTMLElement>(
+            `[data-toast-id="${record.id}"]`
+          )
+
+          if (!element || element.dataset.toastSignature !== signature) {
+            const nextElement = this.createToastElement(record)
+            nextElement.dataset.toastSignature = signature
+            const timer = this.timers.get(record.id)
+            if (timer?.handle !== undefined) clearTimeout(timer.handle)
+            this.timers.delete(record.id)
+            element?.replaceWith(nextElement)
+            element = nextElement
+          }
+
+          if (previousElement) {
+            if (previousElement.nextElementSibling !== element) {
+              previousElement.after(element)
+            }
+          } else {
+            const firstToast = this.querySelector<HTMLElement>(
+              ':scope > [data-toast-id]'
+            )
+            if (firstToast !== element) this.insertBefore(element, firstToast)
+          }
+
+          previousElement = element
+          this.ensureTimer(record)
+        })
+      }
+
+      createToastElement(record: ToastRecord) {
+        const template = this.querySelector<HTMLTemplateElement>(
+          ':scope > template[data-toast-template]'
+        )
+        const element = template?.content
+          .querySelector<HTMLElement>('[data-slot="toast"]')
+          ?.cloneNode(true) as HTMLElement | undefined
+        if (!element) throw new Error('Toast template is unavailable')
+
+        element.ariaAtomic = 'true'
+        element.className = `${toastClassNames.toast} ${toastVariantClassNames[record.variant]}`
+        element.dataset.slot = 'toast'
+        element.dataset.toastId = record.id
+        element.dataset.variant = record.variant
+        element.role = record.variant === 'danger' ? 'alert' : 'status'
+
+        const title = element.querySelector<HTMLElement>(
+          '[data-toast-template-title]'
+        )
+        if (title) title.textContent = record.title
+
+        const description = element.querySelector<HTMLElement>(
+          '[data-toast-template-description]'
+        )
+        if (record.description) {
+          if (description) {
+            description.hidden = false
+            description.textContent = record.description
+          }
+        } else {
+          description?.remove()
+        }
+
+        const close = element.querySelector<HTMLButtonElement>(
+          '[data-toast-template-close]'
+        )
+        close?.addEventListener('click', () => dismissToast(record.id))
+
+        const action = element.querySelector<HTMLButtonElement>(
+          '[data-toast-template-action]'
+        )
+        if (record.action) {
+          if (action) {
+            action.hidden = false
+            action.textContent = record.action.label
+            action.addEventListener('click', () => {
+              record.action?.onClick?.()
+              dismissToast(record.id)
+            })
+          }
+        } else {
+          action?.remove()
+        }
+
+        const progress = element.querySelector<HTMLElement>(
+          '[data-toast-template-progress]'
+        )
+        const duration = record.duration ?? this.defaultDuration
+        if (duration > 0) {
+          progress?.style.setProperty('--hulla-toast-duration', `${duration}ms`)
+        } else {
+          progress?.remove()
+        }
+
+        element.addEventListener('pointerenter', () =>
+          this.pauseTimer(record.id)
+        )
+        element.addEventListener('pointerleave', () => {
+          if (!element.contains(document.activeElement))
+            this.resumeTimer(record.id)
+        })
+        element.addEventListener('focusin', () => this.pauseTimer(record.id))
+        element.addEventListener('focusout', () => {
+          queueMicrotask(() => {
+            if (!element.contains(document.activeElement))
+              this.resumeTimer(record.id)
+          })
+        })
+
+        return element
+      }
+
+      ensureTimer(record: ToastRecord) {
+        if (this.timers.has(record.id)) return
+        const duration = record.duration ?? this.defaultDuration
+        const timer = { deadline: 0, remaining: duration } satisfies TimerState
+        this.timers.set(record.id, timer)
+        this.resumeTimer(record.id)
+      }
+
+      pauseTimer(id: string) {
+        const element = this.querySelector<HTMLElement>(
+          `[data-toast-id="${id}"]`
+        )
+        if (element) element.dataset.paused = 'true'
+        const timer = this.timers.get(id)
+        if (!timer || timer.handle === undefined) return
+        clearTimeout(timer.handle)
+        timer.handle = undefined
+        timer.remaining = Math.max(0, timer.deadline - Date.now())
+      }
+
+      resumeTimer(id: string) {
+        const element = this.querySelector<HTMLElement>(
+          `[data-toast-id="${id}"]`
+        )
+        if (element) element.dataset.paused = 'false'
+        const timer = this.timers.get(id)
+        if (!timer || timer.remaining <= 0 || timer.handle !== undefined) return
+        timer.deadline = Date.now() + timer.remaining
+        timer.handle = setTimeout(() => dismissToast(id), timer.remaining)
+      }
+    }
+
+    customElements.define(elementName, HullaToasterElement)
+  }
+</script>

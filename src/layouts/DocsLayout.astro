@@ -3,12 +3,20 @@ import BaseLayout from './BaseLayout.astro'
 import SiteHeader from '@/components/site/SiteHeader.astro'
 import SiteFooter from '@/components/site/SiteFooter.astro'
 import DocsSidebar from '@/components/docs/DocsSidebar.astro'
+import PackageChooser from '@/components/docs/PackageChooser.astro'
 import MobileDocsNav from '@/components/docs/MobileDocsNav.astro'
 import SearchCommand from '@/components/docs/SearchCommand'
+import DocsTutorialOverview from '@/components/docs/DocsTutorialOverview.astro'
 import DocsInlineText from '@/components/docs/DocsInlineText.astro'
+import DocsCopyLink from '@/components/docs/DocsCopyLink.astro'
+import Toaster from '@/components/toast/toaster.astro'
+import Collapsible from '@/components/collapsible/collapsible.astro'
+import CollapsibleTrigger from '@/components/collapsible/collapsible-trigger.astro'
+import CollapsibleContent from '@/components/collapsible/collapsible-content.astro'
 import Breadcrumbs from '@/components/breadcrumbs/breadcrumbs.astro'
 import BreadcrumbItem from '@/components/breadcrumbs/breadcrumb-item.astro'
 import TableOfContents from '@/components/table-of-contents/table-of-contents.astro'
+import TableOfContentsSection from '@/components/table-of-contents/table-of-contents-section.astro'
 import GitHubIcon from '@/components/site/GitHubIcon.astro'
 import { SquarePen } from '@lucide/astro'
 import {
@@ -20,33 +28,39 @@ import {
   findDocGroupPage,
   findDoc,
 } from '@/data/docs'
+import { guides, findGuide, adjacentGuides } from '@/data/guides'
 import { stripInlineCode } from '@/lib/inline-code'
 type Props = {
-  frontmatter: { title: string; description: string; usefulFor?: string[] }
+  frontmatter: {
+    title: string
+    description: string
+    usefulFor?: string[]
+    tutorial?: {
+      outcome: string
+      prerequisites: { title: string; href?: string }[]
+    }
+  }
 }
 const { frontmatter } = Astro.props
 const pathname = Astro.url.pathname.replace(/\/$/, '')
-const { previous, next } = adjacentDocs(pathname)
+const guide = findGuide(pathname)
+const { previous, next } = guide
+  ? adjacentGuides(pathname)
+  : adjacentDocs(pathname)
 const group = findDocGroup(pathname) ?? findDocGroupPage(pathname)
 const current = findDoc(pathname)
 const groupPage = findDocGroupPage(pathname)
-const packageMeta = findDocPackage(pathname) ?? docPackages[0]!
-const fallback = [
-  ...flatDocs,
-  {
-    title: 'Components & styling',
-    href: '/docs/ui',
-    description: 'Shared components and Markdown styling with @hulla/ui.',
-  },
-]
-const contentPath =
-  pathname === packageMeta.href && pathname !== '/docs/ui'
+const packageMeta =
+  findDocPackage(guide ? `/docs/${guide.packageKind}` : pathname) ??
+  docPackages[0]!
+const fallback = [...flatDocs, ...guides]
+const contentPath = guide
+  ? `src/content/guides/${guide.id}.mdx`
+  : pathname === packageMeta.href
     ? `src/content/docs/${packageMeta.kind}/index.mdx`
-    : pathname === '/docs/ui'
-      ? 'src/content/docs/ui.mdx'
-      : groupPage
-        ? 'src/data/docs.ts'
-        : `src/content/docs/${pathname.slice('/docs/'.length)}.mdx`
+    : groupPage
+      ? 'src/data/docs.ts'
+      : `src/content/docs/${pathname.slice('/docs/'.length)}.mdx`
 const editUrl = `https://github.com/samuelhulla/hulla.dev/edit/master/${contentPath}`
 ---
 
@@ -64,42 +78,67 @@ const editUrl = `https://github.com/samuelhulla/hulla.dev/edit/master/${contentP
     </div>
     <main class="docs-main" id="main">
       <div class="docs-columns">
-        <article class="docs-article" data-pagefind-body>
+        <article id="docs-article" class="docs-article" data-pagefind-body>
           <Breadcrumbs>
             <BreadcrumbItem>
-              <a href="/docs">Docs</a>
+              <a href={guide ? '/guides' : '/docs'}>
+                {guide ? 'Guides' : 'Docs'}
+              </a>
             </BreadcrumbItem>
             <BreadcrumbItem>
-              <a href={packageMeta.href}>{packageMeta.title}</a>
+              <a
+                href={
+                  guide ? `/guides#${guide.packageKind}` : packageMeta.href
+                }>
+                {packageMeta.title}
+              </a>
             </BreadcrumbItem>
             {group && (
               <BreadcrumbItem>
                 <a href={group.href}>{group.title}</a>
               </BreadcrumbItem>
             )}
-            {current && pathname !== packageMeta.href && (
+            {(current || guide) && pathname !== packageMeta.href && (
               <BreadcrumbItem aria-current="page">
-                {current.title}
+                {guide?.title ?? current?.title}
               </BreadcrumbItem>
             )}
           </Breadcrumbs>
-          <header class="docs-page-heading">
-            <p class="eyebrow">{group?.title ?? 'Documentation'}</p>
-            <h1 class="docs-title" data-pagefind-meta="title">
-              {frontmatter.title}
-            </h1>
-            <p class="docs-description">
-              <DocsInlineText text={frontmatter.description} />
-            </p>
-          </header>
+          <TableOfContentsSection
+            id="docs-page-title"
+            label={frontmatter.title}>
+            <header class="docs-page-heading">
+              <p class="eyebrow">
+                {guide ? 'Guide' : (group?.title ?? 'Documentation')}
+              </p>
+              <h1
+                class="docs-title group/docs-heading"
+                data-pagefind-meta="title">
+                {frontmatter.title}
+                <DocsCopyLink />
+              </h1>
+              <p class="docs-description">
+                <DocsInlineText text={frontmatter.description} />
+              </p>
+            </header>
+          </TableOfContentsSection>
           <noscript>
             <style is:inline>
-              hulla-tabs [data-slot='tabs-list'] {
+              hulla-tabs[data-docs-area-tabs] [data-slot='tabs-list'] {
                 display: none;
               }
-              hulla-tabs
-                [data-slot='tabs-content'][data-value='documentation'] {
-                display: block !important;
+              /* Match the layer of Tailwind's important [hidden] rule. */
+              @layer base {
+                hulla-tabs[data-docs-area-tabs][data-initial-value='documentation']
+                  [data-slot='tabs-content'][data-value='documentation'],
+                hulla-tabs[data-docs-area-tabs][data-initial-value='guides']
+                  [data-slot='tabs-content'][data-value='guides'],
+                hulla-tabs[data-docs-area-tabs][data-initial-value='reference']
+                  [data-slot='tabs-content'][data-value='reference'],
+                hulla-tabs[data-package-manager-tabs]
+                  [data-slot='tabs-content'][data-value='bun'] {
+                  display: block !important;
+                }
               }
             </style>
             <div class="mb-6 lg:hidden">
@@ -109,7 +148,18 @@ const editUrl = `https://github.com/samuelhulla/hulla.dev/edit/master/${contentP
               </details>
             </div>
           </noscript>
-          <div id="docs-content">
+          <div class="mb-6 min-[80rem]:hidden" data-mobile-page-outline>
+            <Collapsible>
+              <CollapsibleTrigger>On this page</CollapsibleTrigger>
+              <CollapsibleContent class="px-2 py-3">
+                <TableOfContents for="docs-article" />
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+          {frontmatter.tutorial && (
+            <DocsTutorialOverview {...frontmatter.tutorial} />
+          )}
+          <div id="docs-content" class="prose">
             <slot />
           </div>
           {(previous || next) && (
@@ -132,7 +182,7 @@ const editUrl = `https://github.com/samuelhulla/hulla.dev/edit/master/${contentP
           )}
         </article>
         <aside class="docs-toc-rail">
-          <TableOfContents for="docs-content">
+          <TableOfContents for="docs-article">
             <p class="eyebrow">On this page</p>
           </TableOfContents>
           <a
@@ -154,5 +204,7 @@ const editUrl = `https://github.com/samuelhulla/hulla.dev/edit/master/${contentP
       </div>
     </main>
   </div>
+  <PackageChooser activePackage={packageMeta} guide={Boolean(guide)} />
   <SiteFooter />
+  <Toaster duration={3000} />
 </BaseLayout>

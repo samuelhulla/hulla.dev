@@ -1,13 +1,14 @@
 import { getCollection, type CollectionEntry } from 'astro:content'
 import { docGroups, docPackages, findDocPackage } from '@/data/docs'
+import { guides } from '@/data/guides'
 import { renderDocGroupMarkdown } from '@/lib/doc-group-markdown'
 import { renderMarkdownDocument } from '@/lib/docs-markdown'
 
 export const SITE_ORIGIN = 'https://hulla.dev'
 
 export type AiDoc = {
-  pathname: `/docs${string}`
-  markdownPathname: `/docs${string}.md`
+  pathname: `/docs${string}` | `/guides${string}`
+  markdownPathname: `/docs${string}.md` | `/guides${string}.md`
   title: string
   description: string
   markdown: string
@@ -57,6 +58,9 @@ export async function loadAiDocs(): Promise<AiDoc[]> {
     .sort((left, right) => left.pathname.localeCompare(right.pathname))
   ordered.push(...remaining)
 
+  ordered.push(guidesLanding())
+  for (const entry of await getCollection('guides'))
+    ordered.push(contentDoc(entry))
   return ordered
 }
 
@@ -91,6 +95,7 @@ Use the focused Markdown pages below for retrieval. Use the full corpus only whe
 
 - [Full documentation corpus](${SITE_ORIGIN}/llms-full.txt): Every documentation page combined into one Markdown document
 - [Documentation home](${SITE_ORIGIN}/docs.md): Package-level documentation index
+- [Guides](${SITE_ORIGIN}/guides.md): Follow-along projects
 
 ${index}
 `
@@ -121,9 +126,14 @@ export function markdownResponse(doc: AiDoc): Response {
   })
 }
 
-function contentDoc(entry: CollectionEntry<'docs'>): AiDoc {
+function contentDoc(
+  entry: CollectionEntry<'docs'> | CollectionEntry<'guides'>
+): AiDoc {
   const pathname = pathnameForEntry(entry)
-  const section = findDocPackage(pathname)?.title ?? 'Start here'
+  const section =
+    entry.collection === 'guides'
+      ? 'Guides'
+      : (findDocPackage(pathname)?.title ?? 'Start here')
 
   return {
     pathname,
@@ -139,8 +149,10 @@ function contentDoc(entry: CollectionEntry<'docs'>): AiDoc {
   }
 }
 
-function pathnameForEntry(entry: CollectionEntry<'docs'>): `/docs${string}` {
-  return `/docs/${entry.id.replace(/\/index$/, '')}`
+function pathnameForEntry(
+  entry: CollectionEntry<'docs'> | CollectionEntry<'guides'>
+): AiDoc['pathname'] {
+  return `/${entry.collection}/${entry.id.replace(/\/index$/, '')}`
 }
 
 function docsLanding(entries: readonly CollectionEntry<'docs'>[]): AiDoc {
@@ -153,18 +165,42 @@ function docsLanding(entries: readonly CollectionEntry<'docs'>[]): AiDoc {
     pathname: '/docs',
     markdownPathname: '/docs.md',
     title: 'Documentation',
-    description: 'Guides and references for the @hulla/* packages.',
+    description: 'Concepts and API references for the @hulla/* packages.',
     section: 'Navigation',
     includeInCorpus: false,
     markdown: renderMarkdownDocument({
       title: 'Documentation',
-      description: 'Guides and references for the @hulla/* packages.',
-      body: packages
-        .map(
-          (entry) =>
-            `- [${entry.data.title}](${SITE_ORIGIN}${pathnameForEntry(entry)}.md): ${entry.data.description}`
-        )
-        .join('\n'),
+      description: 'Concepts and API references for the @hulla/* packages.',
+      body:
+        `Follow a [guide](${SITE_ORIGIN}/guides.md) to build a project, or look up a package below.\n\n## Browse by package\n\n` +
+        packages
+          .map(
+            (entry) =>
+              `- [${entry.data.title}](${SITE_ORIGIN}${pathnameForEntry(entry)}.md): ${entry.data.description}`
+          )
+          .join('\n'),
+    }),
+  }
+}
+
+function guidesLanding(): AiDoc {
+  const body = guides
+    .map(
+      (guide) =>
+        `- [${guide.title}](${SITE_ORIGIN}${guide.href}.md): ${guide.description}`
+    )
+    .join('\n')
+  return {
+    pathname: '/guides',
+    markdownPathname: '/guides.md',
+    title: 'Guides',
+    description: 'Build a small app while learning the @hulla/* packages.',
+    section: 'Navigation',
+    includeInCorpus: false,
+    markdown: renderMarkdownDocument({
+      title: 'Guides',
+      description: 'Build a small app while learning the @hulla/* packages.',
+      body,
     }),
   }
 }

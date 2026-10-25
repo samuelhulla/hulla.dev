@@ -18,7 +18,7 @@ export function renderDocGroupMarkdown(
         entry.chooseWhen !== undefined && entry.applicationOwns !== undefined
     )
   if (!hasDecisionGuide)
-    return `## ${group.area === 'reference' ? 'Reference pages' : 'Guides'}\n\n${guides}`
+    return `## ${group.area === 'reference' ? 'Reference pages' : 'Documentation'}\n\n${guides}`
 
   const rows = group.entries
     .map(
@@ -33,7 +33,7 @@ export function renderDocGroupMarkdown(
 | --- | --- | --- |
 ${rows}
 
-## Guides
+## Documentation
 
 ${guides}`
 }

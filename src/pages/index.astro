@@ -2,21 +2,8 @@
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import SiteHeader from '@/components/site/SiteHeader.astro'
 import SiteFooter from '@/components/site/SiteFooter.astro'
-import DocsCodeBlock from '@/components/docs/DocsCodeBlock.astro'
-import PackageIcon from '@/components/site/PackageIcon.astro'
+import PackageShowcase from '@/components/site/PackageShowcase.astro'
 import { ArrowUpRight, Construction, FileUser, Mail } from '@lucide/astro'
-
-const example = `const contract = defineContract({
-  basePath: '/api',
-  routes: {
-    user: route.get('/users/:id', {
-      params: z.object({ id: z.string() }),
-      responses: { 200: response.json(user) },
-    }),
-  },
-})
-
-const result = await api.user({ params: { id: 'ada' } })`
 ---
 
 <BaseLayout
@@ -107,26 +94,33 @@ const result = await api.user({ params: { id: 'ada' } })`
         </nav>
       </section>
     </section>
-    <section class="home-workshop" aria-labelledby="workshop-title">
-      <div class="home-workshop-intro">
-        <p class="eyebrow">Also in the workshop / Open source</p>
+    <section class="home-package-workshop" aria-labelledby="workshop-title">
+      <div class="home-package-intro">
+        <p class="eyebrow">Open-source TypeScript / @hulla</p>
         <h2 id="workshop-title" class="home-section-title">
-          <PackageIcon kind="api" size={26} class="text-primary-text" />
-          @hulla/api
+          HTTP contracts, live PostgreSQL views, and UI source you can edit.
         </h2>
-        <p class="home-workshop-tagline">
-          One HTTP contract. Every application boundary.
+        <p class="text-muted-foreground text-base leading-7">
+          Change a shared contract and see what breaks. Edit inventory and watch
+          two views react. These are the packages I maintain, with working
+          examples you can try before opening the docs.
         </p>
-        <p class="home-workshop-description">
-          An open-source package I'm building to define your API once, implement
-          it on the server, and call it with types all the way through.
-        </p>
-        <a class="text-link" href="/docs/api/quick-start">
-          Explore the quick start →
-        </a>
       </div>
-      <DocsCodeBlock code={example} language="ts" filename="users.ts" />
+      <PackageShowcase />
     </section>
   </main>
   <SiteFooter />
 </BaseLayout>
+
+<style>
+  .home-package-workshop {
+    margin-block: 5rem;
+  }
+
+  .home-package-intro {
+    display: grid;
+    max-width: 52rem;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+</style>

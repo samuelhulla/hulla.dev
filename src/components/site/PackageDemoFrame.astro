@@ -1,0 +1,12 @@
+---
+import PackageDemo, { type DemoKind } from './PackageDemo'
+
+type Props = { kind: DemoKind; class?: string }
+const { kind, class: className } = Astro.props
+---
+
+<div
+  class:list={['min-w-0 [overflow-wrap:anywhere]', className]}
+  data-component-boundary>
+  <PackageDemo {kind} client:visible />
+</div>

@@ -19,7 +19,10 @@ const removals = lines.filter(
 ).length
 ---
 
-<section class="docs-example" aria-label={`Change in ${filename}`}>
+<section
+  class="docs-example"
+  data-component-boundary
+  aria-label={`Change in ${filename}`}>
   <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
     <span class="inline-flex min-w-0 items-center gap-2 font-mono text-xs text-muted-foreground">
       <FileDiff class="size-4 shrink-0" aria-hidden="true" />

@@ -1,69 +1,4 @@
-/* Site layout and explicitly mapped Markdown nodes only. Component paint lives in styles.css. */
-@layer base {
-  html {
-    background: var(--color-background);
-    color: var(--color-foreground);
-    font-family: var(--font-sans);
-    scrollbar-gutter: stable;
-  }
-  body {
-    margin: 0;
-    min-width: 20rem;
-  }
-  :focus-visible {
-    outline: 2px solid var(--color-focus-ring);
-    outline-offset: 3px;
-  }
-  ::selection {
-    background: var(--color-primary);
-    color: var(--color-primary-foreground);
-  }
-}
-
-/* Documentation area navigation: @hulla/ui Tabs behavior with the quieter,
-   editorial navigation treatment used by the docs shell. */
-.docs-area-tabs {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-items: stretch;
-  gap: 0;
-  overflow: visible;
-  padding: 0;
-}
-
-.docs-area-tab {
-  width: 100%;
-  min-height: 3.25rem;
-  border-radius: 0;
-  background: transparent;
-  padding: 0.75rem 0.25rem;
-  color: var(--color-muted-foreground);
-  font-size: 0.75rem;
-  font-weight: 500;
-}
-
-.docs-area-tab:enabled:hover,
-.docs-area-tab:enabled[data-state='active'],
-.docs-area-tab:enabled[data-state='active']:hover {
-  background: transparent;
-}
-
-.docs-area-tab:enabled:hover {
-  color: var(--color-foreground);
-}
-
-.docs-area-tab:enabled[data-state='active'] {
-  color: var(--color-primary-text);
-}
-
-.docs-area-tab::after {
-  right: 0;
-  bottom: -1px;
-  left: 0;
-  height: 2px;
-  border-radius: 0;
-  background: var(--color-primary-text);
-}
+/* Site layout and branding. Shared theme and optional prose styles come from @hulla/ui. */
 @layer components {
   .site-header {
     position: sticky;
@@ -215,7 +150,6 @@
   }
   .home-notice p {
     margin: 0;
-    max-width: 42rem;
     font-size: 0.875rem;
     line-height: 1.6;
   }
@@ -314,7 +248,6 @@
     letter-spacing: -0.07em;
   }
   .home-intro {
-    max-width: 46ch;
     font-size: clamp(1rem, 1.2vw, 1.25rem);
     line-height: 1.7;
     color: var(--color-muted-foreground);
@@ -350,10 +283,8 @@
   .home-workshop-tagline {
     font-size: clamp(1.125rem, 1.4vw, 1.5rem);
     letter-spacing: -0.025em;
-    max-width: 30ch;
   }
   .home-workshop-description {
-    max-width: 45ch;
     margin-block: 1rem 1.5rem;
     color: var(--color-muted-foreground);
     line-height: 1.75;
@@ -368,9 +299,6 @@
     }
     .home-title {
       font-size: clamp(2.25rem, 9vw, 4.5rem);
-    }
-    .home-intro {
-      max-width: 52ch;
     }
   }
   .docs-shell {
@@ -426,7 +354,6 @@
     color: var(--color-muted-foreground);
     font-size: 1.0625rem;
     line-height: 1.75;
-    max-width: 60ch;
     text-wrap: pretty;
   }
   .docs-toc-rail {
@@ -490,89 +417,6 @@
   }
   .docs-pagination-link:hover {
     color: var(--color-primary-text);
-  }
-  .md-h1,
-  .md-h2,
-  .md-h3,
-  .md-h4,
-  .md-h5,
-  .md-h6 {
-    scroll-margin-top: 6rem;
-    font-weight: 600;
-    letter-spacing: -0.025em;
-    line-height: 1.35;
-    text-wrap: balance;
-  }
-  .md-h1 {
-    margin: 2.5rem 0 1rem;
-    font-size: 2.25rem;
-  }
-  .md-h2 {
-    margin: 3.5rem 0 1.25rem;
-    font-size: 1.625rem;
-  }
-  .md-h3 {
-    margin: 2rem 0 0.75rem;
-    font-size: 1.25rem;
-  }
-  .md-h4,
-  .md-h5,
-  .md-h6 {
-    margin: 1.5rem 0 0.75rem;
-    font-size: 1rem;
-  }
-  .md-p {
-    max-width: 68ch;
-    margin: 1.125rem 0;
-    font-size: 1.0625rem;
-    line-height: 1.75;
-    color: var(--color-foreground);
-    text-wrap: pretty;
-  }
-  #docs-content > .md-p:first-child {
-    margin-top: 0;
-  }
-  .md-a {
-    color: var(--color-foreground);
-    text-decoration: underline;
-    text-decoration-color: var(--color-muted-foreground);
-    text-decoration-thickness: 1px;
-    text-underline-offset: 0.22em;
-  }
-  .md-a:hover {
-    text-decoration-color: currentColor;
-    text-decoration-thickness: 2px;
-  }
-  .md-ul,
-  .md-ol {
-    max-width: 68ch;
-    margin: 1.25rem 0;
-    padding-left: 1.5rem;
-    font-size: 1.0625rem;
-  }
-  .md-ul {
-    list-style: disc;
-  }
-  .md-ol {
-    list-style: decimal;
-  }
-  .md-li {
-    padding-left: 0.25rem;
-    margin: 0.625rem 0;
-    line-height: 1.75;
-    color: var(--color-foreground);
-  }
-  .md-strong {
-    color: var(--color-foreground);
-    font-weight: 600;
-  }
-  .md-em {
-    font-style: italic;
-  }
-  .md-blockquote {
-    margin: 1.5rem 0;
-    padding-left: 1.25rem;
-    border-left: 2px solid var(--color-primary);
   }
   .md-rule,
   .md-table,

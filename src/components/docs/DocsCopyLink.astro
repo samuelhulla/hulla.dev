@@ -1,0 +1,74 @@
+---
+import Button from '@/components/button/button.astro'
+import { Check, Link } from '@lucide/astro'
+
+type Props = { target?: string }
+const { target } = Astro.props
+const label = target ? 'Copy section link' : 'Copy page link'
+---
+
+<docs-copy-link
+  hidden
+  data-target={target}
+  data-pagefind-ignore
+  class="ml-2 inline-flex align-middle opacity-0 group-hover/docs-heading:opacity-100 group-focus-within/docs-heading:opacity-100 [@media(hover:none)]:opacity-100">
+  <Button size="sm" variant="ghost" aria-label={label} title={label}>
+    <Link aria-hidden="true" data-link-icon />
+    <Check aria-hidden="true" data-copied-icon class="hidden" />
+  </Button>
+</docs-copy-link>
+
+<script>
+  import { toast } from '@/lib/toast'
+
+  if (!customElements.get('docs-copy-link')) {
+    customElements.define(
+      'docs-copy-link',
+      class extends HTMLElement {
+        connectedCallback() {
+          const button = this.querySelector('button')
+          if (!button || !navigator.clipboard?.writeText) return
+          this.hidden = false
+          const label = button.getAttribute('aria-label')!
+          const linkIcon = this.querySelector<SVGElement>('[data-link-icon]')!
+          const copiedIcon =
+            this.querySelector<SVGElement>('[data-copied-icon]')!
+          let timer: ReturnType<typeof setTimeout>
+
+          button.onclick = async () => {
+            clearTimeout(timer)
+            const url = new URL(window.location.href)
+            url.search = ''
+            url.hash = this.dataset.target ?? ''
+            try {
+              await navigator.clipboard.writeText(url.href)
+              linkIcon.classList.add('hidden')
+              copiedIcon.classList.remove('hidden')
+              button.setAttribute('aria-label', 'Link copied')
+              button.title = 'Link copied'
+              toast.push({
+                title: 'Link copied to clipboard',
+                variant: 'success',
+              })
+            } catch {
+              button.setAttribute('aria-label', 'Copy failed. Try again')
+              button.title = 'Copy failed. Try again'
+              toast.push({
+                title: 'Could not copy link',
+                description: 'Please try again.',
+                variant: 'danger',
+              })
+            }
+
+            timer = setTimeout(() => {
+              linkIcon.classList.remove('hidden')
+              copiedIcon.classList.add('hidden')
+              button.setAttribute('aria-label', label)
+              button.title = label
+            }, 1800)
+          }
+        }
+      }
+    )
+  }
+</script>

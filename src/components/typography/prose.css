@@ -1,0 +1,131 @@
+/* Optional document typography. Import once, then wrap Markdown or HTML in .prose.
+   .not-prose and data-component-boundary preserve embedded component styling.
+   Nested .prose regions can opt back in inside those boundaries. */
+@layer theme, base, components, utilities;
+
+@layer components {
+  @scope (.prose) to (.not-prose, [data-component-boundary]) {
+    :where(p, ul, ol, blockquote) {
+      color: var(--color-prose);
+      font-size: 0.9375rem;
+      line-height: 1.75;
+      overflow-wrap: anywhere;
+    }
+    :where(p) {
+      margin-block: 1.25rem;
+      text-wrap: pretty;
+    }
+    :where(ul, ol) {
+      margin-block: 1.25rem;
+      padding-inline-start: 1.5rem;
+    }
+    :where(ul) {
+      list-style-type: disc;
+    }
+    :where(ol) {
+      list-style-type: decimal;
+    }
+    :where(li) {
+      margin-block: 0.625rem;
+      padding-inline-start: 0.25rem;
+    }
+    :where(li)::marker {
+      color: var(--color-muted-foreground);
+    }
+    :where(li > p, li > ul, li > ol) {
+      margin-block: 0.625rem;
+    }
+    :where(h1, h2, h3, h4, h5, h6) {
+      color: var(--color-foreground);
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      line-height: 1.35;
+      text-wrap: balance;
+      scroll-margin-block-start: 6rem;
+    }
+    :where(h1) {
+      margin-block: 2.5rem 1rem;
+      font-size: 2.25rem;
+    }
+    :where(h2) {
+      margin-block: 3.5rem 1.25rem;
+      font-size: 1.5rem;
+    }
+    :where(h3) {
+      margin-block: 2rem 0.75rem;
+      font-size: 1.25rem;
+    }
+    :where(h4, h5, h6) {
+      margin-block: 1.5rem 0.75rem;
+      font-size: 1rem;
+    }
+    :where(a) {
+      color: var(--color-foreground);
+      text-decoration: underline;
+      text-decoration-color: var(--color-muted-foreground);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 0.22em;
+    }
+    :where(a:hover) {
+      text-decoration-color: currentColor;
+      text-decoration-thickness: 2px;
+    }
+    :where(strong) {
+      color: var(--color-foreground);
+      font-weight: 600;
+    }
+    :where(em) {
+      font-style: italic;
+    }
+    :where(blockquote) {
+      margin-block: 1.5rem;
+      padding-inline-start: 1.25rem;
+      border-inline-start: 2px solid var(--color-primary);
+    }
+    :where(hr) {
+      margin-block: 1.75rem;
+      border-color: var(--color-border);
+    }
+    :where(code:not([data-slot])) {
+      box-decoration-break: clone;
+      border-radius: 0.25em;
+      background: color-mix(in oklab, var(--color-foreground) 5%, transparent);
+      padding: 0.125em 0.25em;
+      color: var(--color-foreground);
+      font-family: var(--font-mono);
+      font-size: 0.875em;
+      font-weight: 400;
+      line-height: inherit;
+      overflow-wrap: anywhere;
+    }
+    :where(pre) {
+      margin-block: 1.75rem;
+      overflow: auto;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--hulla-code-background);
+      padding: 1rem;
+      color: var(--hulla-code-foreground);
+      font-family: var(--font-mono);
+      font-size: 0.8125rem;
+      line-height: 1.75;
+      tab-size: 2;
+    }
+    :where(pre code) {
+      border: 0;
+      border-radius: 0;
+      background: none;
+      padding: 0;
+      color: inherit;
+      font-size: inherit;
+      overflow-wrap: normal;
+    }
+    :scope
+      > :where(p, h1, h2, h3, h4, h5, h6, ul, ol, blockquote, pre):first-child {
+      margin-block-start: 0;
+    }
+    :scope > :where(p, ul, ol, blockquote, pre):last-child {
+      margin-block-end: 0;
+    }
+  }
+}

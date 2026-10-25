@@ -23,20 +23,51 @@
         }
       ],
       "destination": "/docs/:path*.md"
+    },
+    {
+      "source": "/guides",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "(.*)text/markdown(.*)"
+        }
+      ],
+      "destination": "/guides.md"
+    },
+    {
+      "source": "/guides/:path*",
+      "has": [
+        {
+          "type": "header",
+          "key": "accept",
+          "value": "(.*)text/markdown(.*)"
+        }
+      ],
+      "destination": "/guides/:path*.md"
     }
   ],
   "headers": [
     {
       "source": "/docs/:path*",
-      "headers": [{ "key": "Vary", "value": "Accept" }]
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/guides/:path*",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
     }
   ],
   "redirects": [
-    {
-      "source": "/docs",
-      "destination": "/docs/api",
-      "permanent": true
-    },
     {
       "source": "/docs/api/getting-started/installation",
       "destination": "/docs/api/installation",
@@ -44,17 +75,67 @@
     },
     {
       "source": "/docs/api/getting-started/quickstart",
-      "destination": "/docs/api/quick-start",
+      "destination": "/guides/api/quick-start",
       "permanent": true
     },
     {
       "source": "/docs/api/core-concepts/procedures",
-      "destination": "/docs/api/core/procedures",
+      "destination": "/docs/api/core/contracts",
       "permanent": true
     },
     {
       "source": "/docs/api/core-concepts/router",
-      "destination": "/docs/api/core/routers-routes",
+      "destination": "/docs/api/core/contracts#keys-name-code-paths-name-http",
+      "permanent": true
+    },
+    {
+      "source": "/docs/api/quick-start",
+      "destination": "/guides/api/quick-start",
+      "permanent": true
+    },
+    {
+      "source": "/docs/args/quick-start",
+      "destination": "/guides/args/quick-start",
+      "permanent": true
+    },
+    {
+      "source": "/docs/args/recipes",
+      "destination": "/guides/args/recipes",
+      "permanent": true
+    },
+    {
+      "source": "/docs/cli/quick-start",
+      "destination": "/guides/cli/quick-start",
+      "permanent": true
+    },
+    {
+      "source": "/docs/control/quick-start",
+      "destination": "/guides/control/quick-start",
+      "permanent": true
+    },
+    {
+      "source": "/docs/control/config-checker",
+      "destination": "/guides/control/config-checker",
+      "permanent": true
+    },
+    {
+      "source": "/docs/db/quick-start",
+      "destination": "/guides/db/quick-start",
+      "permanent": true
+    },
+    {
+      "source": "/docs/style/quick-start",
+      "destination": "/guides/style/quick-start",
+      "permanent": true
+    },
+    {
+      "source": "/docs/ui/quick-start",
+      "destination": "/guides/ui/quick-start",
+      "permanent": true
+    },
+    {
+      "source": "/docs/gittar/quick-start",
+      "destination": "/guides/gittar/quick-start",
       "permanent": true
     }
   ]

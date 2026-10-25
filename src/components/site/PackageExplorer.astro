@@ -1,0 +1,205 @@
+---
+import Tabs from '@/components/tabs/tabs.astro'
+import TabsList from '@/components/tabs/tabs-list.astro'
+import TabsTrigger from '@/components/tabs/tabs-trigger.astro'
+import TabsContent from '@/components/tabs/tabs-content.astro'
+import CodeBlock from '@/components/code/code-block.astro'
+import CodeBlockContent from '@/components/code/code-block-content.astro'
+import NavigationLink from '@/components/navigation-menu/navigation-menu-link.astro'
+import LinkContent from '@/components/navigation-menu/navigation-menu-link-content.astro'
+import LinkTitle from '@/components/navigation-menu/navigation-menu-link-title.astro'
+import LinkDescription from '@/components/navigation-menu/navigation-menu-link-description.astro'
+import PackageDemoFrame from '@/components/site/PackageDemoFrame.astro'
+import PackageIcon from '@/components/site/PackageIcon.astro'
+import { createShikiCodeHighlighter } from '@/components/code-highlighter-shiki/code-highlighter-shiki'
+import { ArrowRight, BookOpen } from '@lucide/astro'
+import { docPackages, type DocPackage } from '@/data/docs'
+import { packagePreviews } from '@/data/package-previews'
+import { guides } from '@/data/guides'
+
+type Props = { activePackage: DocPackage; guide?: boolean; compact?: boolean }
+const { activePackage, guide = false, compact = false } = Astro.props
+const highlighter = await createShikiCodeHighlighter({
+  languages: ['ts', 'sh'],
+})
+---
+
+<Tabs
+  orientation="vertical"
+  defaultValue={activePackage.kind}
+  data-layout={compact ? 'compact' : 'catalog'}
+  class="package-explorer">
+  <TabsList aria-label="Packages">
+    {docPackages.map((pkg) => (
+      <TabsTrigger value={pkg.kind} class="gap-3 py-2 text-left">
+        <PackageIcon kind={pkg.kind} size={17} class="text-muted-foreground" />
+        <span class="grid gap-0.5">
+          <span class="font-mono text-[0.8125rem] leading-5">{pkg.title}</span>
+          <span class="package-purpose text-muted-foreground text-xs font-normal leading-4">
+            {packagePreviews[pkg.kind].purpose}
+          </span>
+        </span>
+      </TabsTrigger>
+    ))}
+  </TabsList>
+
+  {docPackages.map((pkg) => {
+    const preview = packagePreviews[pkg.kind]
+    const tutorial = guides.find((item) => item.packageKind === pkg.kind)
+    return (
+      <TabsContent value={pkg.kind} class="package-preview" tabindex={-1}>
+        <div>
+          <p class="text-muted-foreground mb-3 flex items-baseline gap-2 font-mono text-xs">
+            {pkg.title}
+            {pkg.status && <span class="font-sans">{pkg.status}</span>}
+          </p>
+          <h3
+            tabindex="-1"
+            class="text-[clamp(1.6rem,3.2vw,2rem)] font-semibold leading-[1.12] tracking-[-0.045em]">
+            {preview.headline}
+          </h3>
+          <p class="text-muted-foreground mt-4 text-sm leading-6">
+            {preview.description}
+          </p>
+        </div>
+
+        <figure class="grid gap-2.5">
+          {preview.demo ? (
+            <PackageDemoFrame kind={preview.demo} />
+          ) : (
+            <CodeBlock>
+              <CodeBlockContent
+                highlighted={highlighter.highlight(preview.code, {
+                  language: preview.language,
+                })}
+                language={preview.language}
+                aria-label={`${pkg.title} example`}
+                wrap
+              />
+            </CodeBlock>
+          )}
+          <figcaption class="text-muted-foreground text-sm leading-6">
+            {preview.caption}
+          </figcaption>
+        </figure>
+
+        <p class="package-use-case text-muted-foreground text-xs leading-5">
+          <span class="text-foreground font-medium">Useful for: </span>
+          {preview.useCase}
+        </p>
+
+        <footer class="package-preview-links">
+          {!compact && (
+            <NavigationLink href={guide && tutorial ? tutorial.href : pkg.href}>
+              <LinkContent>
+                <LinkTitle>
+                  {guide ? 'Explore the guide' : 'Explore documentation'}
+                </LinkTitle>
+                <LinkDescription>{pkg.title}</LinkDescription>
+              </LinkContent>
+              <ArrowRight
+                size={16}
+                class="text-primary-text ml-auto shrink-0"
+                aria-hidden="true"
+              />
+            </NavigationLink>
+          )}
+          {tutorial && !guide && (
+            <NavigationLink href={tutorial.href}>
+              <BookOpen
+                size={16}
+                class="text-muted-foreground shrink-0"
+                aria-hidden="true"
+              />
+              <LinkContent>
+                <LinkDescription>Try a working example</LinkDescription>
+                <LinkTitle>{tutorial.title}</LinkTitle>
+              </LinkContent>
+            </NavigationLink>
+          )}
+        </footer>
+      </TabsContent>
+    )
+  })}
+</Tabs>
+
+<style>
+  .package-explorer {
+    grid-template-columns: 14rem minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .package-explorer :global([data-slot='tabs-list']) {
+    width: 100%;
+    align-self: stretch;
+    padding: 0.75rem;
+  }
+
+  .package-preview:not([hidden]) {
+    display: flex;
+    min-height: 37rem;
+    flex-direction: column;
+    gap: 1.25rem;
+    padding: 1.75rem 2rem 1rem;
+  }
+
+  .package-preview-links {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin: auto -0.75rem 0;
+  }
+
+  .package-explorer[data-layout='compact'] .package-use-case,
+  .package-explorer[data-layout='compact'] figcaption {
+    display: none;
+  }
+
+  @media (min-width: 900px) {
+    .package-explorer[data-layout='compact'] :global([data-slot='tabs-list']) {
+      position: sticky;
+      top: 5.25rem;
+      align-self: start;
+    }
+  }
+
+  @media (max-width: 899px) {
+    .package-explorer {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .package-explorer :global([data-slot='tabs-list']) {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.125rem;
+      border-right: 0;
+      border-bottom: 1px solid var(--color-border);
+      padding: 0.5rem;
+    }
+
+    .package-explorer :global([data-slot='tabs-trigger']) {
+      min-width: 0;
+      padding-inline: 0.75rem;
+    }
+
+    .package-purpose {
+      display: none;
+    }
+
+    .package-preview:not([hidden]) {
+      min-height: 0;
+      gap: 1rem;
+      padding: 1.5rem 1.25rem 0.75rem;
+    }
+
+    .package-preview-links {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .package-explorer :global([data-slot='tabs-trigger'] svg) {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,19 @@
+---
+import { toastClassNames } from '@/lib/toast'
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+import Button from '../button/button.astro'
+
+type Props = HTMLAttributes<'button'>
+
+const { class: className, ...props } = Astro.props as Props
+---
+
+<Button
+  {...props}
+  data-slot="toast-action"
+  size="sm"
+  variant="outline"
+  class={cn(toastClassNames.action, className)}>
+  <slot />
+</Button>

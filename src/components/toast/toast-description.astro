@@ -1,0 +1,16 @@
+---
+import { toastClassNames } from '@/lib/toast'
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'p'>
+
+const { class: className, ...props } = Astro.props as Props
+---
+
+<p
+  {...props}
+  data-slot="toast-description"
+  class={cn(toastClassNames.description, className)}>
+  <slot />
+</p>

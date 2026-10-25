@@ -19,6 +19,11 @@
   --color-surface-raised: oklch(1 0 0);
   --color-foreground: oklch(0.16 0.04 265);
   --color-muted-foreground: oklch(0.44 0.04 255);
+  --color-prose: color-mix(
+    in oklab,
+    var(--color-foreground) 85%,
+    var(--color-background)
+  );
   --color-border: color-mix(in oklab, var(--color-foreground) 14%, transparent);
   --color-primary: oklch(0.52 0.22 264);
   --color-primary-text: var(--color-primary);

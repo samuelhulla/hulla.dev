@@ -78,10 +78,12 @@ const hasDecisionGuide =
       )}
       <section aria-labelledby="guides">
         <Heading id="guides">
-          {group!.area === 'reference' ? 'Reference pages' : 'Guides'}
+          {group!.area === 'reference' ? 'Reference pages' : 'Documentation'}
         </Heading>
         <DocsGuideLinks
-          label={group!.area === 'reference' ? 'Reference pages' : 'Guides'}
+          label={
+            group!.area === 'reference' ? 'Reference pages' : 'Documentation'
+          }
           items={group!.entries}
         />
       </section>

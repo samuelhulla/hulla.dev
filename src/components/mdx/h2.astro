@@ -1,6 +1,7 @@
 ---
 import type { HTMLAttributes } from 'astro/types'
 import Section from '@/components/table-of-contents/table-of-contents-section.astro'
+import DocsCopyLink from '@/components/docs/DocsCopyLink.astro'
 type Props = HTMLAttributes<'h2'>
 const { id, ...props } = Astro.props
 const label = (await Astro.slots.render('default'))
@@ -14,8 +15,13 @@ const label = (await Astro.slots.render('default'))
 
 {id ? (
   <Section id={id} label={label}>
-    <h2 {...props} class:list={['md-h2', props.class]}>
-      <slot />
+    <h2 {...props} class:list={['md-h2 group/docs-heading', props.class]}>
+      <a
+        href={`#${id}`}
+        class="text-inherit no-underline hover:underline hover:decoration-primary-text hover:underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-focus-ring">
+        <slot />
+      </a>
+      <DocsCopyLink target={id} />
     </h2>
   </Section>
 ) : (

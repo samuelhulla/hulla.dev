@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import process from 'node:process'
 import { createHash } from 'node:crypto'
+import { format, resolveConfig } from 'prettier'
 
 const root = process.cwd()
 const args = process.argv.slice(2)
@@ -29,6 +30,7 @@ const astroComponents = [
   'breadcrumbs',
   'card',
   'code',
+  'typography',
   'code-highlighter-shiki',
   'separator',
   'sidebar',
@@ -41,6 +43,8 @@ const astroComponents = [
   'table-of-contents',
   'backdrop',
   'stepper',
+  'toast',
+  'progress',
 ]
 const solidComponents = [
   'command',
@@ -238,6 +242,56 @@ async function staticCheck() {
         throw new Error(`Direct sibling UI import remains in ${file}`)
       }
     }
+  }
+  if (await exists(path.join(registry, 'ui.manifest.json'))) {
+    const formatting = await resolveConfig(path.join(root, '.prettierrc'))
+    const comparisons = [
+      ['src/styles.css', 'astro/styles.css'],
+      ...astroComponents.map((component) => [
+        `src/components/${component}`,
+        `astro/${component}`,
+      ]),
+      ...solidComponents.map((component) => [
+        `src/components/${component}`,
+        `solid/${component}`,
+      ]),
+    ]
+    for (const [installed, canonical] of comparisons) {
+      const target = path.join(registry, canonical)
+      const sources = target.endsWith('.css')
+        ? [target]
+        : await listFiles(target)
+      for (const source of sources) {
+        if (!/\.(astro|tsx?|css)$/.test(source)) continue
+        const destination =
+          source === target
+            ? path.join(root, installed)
+            : path.join(root, installed, path.relative(target, source))
+        if (!(await exists(destination))) {
+          throw new Error(
+            `Missing shared UI source: ${path.relative(root, destination)}`
+          )
+        }
+        const options = {
+          ...formatting,
+          objectWrap: 'collapse',
+          filepath: destination,
+        }
+        const expected = await format(await readFile(source, 'utf8'), options)
+        const actual = await format(
+          await readFile(destination, 'utf8'),
+          options
+        )
+        if (expected !== actual) {
+          throw new Error(
+            `${path.relative(root, destination)} differs from @hulla/ui. Update the canonical source and sync both.`
+          )
+        }
+      }
+    }
+    console.log(
+      'Shared theme and installed UI sources match the local registry.'
+    )
   }
 }
 

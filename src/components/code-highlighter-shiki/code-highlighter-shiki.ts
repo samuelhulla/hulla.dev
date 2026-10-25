@@ -109,11 +109,15 @@ export async function createShikiCodeHighlighter({
 
       const oldCode = highlight(
         oldLineIndexes.map((index) => lines[index]!.body).join('\n'),
-        { language }
+        {
+          language,
+        }
       )
       const newCode = highlight(
         newLineIndexes.map((index) => lines[index]!.body).join('\n'),
-        { language }
+        {
+          language,
+        }
       )
       const oldTokens = new Map(
         oldLineIndexes.map((index, position) => [

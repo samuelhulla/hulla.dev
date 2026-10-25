@@ -1,0 +1,18 @@
+---
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'progress'>
+
+const { class: className, ...props } = Astro.props as Props
+---
+
+<progress
+  {...props}
+  data-slot="progress"
+  class={cn(
+    'block h-1.5 w-full appearance-none overflow-hidden rounded-full border-0 bg-foreground/10 text-primary [&::-moz-progress-bar]:rounded-full [&::-moz-progress-bar]:bg-current [&::-webkit-progress-bar]:rounded-full [&::-webkit-progress-bar]:bg-transparent [&::-webkit-progress-value]:rounded-full [&::-webkit-progress-value]:bg-current [&::-webkit-progress-value]:transition-[inline-size] [&::-webkit-progress-value]:duration-300 indeterminate:animate-[progress-indeterminate_1.4s_ease-in-out_infinite] indeterminate:bg-[linear-gradient(90deg,color-mix(in_oklab,currentColor_12%,transparent)_0%,currentColor_50%,color-mix(in_oklab,currentColor_12%,transparent)_100%)] indeterminate:bg-[length:200%_100%] indeterminate:[&::-moz-progress-bar]:bg-transparent indeterminate:[&::-webkit-progress-bar]:bg-transparent motion-reduce:transition-none motion-reduce:indeterminate:animate-none motion-reduce:[&::-webkit-progress-value]:transition-none',
+    className
+  )}>
+  <slot />
+</progress>

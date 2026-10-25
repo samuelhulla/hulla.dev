@@ -1,0 +1,46 @@
+---
+import { toastClassNames } from '@/lib/toast'
+import { cn } from '@/lib/style'
+import type { HTMLAttributes } from 'astro/types'
+
+type Props = HTMLAttributes<'button'>
+
+const {
+  'aria-label': ariaLabel = 'Dismiss notification',
+  class: className,
+  type = 'button',
+  ...props
+} = Astro.props as Props
+---
+
+<button
+  {...props}
+  aria-label={ariaLabel}
+  data-slot="toast-close"
+  type={type}
+  class={cn(toastClassNames.close, className)}>
+  <slot>
+    <svg aria-hidden="true" viewBox="0 0 16 16" class="size-3.5" fill="none">
+      <path
+        d="m4 4 8 8m0-8-8 8"
+        stroke="currentColor"
+        stroke-linecap="round"></path>
+    </svg>
+  </slot>
+</button>
+
+<script>
+  document.addEventListener('click', (event) => {
+    const close = (event.target as HTMLElement).closest(
+      '[data-slot="toast-close"]'
+    )
+    const toast = close?.closest<HTMLElement>('[data-slot="toast"]')
+    if (!close || !toast || toast.closest('[data-slot="toast-viewport"]'))
+      return
+
+    toast.dispatchEvent(
+      new CustomEvent('hulla:toast-dismiss', { bubbles: true })
+    )
+    toast.remove()
+  })
+</script>
