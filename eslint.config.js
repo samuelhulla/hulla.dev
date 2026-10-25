@@ -13,6 +13,7 @@ export default tseslint.config(
       'dist/**',
       'node_modules/**',
       'output/**',
+      'tmp/**',
       'public/pagefind/**',
       'src/env.d.ts',
     ],
