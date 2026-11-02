@@ -1,8 +1,8 @@
 ---
-import NavigationLink from '@/components/navigation-menu/navigation-menu-link.astro'
-import LinkContent from '@/components/navigation-menu/navigation-menu-link-content.astro'
-import LinkTitle from '@/components/navigation-menu/navigation-menu-link-title.astro'
-import LinkDescription from '@/components/navigation-menu/navigation-menu-link-description.astro'
+import LinkCard from '@/components/link-card/link-card.astro'
+import LinkCardContent from '@/components/link-card/link-card-content.astro'
+import LinkCardTitle from '@/components/link-card/link-card-title.astro'
+import LinkCardDescription from '@/components/link-card/link-card-description.astro'
 import PackageIcon from './PackageIcon.astro'
 import { ArrowRight } from '@lucide/astro'
 import { docPackages } from '@/data/docs'
@@ -11,18 +11,20 @@ import { packagePreviews } from '@/data/package-previews'
 
 <nav aria-label="Package documentation" class="package-directory">
   {docPackages.map((pkg) => (
-    <NavigationLink href={pkg.href}>
+    <LinkCard href={pkg.href}>
       <PackageIcon kind={pkg.kind} class="text-muted-foreground mt-1" />
-      <LinkContent>
-        <LinkTitle>
+      <LinkCardContent>
+        <LinkCardTitle>
           <span class="font-mono">{pkg.title}</span>
-        </LinkTitle>
-        <LinkDescription>{packagePreviews[pkg.kind].summary}</LinkDescription>
+        </LinkCardTitle>
+        <LinkCardDescription>
+          {packagePreviews[pkg.kind].summary}
+        </LinkCardDescription>
         <span class="mt-2 inline-flex items-center gap-2 text-sm font-medium">
           Read documentation <ArrowRight size={14} aria-hidden="true" />
         </span>
-      </LinkContent>
-    </NavigationLink>
+      </LinkCardContent>
+    </LinkCard>
   ))}
 </nav>
 

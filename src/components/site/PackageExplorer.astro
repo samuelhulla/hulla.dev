@@ -5,10 +5,10 @@ import TabsTrigger from '@/components/tabs/tabs-trigger.astro'
 import TabsContent from '@/components/tabs/tabs-content.astro'
 import CodeBlock from '@/components/code/code-block.astro'
 import CodeBlockContent from '@/components/code/code-block-content.astro'
-import NavigationLink from '@/components/navigation-menu/navigation-menu-link.astro'
-import LinkContent from '@/components/navigation-menu/navigation-menu-link-content.astro'
-import LinkTitle from '@/components/navigation-menu/navigation-menu-link-title.astro'
-import LinkDescription from '@/components/navigation-menu/navigation-menu-link-description.astro'
+import LinkCard from '@/components/link-card/link-card.astro'
+import LinkCardContent from '@/components/link-card/link-card-content.astro'
+import LinkCardTitle from '@/components/link-card/link-card-title.astro'
+import LinkCardDescription from '@/components/link-card/link-card-description.astro'
 import PackageDemoFrame from '@/components/site/PackageDemoFrame.astro'
 import PackageIcon from '@/components/site/PackageIcon.astro'
 import { createShikiCodeHighlighter } from '@/components/code-highlighter-shiki/code-highlighter-shiki'
@@ -90,32 +90,32 @@ const highlighter = await createShikiCodeHighlighter({
 
         <footer class="package-preview-links">
           {!compact && (
-            <NavigationLink href={guide && tutorial ? tutorial.href : pkg.href}>
-              <LinkContent>
-                <LinkTitle>
+            <LinkCard href={guide && tutorial ? tutorial.href : pkg.href}>
+              <LinkCardContent>
+                <LinkCardTitle>
                   {guide ? 'Explore the guide' : 'Explore documentation'}
-                </LinkTitle>
-                <LinkDescription>{pkg.title}</LinkDescription>
-              </LinkContent>
+                </LinkCardTitle>
+                <LinkCardDescription>{pkg.title}</LinkCardDescription>
+              </LinkCardContent>
               <ArrowRight
                 size={16}
                 class="text-primary-text ml-auto shrink-0"
                 aria-hidden="true"
               />
-            </NavigationLink>
+            </LinkCard>
           )}
           {tutorial && !guide && (
-            <NavigationLink href={tutorial.href}>
+            <LinkCard href={tutorial.href}>
               <BookOpen
                 size={16}
                 class="text-muted-foreground shrink-0"
                 aria-hidden="true"
               />
-              <LinkContent>
-                <LinkDescription>Try a working example</LinkDescription>
-                <LinkTitle>{tutorial.title}</LinkTitle>
-              </LinkContent>
-            </NavigationLink>
+              <LinkCardContent>
+                <LinkCardDescription>Try a working example</LinkCardDescription>
+                <LinkCardTitle>{tutorial.title}</LinkCardTitle>
+              </LinkCardContent>
+            </LinkCard>
           )}
         </footer>
       </TabsContent>
@@ -129,7 +129,7 @@ const highlighter = await createShikiCodeHighlighter({
     gap: 0;
   }
 
-  .package-explorer :global([data-slot='tabs-list']) {
+  .package-explorer > :global([data-slot='tabs-list']) {
     width: 100%;
     align-self: stretch;
     padding: 0.75rem;

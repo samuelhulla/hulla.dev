@@ -29,6 +29,7 @@ const astroComponents = [
   'badge',
   'breadcrumbs',
   'card',
+  'link-card',
   'code',
   'typography',
   'code-highlighter-shiki',

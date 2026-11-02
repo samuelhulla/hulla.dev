@@ -1,8 +1,8 @@
 ---
-import NavigationLink from '@/components/navigation-menu/navigation-menu-link.astro'
-import LinkContent from '@/components/navigation-menu/navigation-menu-link-content.astro'
-import LinkTitle from '@/components/navigation-menu/navigation-menu-link-title.astro'
-import LinkDescription from '@/components/navigation-menu/navigation-menu-link-description.astro'
+import LinkCard from '@/components/link-card/link-card.astro'
+import LinkCardContent from '@/components/link-card/link-card-content.astro'
+import LinkCardTitle from '@/components/link-card/link-card-title.astro'
+import LinkCardDescription from '@/components/link-card/link-card-description.astro'
 import { ArrowUpRight } from '@lucide/astro'
 
 type Props = {
@@ -16,16 +16,16 @@ const { label, items } = Astro.props
   <ul role="list" class="m-0 grid list-none gap-2 p-0 sm:grid-cols-2">
     {items.map((item) => (
       <li class="min-w-0">
-        <NavigationLink href={item.href}>
-          <LinkContent>
-            <LinkTitle>{item.title}</LinkTitle>
-            <LinkDescription>{item.description}</LinkDescription>
-          </LinkContent>
+        <LinkCard href={item.href}>
+          <LinkCardContent>
+            <LinkCardTitle>{item.title}</LinkCardTitle>
+            <LinkCardDescription>{item.description}</LinkCardDescription>
+          </LinkCardContent>
           <ArrowUpRight
             class="mt-0.5 ml-auto size-4 shrink-0 text-muted-foreground"
             aria-hidden="true"
           />
-        </NavigationLink>
+        </LinkCard>
       </li>
     ))}
   </ul>
