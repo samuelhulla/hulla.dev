@@ -6,6 +6,7 @@ import TabsTrigger from '@/components/tabs/tabs-trigger.astro'
 import CodeBlock from '@/components/code/code-block.astro'
 import CodeBlockHeader from '@/components/code/code-block-header.astro'
 import CodeBlockBody from '@/components/code/code-block-body.astro'
+import FileIcon from '@/components/site/FileIcon.astro'
 
 const typescript = await Astro.slots.render('typescript')
 const rust = await Astro.slots.render('rust')
@@ -23,8 +24,14 @@ if (!rust.trim()) {
     <CodeBlock>
       <CodeBlockHeader>
         <TabsList aria-label="Code language">
-          <TabsTrigger value="typescript">TypeScript</TabsTrigger>
-          <TabsTrigger value="rust">Rust</TabsTrigger>
+          <TabsTrigger value="typescript">
+            <FileIcon language="typescript" />
+            TypeScript
+          </TabsTrigger>
+          <TabsTrigger value="rust">
+            <FileIcon language="rust" />
+            Rust
+          </TabsTrigger>
         </TabsList>
       </CodeBlockHeader>
       <CodeBlockBody>

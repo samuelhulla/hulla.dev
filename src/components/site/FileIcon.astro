@@ -1,0 +1,16 @@
+---
+import { fileIcon } from '@/lib/file-icons'
+
+type Props = { filename?: string; language?: string }
+const icon = fileIcon(Astro.props.filename, Astro.props.language)
+---
+
+<img
+  src={`/file-icons/${icon}.svg`}
+  alt=""
+  aria-hidden="true"
+  width="14"
+  height="14"
+  class="size-3.5 shrink-0 object-contain"
+  data-file-icon={icon}
+/>

@@ -13,6 +13,7 @@ import CodeBlockPath from '@/components/code/code-block-path.astro'
 import CodeBlockTitle from '@/components/code/code-block-title.astro'
 import { createShikiCodeHighlighter } from '@/components/code-highlighter-shiki/code-highlighter-shiki'
 import { Copy } from '@lucide/astro'
+import FileIcon from '@/components/site/FileIcon.astro'
 type Props = {
   class?: string
   embedded?: boolean
@@ -134,7 +135,10 @@ const label =
 {embedded ? (
   <>
     <CodeBlockPath>
-      <CodeBlockTitle>{label}</CodeBlockTitle>
+      <CodeBlockTitle class="flex items-center gap-2">
+        <FileIcon filename={filename ?? label} language={syntaxLanguage} />
+        <span class="truncate">{label}</span>
+      </CodeBlockTitle>
       <CodeBlockActions>
         <Button
           size="sm"
@@ -170,7 +174,10 @@ const label =
   <div class:list={['docs-example', className]} data-component-boundary>
     <CodeBlock>
       <CodeBlockHeader>
-        <CodeBlockTitle>{label}</CodeBlockTitle>
+        <CodeBlockTitle class="flex items-center gap-2">
+          <FileIcon filename={filename ?? label} language={syntaxLanguage} />
+          <span class="truncate">{label}</span>
+        </CodeBlockTitle>
         <CodeBlockActions>
           <Button
             size="sm"
