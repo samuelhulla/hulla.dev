@@ -207,11 +207,13 @@ async function fixtureCheck(binary) {
       )
         throw new Error(`${relative} differs from CLI regeneration.`)
     }
-    if (
-      (await readFile(path.join(root, 'src/styles.css'), 'utf8')) !==
-      (await readFile(path.join(fixture, 'src/styles.css'), 'utf8'))
-    )
-      throw new Error('Shared stylesheet differs from CLI regeneration.')
+    for (const stylesheet of ['src/styles.css', 'src/theme.css']) {
+      if (
+        (await readFile(path.join(root, stylesheet), 'utf8')) !==
+        (await readFile(path.join(fixture, stylesheet), 'utf8'))
+      )
+        throw new Error(`${stylesheet} differs from CLI regeneration.`)
+    }
     console.log(
       'UI fixture regeneration matches committed component and support source.'
     )
@@ -247,6 +249,7 @@ async function staticCheck() {
     const formatting = await resolveConfig(path.join(root, '.prettierrc'))
     const comparisons = [
       ['src/styles.css', 'astro/styles.css'],
+      ['src/theme.css', 'astro/theme.css'],
       ...astroComponents.map((component) => [
         `src/components/${component}`,
         `astro/${component}`,

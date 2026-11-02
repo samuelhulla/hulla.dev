@@ -3,6 +3,7 @@
 @import '@fontsource/ibm-plex-mono/400.css';
 @import '@fontsource/ibm-plex-mono/500.css';
 @import 'tailwindcss';
+@import './theme.css';
 
 @custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
 
@@ -14,60 +15,6 @@
     'IBM Plex Mono', ui-monospace, 'SFMono-Regular', 'Cascadia Code', Menlo,
     monospace;
 
-  --color-background: oklch(0.982 0.012 250);
-  --color-surface: oklch(0.996 0.004 250);
-  --color-surface-raised: oklch(1 0 0);
-  --color-foreground: oklch(0.16 0.04 265);
-  --color-muted-foreground: oklch(0.44 0.04 255);
-  --color-prose: color-mix(
-    in oklab,
-    var(--color-foreground) 85%,
-    var(--color-background)
-  );
-  --color-border: color-mix(in oklab, var(--color-foreground) 14%, transparent);
-  --color-primary: oklch(0.52 0.22 264);
-  --color-primary-text: var(--color-primary);
-  --color-primary-foreground: oklch(0.99 0.005 245);
-  --color-focus-ring: color-mix(
-    in oklab,
-    var(--color-primary) 82%,
-    var(--color-foreground)
-  );
-  --color-success: oklch(0.54 0.14 150);
-  --color-warning: oklch(0.77 0.13 85);
-  --color-danger: oklch(0.56 0.18 27);
-  --color-on-emphasis: oklch(0.99 0.005 245);
-  --color-disabled-foreground: color-mix(
-    in oklab,
-    var(--color-muted-foreground) 75%,
-    transparent
-  );
-  --color-disabled-surface: color-mix(
-    in oklab,
-    var(--color-foreground) 3.5%,
-    transparent
-  );
-  --color-disabled-border: color-mix(
-    in oklab,
-    var(--color-foreground) 8%,
-    transparent
-  );
-  --color-hover-surface: color-mix(
-    in oklab,
-    var(--color-foreground) 8%,
-    transparent
-  );
-  --color-selected-surface: color-mix(
-    in oklab,
-    var(--color-primary) 10%,
-    transparent
-  );
-  --color-selected-hover-surface: color-mix(
-    in oklab,
-    var(--color-primary) 16%,
-    transparent
-  );
-
   /* Depth roles: tactile controls, raised content, floating surfaces, modal layers.
      Keep geometry stable across themes; tune contrast and edge light instead. */
   --shadow-control:
@@ -78,10 +25,6 @@
     0 2px 4px -2px oklch(0 0 0 / 0.1), 0 16px 48px -16px oklch(0 0 0 / 0.26);
   --shadow-overlay:
     0 2px 4px -2px oklch(0 0 0 / 0.12), 0 24px 80px -28px oklch(0 0 0 / 0.28);
-
-  --radius-sm: 0.4375rem;
-  --radius-md: 0.6875rem;
-  --radius-lg: 1rem;
 
   --animate-skeleton-pulse: skeleton-pulse 2.4s ease-in-out infinite;
   --animate-skeleton-shimmer: skeleton-shimmer 1.8s ease-in-out infinite;
@@ -169,38 +112,6 @@
     0 2px 4px -2px oklch(0 0 0 / 0.28), 0 24px 80px -28px oklch(0 0 0 / 0.9),
     inset 0 1px 0 oklch(1 0 0 / 0.08);
 
-  --color-background: oklch(0.105 0 0);
-  --color-surface: oklch(0.145 0 0);
-  --color-surface-raised: oklch(0.19 0 0);
-  --color-foreground: oklch(0.97 0 0);
-  --color-muted-foreground: oklch(0.7 0 0);
-  --color-hover-surface: color-mix(
-    in oklab,
-    var(--color-foreground) 12%,
-    transparent
-  );
-  --color-selected-surface: color-mix(
-    in oklab,
-    var(--color-primary) 18%,
-    transparent
-  );
-  --color-selected-hover-surface: color-mix(
-    in oklab,
-    var(--color-primary) 26%,
-    transparent
-  );
-  --color-border: color-mix(in oklab, var(--color-foreground) 14%, transparent);
-  --color-primary: oklch(0.52 0.22 264);
-  --color-primary-text: color-mix(
-    in oklab,
-    var(--color-primary) 55%,
-    var(--color-foreground)
-  );
-  --color-primary-foreground: oklch(0.97 0 0);
-  --color-focus-ring: color-mix(in oklab, var(--color-primary) 72%, white);
-  --color-success: oklch(0.73 0.105 155);
-  --color-warning: oklch(0.77 0.105 75);
-  --color-danger: oklch(0.68 0.18 20);
   --hulla-code-background: oklch(0.13 0.012 260);
   --hulla-code-foreground: oklch(0.9 0.018 250);
   --hulla-code-token-comment: oklch(0.62 0.04 250);

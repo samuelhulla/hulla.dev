@@ -22,7 +22,7 @@
         "@fontsource/playfair-display": "^5.3.0",
         "@hulla/args": "^0.0.4",
         "@hulla/control": "^0.0.3",
-        "@hulla/style": "0.4.0",
+        "@hulla/style": "0.5.0",
         "@lezer/highlight": "^1.2.5",
         "@lucide/astro": "^1.46.0",
         "@tailwindcss/vite": "^4.3.3",
@@ -295,7 +295,7 @@
 
     "@hulla/control": ["@hulla/control@0.0.3", "", {}, "sha512-63McqzBte48N223OV7CZAQccoyk/9TGbIeal242gay5Sb+JP/SQIpjSxLY3RX0mZYKODZ2oApWUzZhtXiRcu1Q=="],
 
-    "@hulla/style": ["@hulla/style@0.4.0", "", {}, "sha512-kHNm7A3EyMyFzL5cG2qnbAXuQ8LtY1uqVMK9GRwxj6ffN5IeZpKpQf5OIugQaIWxmpN0bHrkLnx1zCaWJ9vGrg=="],
+    "@hulla/style": ["@hulla/style@0.5.0", "", {}, "sha512-LlhpOYSu5rJrF60IQ5GqWvSH9WnCnDtoEU6fzzXofkTQhsy8sNlpWDhDMh0KJF0A3oXnNwvgh5NFcCWSq0E2dw=="],
 
     "@humanfs/core": ["@humanfs/core@0.19.2", "", { "dependencies": { "@humanfs/types": "^0.15.0" } }, "sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA=="],
 

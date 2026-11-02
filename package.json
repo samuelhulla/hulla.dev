@@ -46,7 +46,7 @@
     "@fontsource/playfair-display": "^5.3.0",
     "@hulla/args": "^0.0.4",
     "@hulla/control": "^0.0.3",
-    "@hulla/style": "0.4.0",
+    "@hulla/style": "0.5.0",
     "@lezer/highlight": "^1.2.5",
     "@lucide/astro": "^1.46.0",
     "@tailwindcss/vite": "^4.3.3",
