@@ -15,15 +15,17 @@ test('arbitrary API edits are type-checked across all project files', async ({
   await app
     .getByRole('textbox', { name: 'Edit contract.ts', exact: true })
     .fill(project['/contract.ts'])
-  await expect(app.getByText('2 errors', { exact: true })).toBeVisible({
+  await expect(
+    app.getByRole('status').filter({ hasText: 'TypeScript · 2 errors' })
+  ).toBeVisible({
     timeout: 15000,
   })
   await expect(app.getByText(/Property 'name' does not exist/)).toBeVisible()
-  await app.getByRole('button', { name: 'server.ts', exact: true }).click()
+  await app.getByRole('tab', { name: 'server.ts', exact: true }).click()
   await app
     .getByRole('textbox', { name: 'Edit server.ts', exact: true })
     .fill(project['/server.ts'].replace("name: 'Ada Lovelace'", 'email: 42'))
-  await app.getByRole('button', { name: 'profile.ts', exact: true }).click()
+  await app.getByRole('tab', { name: 'profile.ts', exact: true }).click()
   await app
     .getByRole('textbox', { name: 'Edit profile.ts', exact: true })
     .fill(
@@ -35,7 +37,9 @@ test('arbitrary API edits are type-checked across all project files', async ({
   await expect(
     app.getByText('The contract, handler, and client agree.', { exact: true })
   ).toBeVisible()
-  await expect(app.getByText('0 errors', { exact: true })).toBeVisible()
+  await expect(
+    app.getByRole('status').filter({ hasText: 'TypeScript · 0 errors' })
+  ).toBeVisible()
 })
 
 test('style source runs custom edits, preserves the last good preview, and recovers', async ({
@@ -145,10 +149,92 @@ test('the mobile editor stays readable and keyboard focus can leave it', async (
   const editor = page
     .locator('main')
     .getByRole('textbox', { name: 'Edit contract.ts', exact: true })
-  await expect(editor).toHaveCSS('font-size', '14px')
+  await expect(editor).toHaveCSS('font-size', '13px')
   await editor.click()
   await page.keyboard.press('Tab')
   await expect(editor).not.toBeFocused()
   const width = await page.locator('main [data-demo="api"]').boundingBox()
   expect(width!.width).toBeLessThanOrEqual(390)
+})
+
+test('API problems open the affected file and file tabs support keyboard navigation', async ({
+  page,
+}) => {
+  await page.goto('/docs/api')
+  const app = page.locator('main [data-demo="api"]')
+  await app
+    .getByRole('button', { name: 'Break the contract', exact: true })
+    .click()
+  const problems = app.getByRole('region', { name: 'TypeScript diagnostics' })
+  await expect(problems.getByRole('status')).toHaveText(
+    'TypeScript · 2 errors',
+    { timeout: 15000 }
+  )
+  const problem = problems.getByRole('button').filter({ hasText: 'profile.ts' })
+  await problem.click()
+  await expect(
+    app.getByRole('tab', { name: 'profile.ts', exact: true })
+  ).toHaveAttribute('aria-selected', 'true')
+  const editor = app.getByRole('textbox', {
+    name: 'Edit profile.ts',
+    exact: true,
+  })
+  await expect(editor).toBeFocused()
+  await expect
+    .poll(() => page.evaluate(() => window.getSelection()?.toString()))
+    .toBe('name')
+  const contract = app.getByRole('tab', { name: 'contract.ts', exact: true })
+  await contract.focus()
+  await page.keyboard.press('ArrowRight')
+  await expect(
+    app.getByRole('tab', { name: 'server.ts', exact: true })
+  ).toBeFocused()
+  await expect(
+    app.getByRole('textbox', { name: 'Edit server.ts', exact: true })
+  ).toBeVisible()
+  await app
+    .getByRole('button', { name: 'Load repaired example', exact: true })
+    .click()
+  await expect(problems.getByRole('status')).toHaveText('TypeScript · 0 errors')
+  await expect(problems.getByRole('button')).toHaveCount(0)
+})
+
+test('editable and static code share their theme and typography', async ({
+  page,
+}) => {
+  await page.goto('/docs/api')
+  const app = page.locator('main [data-demo="api"]')
+  await expect(app.locator('.cm-editor').first()).toBeVisible()
+  for (const theme of ['light', 'dark']) {
+    await page.evaluate((value) => {
+      document.documentElement.dataset.theme = value
+    }, theme)
+    const staticCode = page
+      .locator('main .docs-example [data-slot="code-block-content"]')
+      .first()
+    const editableCode = app.locator('.cm-editor').first()
+    for (const property of ['background-color', 'color', 'font-size']) {
+      const expected = await staticCode.evaluate(
+        (element, name) => getComputedStyle(element).getPropertyValue(name),
+        property
+      )
+      await expect(editableCode).toHaveCSS(property, expected)
+    }
+    const lineHeight = await staticCode.evaluate(
+      (element) => getComputedStyle(element).lineHeight
+    )
+    await expect(app.locator('.cm-scroller').first()).toHaveCSS(
+      'line-height',
+      lineHeight
+    )
+    const staticHeader = page
+      .locator('main .docs-example [data-slot="code-block-header"]')
+      .first()
+    const background = await staticHeader.evaluate(
+      (element) => getComputedStyle(element).backgroundColor
+    )
+    await expect(
+      app.locator('[data-slot="code-block-header"]').first()
+    ).toHaveCSS('background-color', background)
+  }
 })

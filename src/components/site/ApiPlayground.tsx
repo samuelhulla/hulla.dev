@@ -1,11 +1,21 @@
-import { createSignal, For, onCleanup, Show } from 'solid-js'
+import { createSignal, For, onCleanup } from 'solid-js'
 import { Button } from '@/components/button'
 import {
   apiProject,
   type ApiCheck,
+  type ApiDiagnostic,
   type ApiSources,
 } from '@/lib/demos/api-project'
-import DemoEditor from './DemoEditor'
+import {
+  CodeBlock,
+  CodeBlockActions,
+  CodeBlockBody,
+  CodeBlockHeader,
+} from '@/components/code'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/tabs'
+import CodeMirrorSurface from './CodeMirrorSurface'
+import TypeScriptPanel from './TypeScriptPanel'
+import FileIcon from './FileIcon'
 
 export default function ApiPlayground() {
   const [project, setProject] = createSignal<ApiSources>(
@@ -14,6 +24,7 @@ export default function ApiPlayground() {
   const [file, setFile] = createSignal<keyof ApiSources>('/contract.ts')
   const [result, setResult] = createSignal<ApiCheck>()
   const [checking, setChecking] = createSignal(false)
+  const [selection, setSelection] = createSignal<ApiDiagnostic>()
   let worker: Worker | undefined
   let debounce: ReturnType<typeof setTimeout> | undefined
   let revision = 0
@@ -21,6 +32,7 @@ export default function ApiPlayground() {
     clearTimeout(debounce)
     revision++
     setChecking(true)
+    setSelection(undefined)
     debounce = setTimeout(() => {
       if (!worker) {
         worker = new Worker(
@@ -76,99 +88,69 @@ export default function ApiPlayground() {
           </Button>
         </div>
       </div>
-      <div class="demo-split">
-        <div class="min-w-0">
-          <div
-            class="mb-3 flex flex-wrap gap-1"
-            role="group"
-            aria-label="Project files">
-            <For each={['/contract.ts', '/server.ts', '/profile.ts'] as const}>
-              {(name) => (
-                <Button
-                  size="md"
-                  variant={file() === name ? 'secondary' : 'ghost'}
-                  aria-pressed={file() === name}
-                  onClick={() => setFile(name)}>
-                  {name.slice(1)}
-                </Button>
-              )}
-            </For>
-          </div>
-          <For each={['/contract.ts', '/server.ts', '/profile.ts'] as const}>
-            {(name) => (
-              <div hidden={file() !== name}>
-                <DemoEditor
-                  filename={name.slice(1)}
-                  label={`Edit ${name.slice(1)}`}
-                  value={project()[name]}
-                  height={330}
-                  diagnostics={
-                    checking()
-                      ? []
-                      : result()?.diagnostics.filter(
-                          (error) => `/${error.file}` === name
-                        )
-                  }
-                  onChange={(source) => {
-                    setProject((files) => ({ ...files, [name]: source }))
-                    requestCheck()
-                  }}
-                />
-              </div>
-            )}
-          </For>
-        </div>
-        <section
-          class="demo-output"
-          aria-label="TypeScript diagnostics"
-          aria-busy={checking()}>
-          <div class="demo-output-heading">
-            <h4>TypeScript</h4>
-            <span class="text-muted-foreground text-sm" role="status">
-              {checking()
-                ? 'Checking…'
-                : result()?.error
-                  ? 'Unavailable'
-                  : result()
-                    ? `${result()!.diagnostics.length} errors`
-                    : 'Ready'}
-            </span>
-          </div>
-          <Show when={!result() && !checking()}>
-            <p class="text-muted-foreground text-sm leading-6">
-              Rename <strong class="text-foreground font-medium">name</strong>{' '}
-              in the response type, or use the shortcut. The handler and caller
-              will need to follow.
-            </p>
-          </Show>
-          <Show when={result()?.error}>
-            <p class="text-danger text-sm leading-6">{result()!.error}</p>
-          </Show>
-          <Show when={!checking() && !result()?.error}>
-            <ul class="m-0 grid list-none gap-5 p-0">
-              <For each={result()?.diagnostics}>
-                {(error) => (
-                  <li class="text-sm leading-6">
-                    <p class="text-danger mb-1 font-mono">
-                      {error.file}:{error.line} · TS{error.code}
-                    </p>
-                    <p>{error.message}</p>
-                  </li>
+      <Tabs
+        value={file()}
+        onValueChange={(value) => setFile(value as keyof ApiSources)}>
+        <CodeBlock data-demo-editor>
+          <CodeBlockHeader>
+            <TabsList aria-label="Project files">
+              <For
+                each={['/contract.ts', '/server.ts', '/profile.ts'] as const}>
+                {(name) => (
+                  <TabsTrigger value={name}>
+                    <FileIcon filename={name} />
+                    {name.slice(1)}
+                  </TabsTrigger>
                 )}
               </For>
-            </ul>
-            <Show when={result() && result()!.diagnostics.length === 0}>
-              <p class="text-success text-base leading-7">
-                The contract, handler, and client agree.
-              </p>
-            </Show>
-          </Show>
-          <p class="text-muted-foreground mt-6 text-sm leading-6">
-            Real TypeScript and @hulla/api declarations. Code is type-checked
-            locally; no API request or AI agent runs.
-          </p>
-        </section>
-      </div>
+            </TabsList>
+            <CodeBlockActions>
+              <span class="text-muted-foreground text-xs">Editable</span>
+            </CodeBlockActions>
+          </CodeBlockHeader>
+          <CodeBlockBody>
+            <For each={['/contract.ts', '/server.ts', '/profile.ts'] as const}>
+              {(name) => (
+                <TabsContent value={name} tabIndex={-1}>
+                  <CodeMirrorSurface
+                    label={`Edit ${name.slice(1)}`}
+                    value={project()[name]}
+                    height={330}
+                    selection={
+                      selection()?.file === name.slice(1)
+                        ? selection()
+                        : undefined
+                    }
+                    diagnostics={
+                      checking()
+                        ? []
+                        : result()?.diagnostics.filter(
+                            (error) => `/${error.file}` === name
+                          )
+                    }
+                    onChange={(source) => {
+                      setProject((files) => ({ ...files, [name]: source }))
+                      requestCheck()
+                    }}
+                  />
+                </TabsContent>
+              )}
+            </For>
+          </CodeBlockBody>
+          <TypeScriptPanel
+            result={result()}
+            checking={checking()}
+            onSelect={(diagnostic) => {
+              setFile(`/${diagnostic.file}` as keyof ApiSources)
+              setSelection({ ...diagnostic })
+            }}
+          />
+        </CodeBlock>
+      </Tabs>
+      <p class="text-muted-foreground mt-3 text-xs leading-6">
+        Real TypeScript and @hulla/api declarations. Code is type-checked
+        locally; no API request or AI agent runs.
+      </p>
     </div>
   )
 }

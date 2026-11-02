@@ -49,6 +49,8 @@ const astroComponents = [
   'tooltip',
 ]
 const solidComponents = [
+  'code',
+  'tabs',
   'command',
   'dialog',
   'input',
