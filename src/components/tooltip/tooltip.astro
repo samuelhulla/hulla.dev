@@ -1,0 +1,79 @@
+---
+import { cn } from '@/lib/style'
+import type { Placement } from '@floating-ui/dom'
+import type { HTMLAttributes } from 'astro/types'
+
+const $layer =
+  'fixed top-0 left-0 m-0 invisible pointer-events-none opacity-0 transition-[display,opacity,overlay,translate,visibility] duration-120 ease-out [transition-behavior:allow-discrete] [&[data-placement^=top]]:translate-y-0.5 [&[data-placement^=bottom]]:-translate-y-0.5 [&[data-placement^=left]]:translate-x-0.5 [&[data-placement^=right]]:-translate-x-0.5 [&[data-positioned=true]:popover-open]:visible [&[data-positioned=true]:popover-open]:pointer-events-auto [&[data-positioned=true]:popover-open]:translate-none [&[data-positioned=true]:popover-open]:opacity-100 starting:[&[data-positioned=true]:popover-open]:opacity-0 starting:[&[data-positioned=true][data-placement^=top]:popover-open]:translate-y-0.5 starting:[&[data-positioned=true][data-placement^=bottom]:popover-open]:-translate-y-0.5 starting:[&[data-positioned=true][data-placement^=left]:popover-open]:translate-x-0.5 starting:[&[data-positioned=true][data-placement^=right]:popover-open]:-translate-x-0.5 motion-reduce:transition-none motion-reduce:translate-none'
+
+type Props = HTMLAttributes<'div'> & {
+  closeDelay?: number
+  openDelay?: number
+  placement?: Placement
+  triggerId: string
+}
+
+const {
+  class: className,
+  closeDelay = 100,
+  openDelay = 100,
+  placement = 'top',
+  popover = 'hint',
+  role = 'tooltip',
+  triggerId,
+  ...props
+} = Astro.props as Props
+---
+
+<hulla-tooltip
+  {...props}
+  popover={popover}
+  role={role}
+  data-close-delay={closeDelay}
+  data-open-delay={openDelay}
+  data-placement={placement}
+  data-slot="tooltip"
+  data-trigger-id={triggerId}
+  class={cn(
+    $layer,
+    'max-w-72 rounded-sm border border-foreground/10 bg-foreground px-2 py-1 font-sans text-xs leading-5 font-medium text-background shadow-lg',
+    className
+  )}>
+  <slot />
+</hulla-tooltip>
+
+<script>
+  import {
+    connectFloatingLayer,
+    type FloatingLayerController,
+  } from '@/lib/floating-layer'
+  import type { Placement } from '@floating-ui/dom'
+
+  const elementName = 'hulla-tooltip'
+
+  if (!customElements.get(elementName)) {
+    class HullaTooltipElement extends HTMLElement {
+      controller: FloatingLayerController | undefined
+
+      connectedCallback() {
+        const triggerId = this.dataset.triggerId
+        if (!triggerId) return
+
+        this.controller ??= connectFloatingLayer(this, {
+          closeDelay: Number(this.dataset.closeDelay ?? 100),
+          offset: 7,
+          openDelay: Number(this.dataset.openDelay ?? 100),
+          placement: (this.dataset.placement ?? 'top') as Placement,
+          triggerId,
+        })
+      }
+
+      disconnectedCallback() {
+        this.controller?.destroy()
+        this.controller = undefined
+      }
+    }
+
+    customElements.define(elementName, HullaTooltipElement)
+  }
+</script>

@@ -46,6 +46,7 @@ const astroComponents = [
   'stepper',
   'toast',
   'progress',
+  'tooltip',
 ]
 const solidComponents = [
   'command',

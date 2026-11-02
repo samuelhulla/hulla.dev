@@ -11,13 +11,36 @@ const { activePackage } = Astro.props
 <Button
   variant="ghost"
   size="lg"
-  class="w-full justify-start"
+  class="group/package-trigger h-15 w-full justify-start rounded-none px-6 enabled:hover:bg-transparent enabled:active:bg-transparent focus-visible:outline-offset-[-2px]"
   aria-label={`Choose package, current package ${activePackage.title}`}
   aria-haspopup="dialog"
   aria-controls="package-explorer"
   aria-expanded="false"
   data-package-chooser-open>
-  <PackageIcon kind={activePackage.kind} />
-  <span class="text-foreground font-mono text-sm">{activePackage.title}</span>
+  <span class="package-chooser-icon inline-flex shrink-0">
+    <PackageIcon kind={activePackage.kind} />
+  </span>
+  <span class="text-foreground font-mono text-sm font-normal group-hover/package-trigger:font-medium group-focus-visible/package-trigger:font-medium">
+    {activePackage.title}
+  </span>
   <ChevronsUpDown class="ml-auto" aria-hidden="true" />
 </Button>
+
+<style>
+  @media (prefers-reduced-motion: no-preference) {
+    :global([data-package-chooser-open]:is(:hover, :focus-visible))
+      .package-chooser-icon {
+      animation: package-icon-nudge 320ms ease-out;
+    }
+  }
+
+  @keyframes package-icon-nudge {
+    0%,
+    100% {
+      transform: translateY(0) rotate(0);
+    }
+    45% {
+      transform: translateY(-1px) rotate(-6deg);
+    }
+  }
+</style>

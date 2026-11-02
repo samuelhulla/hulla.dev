@@ -5,9 +5,10 @@ import Dialog from '@/components/dialog/dialog.astro'
 import DialogTitle from '@/components/dialog/dialog-title.astro'
 import DialogDescription from '@/components/dialog/dialog-description.astro'
 import NavigationLink from '@/components/navigation-menu/navigation-menu-link.astro'
+import Tooltip from '@/components/tooltip/tooltip.astro'
 import PackageExplorer from '@/components/site/PackageExplorer.astro'
 import PackageIcon from '@/components/site/PackageIcon.astro'
-import { ArrowLeft, ArrowRight, BookOpen, X } from '@lucide/astro'
+import { ArrowLeft, ArrowRight, BookOpen, Eye, X } from '@lucide/astro'
 import { docPackages, type DocPackage } from '@/data/docs'
 import { packagePreviews } from '@/data/package-previews'
 
@@ -66,14 +67,14 @@ const { activePackage } = Astro.props
     <nav class="px-3 py-2" aria-label="Switch package documentation">
       {docPackages.map((pkg) => (
         <div
-          class="package-switch-row"
+          class="group/package-row relative"
           data-package-row
           data-package-kind={pkg.kind}
           data-search={`${pkg.title} ${packagePreviews[pkg.kind].purpose} ${packagePreviews[pkg.kind].summary}`}>
           <NavigationLink
             href={pkg.href}
             aria-current={activePackage.kind === pkg.kind ? 'page' : undefined}
-            class="items-center gap-3"
+            class="items-center gap-3 pr-14 group-hover/package-row:bg-hover-surface aria-[current=page]:group-hover/package-row:bg-selected-hover-surface"
             data-package-quick-link>
             <PackageIcon
               kind={pkg.kind}
@@ -93,12 +94,21 @@ const { activePackage } = Astro.props
             />
           </NavigationLink>
           <Button
+            id={`package-preview-${pkg.kind}`}
             size="sm"
             variant="ghost"
+            class="absolute top-1/2 right-3 size-8 -translate-y-1/2 p-0"
             aria-label={`Preview ${pkg.title}`}
+            aria-describedby={`package-preview-${pkg.kind}-tooltip`}
             data-package-preview={pkg.kind}>
-            Preview
+            <Eye aria-hidden="true" />
           </Button>
+          <Tooltip
+            id={`package-preview-${pkg.kind}-tooltip`}
+            triggerId={`package-preview-${pkg.kind}`}
+            placement="left">
+            Preview {pkg.title}
+          </Tooltip>
         </div>
       ))}
     </nav>
@@ -111,7 +121,9 @@ const { activePackage } = Astro.props
     </p>
     <footer class="border-border text-muted-foreground flex flex-wrap justify-between gap-2 border-t px-5 py-3 text-xs">
       <span>Enter opens docs · ↑ ↓ move between packages</span>
-      <span>Preview to try a package first</span>
+      <span class="inline-flex items-center gap-1.5">
+        <Eye size={14} aria-hidden="true" /> Preview a package
+      </span>
     </footer>
   </div>
 
@@ -131,15 +143,6 @@ const { activePackage } = Astro.props
   }
   .package-chooser[data-mode='preview'] {
     --package-dialog-width: 72rem;
-  }
-  .package-switch-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.25rem;
-  }
-  .package-switch-row[hidden] {
-    display: none;
   }
 </style>
 
