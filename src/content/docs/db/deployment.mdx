@@ -3,6 +3,8 @@ title: Deployment
 description: Deploy your application, persistent query service and PostgreSQL without choosing a specific cloud provider.
 ---
 
+import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
+
 An application with live browser queries has three parts: your app, the persistent
 `@hulla/db` service and PostgreSQL. Your framework deploys as usual; the service
 maintains subscriptions and runs declared database functions.
@@ -32,13 +34,19 @@ support for the package's session settings.
 
 ## Generate during the build
 
-Install `@hulla/db@0.1.0` from npm using the
-[installation commands](/docs/db/installation). The package includes macOS arm64
-and Linux x64/glibc executables. Generate in a Bun build environment:
+Install the matching SDK and native artifacts described in
+[installation](/docs/db/installation#local-development-requirements). The migration
+workflow below requires the updated development build. Generate during the build;
+that build includes its own development runtime and compiler:
 
-```sh
-bun --bun hulla-db generate db.config.ts
-```
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun --bun hulla-db generate db.config.ts',
+    npm: 'npx hulla-db generate db.config.ts',
+    pnpm: 'pnpm exec hulla-db generate db.config.ts',
+    yarn: 'yarn exec hulla-db generate db.config.ts',
+  }}
+/>
 
 Include the config, schema, generated artifacts and their runtime dependencies.
 Deploy the same schema and function artifacts to the app and service. Native
@@ -51,18 +59,62 @@ asset tracing; other hosts use their normal packaging mechanisms. Use the bundle
 executables for a supported target. Linux musl/Alpine, Linux arm64 and macOS x64
 are not included in this release.
 
-## Provision explicitly, then serve
+## Initialize fresh storage
 
 Use a provisioning credential to initialize or verify storage. Node can run the
 prepared runtime; Bun is not required for serving:
 
 ```sh
 node node_modules/@hulla/db/dist/cli.js init db.config.ts
+```
+
+Initialization creates fresh storage or verifies an exact match. Use `migrate`
+for a supported change to an existing database. These commands assume production
+server environment variables are already supplied.
+
+## Apply a schema change
+
+Build the release first. During a maintenance window, stop application writers,
+the query service and workers, then take a backup. With the new release's schema
+and a provisioning credential, run:
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun --bun hulla-db migrate db.config.ts',
+    npm: 'npx hulla-db migrate db.config.ts',
+    pnpm: 'pnpm exec hulla-db migrate db.config.ts',
+    yarn: 'yarn exec hulla-db migrate db.config.ts',
+  }}
+/>
+
+`migrate` applies supported changes directly, without a confirmation prompt. Add
+`--check` for a read-only plan. Repeating an already-applied migration leaves rows
+unchanged. Unsupported changes fail instead of resetting storage; see
+[schema authoring](/docs/db/schemas#change-an-existing-schema) for supported operations.
+
+Production `serve` verifies storage; it never applies migrations at startup.
+Previously connected runtimes reject a changed contract before further operations,
+so start the matching application and service together after the migration succeeds.
+
+If the migration connection is interrupted, run `migrate --check` to inspect the
+result before proceeding. A committed upgrade is already current; a rolled-back
+upgrade still has a pending plan. Applying the current schema again is harmless.
+
+To reverse a committed upgrade, restore the backup into a separate database,
+reapply grants, verify the data, and switch back to matching application artifacts.
+That restore returns to the backup point; the command does not generate destructive
+down migrations.
+
+## Serve the prepared release
+
+Start the matching application and persistent service with normal runtime credentials:
+
+```sh
 node node_modules/@hulla/db/dist/cli.js serve db.config.ts
 ```
 
-These commands assume server environment variables are already supplied. `serve`
-does not regenerate, watch source or reset storage. Terminate HTTPS at an ingress
+`serve` verifies the installed contract and does not regenerate, watch source or
+apply migrations. Terminate HTTPS at an ingress
 that preserves streaming responses, allow the browser app's exact origin, and
 verify credentials through the existing auth provider.
 

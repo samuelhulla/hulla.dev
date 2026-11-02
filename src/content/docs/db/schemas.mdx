@@ -3,6 +3,8 @@ title: Schemas and constraints
 description: Define tables once, infer application types and enforce storage rules in PostgreSQL.
 ---
 
+import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
+
 Put your database structure in `db/schema.ts`. `defineTable` describes fields;
 the object keys passed to `defineSchema` are the table names used in queries.
 
@@ -162,7 +164,102 @@ preserved. Refinement callbacks can add application-only rules.
 do not insert database defaults or silently coerce values. Resolve a schema with
 `defineSchema` before adapting fields that use named foreign-key references.
 
+## Change an existing schema
+
+The [bundled development build](/docs/db/installation#local-development-requirements)
+applies supported schema changes automatically when `dev` owns PostgreSQL. For an
+external database, `migrate` applies the change and `migrate --check` previews it.
+Use matching SDK and native executables from that build.
+
+### During local development
+
+Suppose `tasks` already contains saved titles. Add a defaulted field to its declaration:
+
+```diff filename="db/schema.ts"
+ const tasks = defineTable({
+   title: v.string(),
++  archived: v.boolean().default(false),
+ })
+```
+
+When `dev` owns PostgreSQL, saving this file regenerates and validates the code,
+fills `archived` with `false` on existing rows, and restarts the service. Saved titles
+and IDs remain intact. Leave the same development process running throughout.
+
+The local database persists in `.hulla/postgres` across service reloads and dev
+restarts. Invalid function code fails generation before a migration is applied.
+An unsupported schema change leaves the database unchanged and the watcher waits
+for corrected source.
+
+### Apply a change to an external database
+
+Setting `database.server.url` or `DATABASE_URL` tells `dev` to use your own database.
+It does not initialize or migrate that database automatically. With the target
+connection configured and a provisioning credential available, run:
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun --bun hulla-db migrate',
+    npm: 'npx hulla-db migrate',
+    pnpm: 'pnpm exec hulla-db migrate',
+    yarn: 'yarn exec hulla-db migrate',
+  }}
+/>
+
+The command compares your schema with the installed contract, applies supported
+changes in one transaction, and prints `Schema migration applied.` It does not ask
+for confirmation. An already-matching schema prints `Schema is already current.`
+without repeating a backfill.
+
+Use `init` once for fresh storage. After migrating an existing development database,
+save a source file or restart `dev` so it starts against the new schema.
+
+### Preview without changing data
+
+Add `--check` to inspect the same plan without applying it:
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun --bun hulla-db migrate --check',
+    npm: 'npx hulla-db migrate --check',
+    pnpm: 'pnpm exec hulla-db migrate --check',
+    yarn: 'yarn exec hulla-db migrate --check',
+  }}
+/>
+
+A supported pending change lists the added tables, fields or references and prints
+`No changes applied.` Check mode reports a plan; it does not fail merely because
+supported changes are pending. Unsupported changes still fail with an error.
+
+Commands use `db.config.ts` in the current directory. Pass another config path when
+needed, for example `hulla-db migrate ./server/db.config.ts --check`.
+
+### Supported schema changes
+
+| Change                     | Behavior                                                    |
+| -------------------------- | ----------------------------------------------------------- |
+| Append a new table         | Creates the table with its declared indexes and constraints |
+| Add a field with a default | Fills existing rows with that default                       |
+| Add a nullable field       | Fills existing rows with null when no default is declared   |
+| Reorder existing fields    | Preserves values and IDs by field name                      |
+| Append a reference         | Validates existing values before committing                 |
+
+Keep existing table and reference order. Renaming or removing tables or fields,
+changing existing types/defaults/nullability, and changing existing indexes or
+constraints require a separately reviewed data transformation. A required new
+field without a default is rejected even for an empty table.
+
+Backfilling a nullable field does not make future inserts optional. Use
+`.nullable().default(null)` when callers should be able to omit it; see
+[fields and defaults](#choose-fields-and-defaults).
+
+Migration validation, column changes, backfills and metadata publication commit
+together. Constraint or quota failures roll the operation back. Existing IDs,
+committed mutation receipts and queued jobs are preserved.
+
+For production deployment, follow the [migration and recovery sequence](/docs/db/deployment#apply-a-schema-change).
+It covers provisioning credentials, backups, stopping writers and starting the
+matching application release.
+
 Use [data types and codecs](/docs/db/data-types) for numbers, dates and JSON, or
-[read and write data](/docs/db/database) to use this schema. Regenerate after
-schema changes and provision storage explicitly; the development watcher never
-silently resets incompatible data.
+[read and write data](/docs/db/database) to use this schema.

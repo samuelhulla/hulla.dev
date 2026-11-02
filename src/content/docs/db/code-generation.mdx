@@ -3,13 +3,21 @@ title: Code generation
 description: 'Generate typed database imports and browser functions from your schema.'
 ---
 
+import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
+
 Run `hulla-db generate` to create typed imports from your schema and function declarations. Server code gets database builders, and browser code gets functions it can call without importing server handlers.
 
-Generation requires Bun and TypeScript 7.0.2. If they aren't installed yet, follow [installation](/docs/db/installation).
+The [bundled development build](/docs/db/installation#local-development-requirements)
+includes the runtime and compiler used by generation.
 
-```sh
-bun --bun hulla-db generate
-```
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun --bun hulla-db generate',
+    npm: 'npx hulla-db generate',
+    pnpm: 'pnpm exec hulla-db generate',
+    yarn: 'yarn exec hulla-db generate',
+  }}
+/>
 
 A successful run prints `Generated database entrypoints.` By default, it reads `db.config.ts`, loads `db/schema.ts`, and discovers query and mutation declarations beside the schema.
 
@@ -70,14 +78,22 @@ Paths resolve relative to the config. Generated output stays beside the resolved
 
 ## Use the watcher during development
 
-```sh
-bun --bun hulla-db dev
-```
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun --bun hulla-db dev',
+    npm: 'npx hulla-db dev',
+    pnpm: 'pnpm exec hulla-db dev',
+    yarn: 'yarn exec hulla-db dev',
+  }}
+/>
 
 The watcher regenerates code and restarts the service when source files change.
+For its owned local PostgreSQL database, it also applies supported schema changes
+after generation succeeds. Existing rows and IDs are preserved.
 
-> [!NOTE] Generation does not provision tables
-> Run `init` explicitly to provision storage. The watcher does not erase existing data; an incompatible development schema needs an explicit recreation of disposable data.
+`generate` itself opens no database. With an external database, run `init` for fresh
+storage or `migrate` for supported schema changes. Use `migrate --check` to inspect
+without changing data. See [changing an existing schema](/docs/db/schemas#change-an-existing-schema).
 
 Generation evaluates your trusted schema and declaration modules. Keep database calls and request-specific work inside handlers, rather than at module initialization. Unsupported handler imports produce a diagnostic.
 
@@ -85,9 +101,14 @@ Generation evaluates your trusted schema and declaration modules. Keep database 
 
 Generate during your build:
 
-```sh
-bun --bun hulla-db generate
-```
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun --bun hulla-db generate',
+    npm: 'npx hulla-db generate',
+    pnpm: 'pnpm exec hulla-db generate',
+    yarn: 'yarn exec hulla-db generate',
+  }}
+/>
 
 Then start the service from the prepared artifacts:
 

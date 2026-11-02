@@ -3,6 +3,8 @@ title: Run the database service
 description: Start the supplied query service, connect browser functions and configure the limits your app needs.
 ---
 
+import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
+
 The database service runs your queries and mutations and sends live results to the browser. Start it alongside your app and PostgreSQL when you use browser functions.
 
 This page configures the service created in [Build a live task list](/guides/db/quick-start).
@@ -11,22 +13,47 @@ This page configures the service created in [Build a live task list](/guides/db/
 
 | Command    | Effect                                                                     |
 | ---------- | -------------------------------------------------------------------------- |
-| `generate` | Creates typed entrypoints and service artifacts; no connection or listener |
-| `init`     | Explicitly creates/verifies database storage                               |
-| `dev`      | Generates, watches source and restarts the service                         |
-| `serve`    | Runs existing artifacts without generation or a watcher                    |
+| `generate` | Creates typed entrypoints and service artifacts without opening a database |
+| `init`     | Creates fresh storage or verifies an existing schema                       |
+| `dev`      | Watches source, migrates its owned local database and reloads the service  |
+| `migrate`  | Applies supported schema changes; `--check` previews without changing data |
+| `serve`    | Verifies storage and runs prepared artifacts without a watcher             |
+| `studio`   | Opens the optional local schema and data workbench                         |
 
-Generation and development use Bun:
+With the [bundled development build](/docs/db/installation#local-development-requirements),
+start local development from your app directory:
 
-```sh
-bun --bun hulla-db generate
-bun --bun hulla-db init
-bun --bun hulla-db dev
-```
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun --bun hulla-db dev',
+    npm: 'npx hulla-db dev',
+    pnpm: 'pnpm exec hulla-db dev',
+    yarn: 'yarn exec hulla-db dev',
+  }}
+/>
 
 Commands default to `db.config.ts` in the current directory. An optional final
-path selects another config. Initialization never silently resets data; schema
-changes in a disposable development database may need explicit recreation.
+path selects another config. Your app's own development server runs separately.
+
+## Let local schema changes reload automatically
+
+With no `database.server.url` or `DATABASE_URL`, `dev` starts its bundled PostgreSQL,
+initializes storage, generates bindings and starts the service. Local data persists
+in `.hulla/postgres`; add `.hulla/` to your application's `.gitignore`.
+
+Saving a supported schema change regenerates and validates the code, applies the
+database migration and restarts the service. Adding a defaulted field fills existing
+rows while preserving their IDs. No second command or manual restart is needed.
+Unsupported changes or invalid function code stop that attempt and leave the watcher
+waiting for a correction. Database contents are preserved.
+
+Setting a server URL selects an external database. Run `init` once for fresh storage
+and `migrate` when its schema changes; `dev` never provisions or migrates external
+storage automatically. See [changing an existing schema](/docs/db/schemas#change-an-existing-schema) for
+the supported changes and read-only preview.
+
+Ctrl-C stops the service and its owned PostgreSQL process while preserving local
+data for the next run. For an external database, only the service is stopped.
 
 ## Set the listener and browser origin
 
@@ -35,7 +62,7 @@ import { defineConfig } from '@hulla/db/config'
 
 export default defineConfig({
   database: {
-    server: { url: process.env.DATABASE_URL! },
+    server: {},
     client: { url: 'http://localhost:3001', credentials: 'include' },
   },
   service: {
@@ -50,6 +77,25 @@ Host and port default to the values shown. Origins are exact HTTP(S) origins,
 not wildcard patterns. The default empty list accepts requests without an Origin
 header. Configure your browser application's origin for remote browser calls.
 Production ingress needs HTTPS and unbuffered streaming responses.
+Set `database.server.url` or `DATABASE_URL` when using your own PostgreSQL instance.
+
+### Resolve an occupied port
+
+When a CLI listener's address is in use, an interactive terminal offers the next available port, a custom address, or exit. Press Enter to choose the next available port. Without an interactive terminal, the CLI fails promptly; set `service.port` explicitly for automation.
+
+Development remembers the selected address across worker reloads. When `database.client` is omitted, generation uses the actual development service address. An explicit `database.client` remains your public endpoint choice and is not rewritten when a local port changes.
+
+## Inspect the database in Studio
+
+Install the optional `@hulla/db-studio` package alongside the matching `@hulla/db` build, then start both tools together:
+
+```sh
+hulla-db dev --studio
+```
+
+Open the Studio access link printed in the terminal to explore the schema and browse or edit rows. Its listener defaults to `127.0.0.1:4983`; `--studio-port` chooses another port. Studio reloads with the development worker and retains its access token across reloads.
+
+Use `hulla-db studio --read-only` to inspect an already running database separately. Standalone Studio loads the configured schema and connection without starting PostgreSQL, generating code, or starting the query service. See [Database Studio](/docs/db/studio) for access modes, row editing, and remote database connections.
 
 ## Connect browser functions
 

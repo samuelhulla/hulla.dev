@@ -19,6 +19,7 @@ Look up package entrypoints, query states, configuration defaults, and runtime l
 | `@hulla/db/zod`                | `createSelectSchema`, `createInsertSchema`, `createUpdateSchema` |
 | `@hulla/db-better-auth`        | `hullaAdapter`                                                   |
 | `@hulla/db-better-auth/schema` | `betterAuthTables`, `generateAuthSchema`                         |
+| `@hulla/db-studio`             | `startStudio` for an optional local operator workbench           |
 
 Schema-bound constructors, callables and the direct database come from your
 [generated modules](/docs/db/code-generation#import-the-generated-surface-for-your-code).
@@ -31,19 +32,38 @@ an invocation handle; query results are recursively readonly.
 Import `defineConfig` from `@hulla/db/config`. The shipped config and browser
 startup accept different kinds of connection address:
 
-| Setting                                           | Purpose                                                        |
-| ------------------------------------------------- | -------------------------------------------------------------- |
-| `database.server.url` in `defineConfig`           | Private `postgresql://…` connection used by the server/service |
-| `database.server.namespace`                       | Optional PostgreSQL schema namespace                           |
-| `schema`                                          | Schema source path; defaults to `db/schema.ts`                 |
-| `functions`                                       | Optional declaration discovery directory                       |
-| `service.host`, `service.port`, `service.origins` | Listener and allowed browser origins                           |
-| `auth(headers)`                                   | Verify credentials and return `{ key, identity }` or null      |
-| `limits`                                          | Default server invocation budgets                              |
-| `database.client.url`                             | Public HTTP(S) query service address                           |
+| Setting                                           | Purpose                                                                                     |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `database.server.url` in `defineConfig`           | Optional private PostgreSQL URL; falls back to `DATABASE_URL` or local development settings |
+| `database.server.namespace`                       | Optional PostgreSQL schema namespace                                                        |
+| `schema`                                          | Schema source path; defaults to `db/schema.ts`                                              |
+| `functions`                                       | Optional declaration discovery directory                                                    |
+| `service.host`, `service.port`, `service.origins` | Listener and allowed browser origins                                                        |
+| `auth(headers)`                                   | Verify credentials and return `{ key, identity }` or null                                   |
+| `limits`                                          | Default server invocation budgets                                                           |
+| `database.client.url`                             | Public HTTP(S) query service address                                                        |
 
 Keep the two URLs separate from user/session state. See the
 [service setup](/docs/db/runtime) and [authentication guide](/docs/db/authentication).
+
+With no server URL or `DATABASE_URL`, `hulla-db dev` owns a persistent local PostgreSQL instance. Generated server code can resolve its saved connection from `.hulla/local.json` during development. Production requires an explicit server URL or `DATABASE_URL` and never falls back to that file.
+
+## Database CLI commands
+
+Commands default to `db.config.ts`; pass a config path after the command to select another project. The [runtime guide](/docs/db/runtime) explains service setup, and [schema authoring](/docs/db/schemas#change-an-existing-schema) explains applying data schema changes.
+
+| Command                    | Effect                                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------ |
+| `hulla-db generate`        | Generates typed bindings and service artifacts.                                                  |
+| `hulla-db init`            | Creates fresh storage or verifies the current schema.                                            |
+| `hulla-db migrate`         | Applies supported schema changes in one transaction.                                             |
+| `hulla-db migrate --check` | Prints the schema plan without changing storage.                                                 |
+| `hulla-db dev`             | Watches source and runs the service, owning local PostgreSQL when no external connection is set. |
+| `hulla-db dev --studio`    | Adds the optional workbench to the development lifecycle.                                        |
+| `hulla-db serve`           | Runs prepared service artifacts against verified storage.                                        |
+| `hulla-db studio`          | Opens the optional workbench against an already running database.                                |
+
+Studio options are `--studio-port <port>` (default `4983`, or `0` for an assigned port), `--read-only`, and `--write`. They apply to `studio` or `dev --studio`. `NODE_ENV=production` defaults Studio to read-only; `--write` explicitly enables editing. `serve --studio` is not supported. See [Database Studio](/docs/db/studio).
 
 ## Declaration options
 
@@ -160,11 +180,11 @@ A mutation confirmation timeout is not proof of rollback.
 
 Most applications use generated code instead of constructing these pieces:
 
-| Import               | Purpose                                                                         |
-| -------------------- | ------------------------------------------------------------------------------- |
-| `@hulla/db/server`   | `createDatabase` and generic database/builder types                             |
-| `@hulla/db/codegen`  | `generateProject`, schema/function generators and optional Rust contract output |
-| `@hulla/db/bindings` | Shared observation primitives used by UI packages                               |
+| Import               | Purpose                                                                                      |
+| -------------------- | -------------------------------------------------------------------------------------------- |
+| `@hulla/db/server`   | `createDatabase`, `migrateDatabase`, `resolveDatabaseConnection`, and database/builder types |
+| `@hulla/db/codegen`  | `generateProject`, schema/function generators and optional Rust contract output              |
+| `@hulla/db/bindings` | Shared observation primitives used by UI packages                                            |
 
 Generated code imports its binding factories, declaration constructor and worker
 installer through internal package entrypoints. Applications do not import or

@@ -311,7 +311,7 @@ function packageManagerCommands(node: LooseNode): LooseNode[] {
   return Object.entries(commands).flatMap(([manager, command]) =>
     typeof command === 'string'
       ? [
-          heading(3, `Install with ${manager}`),
+          heading(3, `Run with ${manager}`),
           { type: 'code', lang: 'sh', value: command } satisfies Code,
         ]
       : []

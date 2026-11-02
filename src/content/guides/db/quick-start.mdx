@@ -5,11 +5,12 @@ tutorial:
   outcome: A React task list that saves to PostgreSQL and updates in two browser tabs.
   prerequisites:
     - title: A React TypeScript Vite app.
-    - title: Database packages, a supported native platform, and PostgreSQL.
-      href: /docs/db/installation
+    - title: The @hulla/db development build with bundled tools on a supported native platform.
+      href: /docs/db/installation#local-development-requirements
 ---
 
 import DocsStepperHeading from '@/components/docs/DocsStepperHeading.astro'
+import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 import Stepper from '@/components/stepper/stepper.astro'
 import StepperContent from '@/components/stepper/stepper-content.astro'
 import StepperDescription from '@/components/stepper/stepper-description.astro'
@@ -22,14 +23,11 @@ every open copy of the page receives the updated list without reloading.
 
 ## Prepare the project
 
-Start in a React TypeScript Vite app with the database packages, Zod and
-TypeScript installed as described in [installation](/docs/db/installation).
-Keep the Vite entrypoints `src/main.tsx` and `src/App.tsx`. Put your PostgreSQL
-connection URL in the app's `.env` file:
-
-```sh filename=".env"
-DATABASE_URL=postgresql://user:password@localhost:5432/my_app
-```
+Start in a React TypeScript Vite app with Zod and the
+[database development build](/docs/db/installation#local-development-requirements).
+Keep the Vite entrypoints `src/main.tsx` and `src/App.tsx`. This guide lets `dev`
+own local PostgreSQL, so leave `DATABASE_URL` unset. The package supplies the
+development runtime, compiler and database executable.
 
 > [!WARNING] Local demo, public functions
 > These declarations don't authenticate callers. Use a local development database with disposable data. Add [authentication](/docs/db/authentication) before using private data.
@@ -38,8 +36,8 @@ DATABASE_URL=postgresql://user:password@localhost:5432/my_app
   <StepperItem id="define-the-table" data-toc-section data-toc-label="Define the table" class="scroll-mt-24">
     <StepperIndicator>1</StepperIndicator>
     <StepperContent>
-      <DocsStepperHeading for="define-the-table">Define the table and connection</DocsStepperHeading>
-      <StepperDescription>Describe the rows, then tell the server where PostgreSQL lives.</StepperDescription>
+      <DocsStepperHeading for="define-the-table">Define the table and service</DocsStepperHeading>
+      <StepperDescription>Describe the rows and let dev manage the local database.</StepperDescription>
     </StepperContent>
     <StepperPanel>
 
@@ -65,7 +63,7 @@ import { defineConfig } from '@hulla/db/config'
 
 export default defineConfig({
   database: {
-    server: { url: process.env.DATABASE_URL! },
+    server: {},
     client: { url: 'http://localhost:3001', credentials: 'include' },
   },
   service: { origins: ['http://localhost:5173'] },
@@ -74,9 +72,14 @@ export default defineConfig({
 
 Generate the schema-bound constructors before declaring your functions:
 
-```sh
-bun --bun hulla-db generate
-```
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun --bun hulla-db generate',
+    npm: 'npx hulla-db generate',
+    pnpm: 'pnpm exec hulla-db generate',
+    yarn: 'yarn exec hulla-db generate',
+  }}
+/>
 
 The command prints `Generated database entrypoints.` and creates `db/_generated/`.
 It does not create database tables or start a server.
@@ -119,22 +122,29 @@ The handler always receives `ctx` first and validated input second.
   <StepperItem id="start-the-service" data-toc-section data-toc-label="Start the service" class="scroll-mt-24">
     <StepperIndicator>3</StepperIndicator>
     <StepperContent>
-      <DocsStepperHeading for="start-the-service">Initialize storage and start development</DocsStepperHeading>
-      <StepperDescription>Provision the table explicitly, then leave the query service running.</StepperDescription>
+      <DocsStepperHeading for="start-the-service">Start development</DocsStepperHeading>
+      <StepperDescription>Start local PostgreSQL and leave the query service running.</StepperDescription>
     </StepperContent>
     <StepperPanel>
 
-From the app directory, initialize the schema and start the watcher:
+From the app directory, start the database development server:
 
-```sh
-bun --bun hulla-db init
-bun --bun hulla-db dev
-```
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun --bun hulla-db dev',
+    npm: 'npx hulla-db dev',
+    pnpm: 'pnpm exec hulla-db dev',
+    yarn: 'yarn exec hulla-db dev',
+  }}
+/>
 
-`init` prints `Database initialized and schema verified.` The watcher generates
-the new function bindings and starts the service at `http://127.0.0.1:3001`.
-Leave this terminal running. `dev` reloads declaration changes; it never resets
-database data or silently applies an incompatible schema change.
+`dev` starts bundled PostgreSQL, initializes the local schema, generates the function
+bindings and starts the service at `http://127.0.0.1:3001`. Leave this terminal
+running and add `.hulla/` to your application's `.gitignore`; saved data lives there.
+
+Saving supported schema changes applies them automatically and reloads the service.
+Existing rows and IDs are preserved. Invalid declarations or unsupported changes
+leave the watcher waiting for corrected source. See [changing an existing schema](/docs/db/schemas#change-an-existing-schema).
 
     </StepperPanel>
 
@@ -211,9 +221,14 @@ export default function App() {
 
 In a second terminal, start Vite on the origin allowed by your config:
 
-```sh
-bun run dev --port 5173 --strictPort
-```
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun run dev --port 5173 --strictPort',
+    npm: 'npm run dev -- --port 5173 --strictPort',
+    pnpm: 'pnpm run dev --port 5173 --strictPort',
+    yarn: 'yarn dev --port 5173 --strictPort',
+  }}
+/>
 
 Open `http://localhost:5173` in two tabs. Click **Add task** in one. Both lists
 update after the commit, and the task remains after a reload. An empty database

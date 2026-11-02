@@ -649,6 +649,12 @@ export const dbGuides: readonly DocGroup[] = [
           'Start the supplied query service, connect browser functions and configure the limits your app needs.',
       },
       {
+        title: 'Database Studio',
+        href: '/docs/db/studio',
+        description:
+          'Explore your schema, browse rows, and edit data in the optional local workbench.',
+      },
+      {
         title: 'Deployment',
         href: '/docs/db/deployment',
         description:

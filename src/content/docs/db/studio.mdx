@@ -1,0 +1,68 @@
+---
+title: Database Studio
+description: Explore your schema, browse rows, and make deliberate edits in a local database workbench.
+---
+
+`@hulla/db-studio` is an optional workbench for the PostgreSQL database configured by your app. Open the table relationship map, search the schema catalog, or browse a table without writing a query function.
+
+Use matching development builds of `@hulla/db` and `@hulla/db-studio`; see [installation](/docs/db/installation#local-development-requirements) for availability and native host requirements. Studio runs locally and connects using your server-side database settings.
+
+## Start alongside development
+
+Install `@hulla/db-studio` alongside `@hulla/db` in the app that owns `db.config.ts`. The package is resolved from that application's dependencies only when requested. With those matching builds installed, run:
+
+```sh
+hulla-db dev --studio
+```
+
+The development process starts its query service and Studio, printing a separate access URL for each. Open the full Studio link, including its token fragment. Studio defaults to `127.0.0.1:4983`; choose a port with `--studio-port 4984` or use `--studio-port 0` for an assigned port.
+
+Source changes restart Studio with the development worker. Its access token stays the same across those reloads. Refresh the browser after a schema change; row snapshots from the previous worker must be reloaded before saving.
+
+## Connect to an existing database
+
+Standalone Studio uses the schema and connection from `db.config.ts` without starting PostgreSQL or the query service:
+
+```sh
+hulla-db studio db.config.ts --read-only
+```
+
+Initialize fresh storage separately with `hulla-db init`. For an existing schema change, use the [schema workflow](/docs/db/schemas#change-an-existing-schema). Standalone Studio does not generate bindings or apply schema changes.
+
+The query service and Studio have separate listeners. Run Studio separately alongside `serve`; `serve --studio` is not a supported command.
+
+## Explore tables and relationships
+
+The map connects tables through declared references. Select a table card to open its detail view, or use the schema catalog to search table names, fields, types, and referenced tables. Schema views show indexes, constraints, and reference delete policies without querying table contents.
+
+Open a table's data view to load rows. Use field filters, scalar sorting, and cursor pagination to find records. Pages contain at most 200 rows. Selecting rows applies to the current page; navigation, filtering, sorting, and refresh clear that selection.
+
+Export selected rows as JSON when you need a local copy of their values. This export is a selection of data, rather than a complete database backup.
+
+## Edit or delete existing rows
+
+In write mode, edit a row's values and save. Studio validates the patch with the field codecs and writes through a managed transaction. Primary keys stay fixed. If the row changed after it was loaded, the save fails rather than overwriting another edit; reload the row before trying again.
+
+Bulk deletion checks every selected row in one transaction. A stale row or restricted reference rejects the whole batch. The confirmation shows reference policies: cascade and set-null rules can affect related rows outside the selection. Studio cannot undo a deletion.
+
+Read-only mode allows browsing, selection, and JSON export while disabling writes. Choose it explicitly with `--read-only`. When `NODE_ENV=production`, Studio defaults to read-only; `--write` explicitly enables editing:
+
+```sh
+NODE_ENV=production hulla-db studio db.config.ts --write
+```
+
+Studio currently edits and deletes existing rows. Row insertion, function invocation, arbitrary SQL, and schema authoring are outside its interface. Keep schema declarations in application source.
+
+## Keep operator access local
+
+Studio binds to `127.0.0.1` and accepts its own loopback origin. Its access link contains a per-run secret; the browser removes the fragment after loading and keeps access in tab-local session storage. The PostgreSQL URL stays on the server.
+
+Studio uses operator access through your configured database connection. It does not reuse application user authentication, so it can read declared tables and bypass application business policies. Share its access link only with the operators who should have that access.
+
+For a remote database, connect Studio locally using the private database connection, or forward its loopback port from a remote host:
+
+```sh
+ssh -N -L 4983:127.0.0.1:4983 your-host
+```
+
+Open the printed link with `127.0.0.1` and the forwarded port. Public ingress and cross-origin embedding are not supported. Use your database backup and recovery tools for full backups and restores; Studio's selected-row JSON export does not replace them.
