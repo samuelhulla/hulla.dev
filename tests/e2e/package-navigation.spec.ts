@@ -116,3 +116,69 @@ test('home discovery and docs directory have direct links without a picker layou
   await directory.getByRole('link', { name: /@hulla\/style/ }).click()
   await expect(page).toHaveURL(/\/docs\/style\/?$/)
 })
+
+for (const width of [1280, 390]) {
+  test(`package preview preserves nested editor tabs at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 })
+    for (const theme of ['light', 'dark']) {
+      await page.goto('/docs/api')
+      await page.evaluate((value) => {
+        document.documentElement.dataset.theme = value
+      }, theme)
+      const docs = page.locator('main [data-demo="api"]')
+      await expect(
+        docs.getByRole('textbox', { name: 'Edit contract.ts', exact: true })
+      ).toBeVisible()
+      const measureTabs = (root: typeof docs) =>
+        root
+          .locator('[data-slot="code-block-header"] > [data-slot="tabs-list"]')
+          .evaluateAll((lists) =>
+            lists.map((list) => {
+              const style = getComputedStyle(list)
+              const tab = list.querySelector('[role="tab"]')!
+              return {
+                display: style.display,
+                position: style.position,
+                padding: style.padding,
+                listHeight: list.getBoundingClientRect().height,
+                tabHeight: tab.getBoundingClientRect().height,
+              }
+            })
+          )
+      const expected = await measureTabs(docs)
+      if (width < 900)
+        await page
+          .getByRole('button', { name: 'Open documentation navigation' })
+          .click()
+      await page
+        .getByRole('button', {
+          name: 'Choose package, current package @hulla/api',
+        })
+        .click()
+      await page
+        .getByRole('button', { name: 'Preview @hulla/api', exact: true })
+        .click()
+      const preview = page.getByRole('dialog', {
+        name: 'Package preview',
+        exact: true,
+      })
+      const editor = preview.locator('[data-demo="api"]')
+      await expect(
+        editor.getByRole('textbox', { name: 'Edit contract.ts', exact: true })
+      ).toBeVisible()
+      expect(await measureTabs(editor)).toEqual(expected)
+      await editor.getByRole('tab', { name: 'server.ts', exact: true }).click()
+      await expect(
+        editor.getByRole('textbox', { name: 'Edit server.ts', exact: true })
+      ).toBeVisible()
+      await editor
+        .getByRole('tab', { name: 'server.ts', exact: true })
+        .press('ArrowRight')
+      await expect(
+        editor.getByRole('tab', { name: 'profile.ts', exact: true })
+      ).toBeFocused()
+    }
+  })
+}

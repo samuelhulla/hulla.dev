@@ -156,7 +156,8 @@ const highlighter = await createShikiCodeHighlighter({
   }
 
   @media (min-width: 900px) {
-    .package-explorer[data-layout='compact'] :global([data-slot='tabs-list']) {
+    .package-explorer[data-layout='compact']
+      > :global([data-slot='tabs-list']) {
       position: sticky;
       top: 5.25rem;
       align-self: start;
@@ -168,7 +169,7 @@ const highlighter = await createShikiCodeHighlighter({
       grid-template-columns: minmax(0, 1fr);
     }
 
-    .package-explorer :global([data-slot='tabs-list']) {
+    .package-explorer > :global([data-slot='tabs-list']) {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.125rem;
@@ -177,7 +178,8 @@ const highlighter = await createShikiCodeHighlighter({
       padding: 0.5rem;
     }
 
-    .package-explorer :global([data-slot='tabs-trigger']) {
+    .package-explorer
+      > :global([data-slot='tabs-list'] > [data-slot='tabs-trigger']) {
       min-width: 0;
       padding-inline: 0.75rem;
     }
@@ -198,7 +200,8 @@ const highlighter = await createShikiCodeHighlighter({
   }
 
   @media (max-width: 380px) {
-    .package-explorer :global([data-slot='tabs-trigger'] svg) {
+    .package-explorer
+      > :global([data-slot='tabs-list'] > [data-slot='tabs-trigger'] > svg) {
       display: none;
     }
   }
