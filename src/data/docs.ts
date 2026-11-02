@@ -731,6 +731,12 @@ const packageGuides: readonly DocGroup[] = [
         description:
           'Resolve conflicting Tailwind classes with a custom composer.',
       },
+      {
+        title: 'React Native styles',
+        href: '/docs/style/native',
+        description:
+          'Compose native style objects with the optional @hulla/style-native adapter.',
+      },
     ],
   },
   dbGuides[0]!,
@@ -903,7 +909,7 @@ const packageDefinitions: readonly DocPackage[] = [
     title: '@hulla/ui',
     href: '/docs/ui',
     description:
-      'Composable components for Astro, React, and Solid, with shared design tokens and source you own.',
+      'Composable web and React Native components with shared design foundations and source you own.',
     groups: [
       {
         title: 'Get started',
@@ -914,13 +920,19 @@ const packageDefinitions: readonly DocPackage[] = [
             title: 'Introduction',
             href: '/docs/ui',
             description:
-              'Composable components for Astro, React, and Solid, with shared design tokens and source you own.',
+              'Composable web and React Native components with shared design foundations and source you own.',
           },
           {
             title: 'Composition and themes',
             href: '/docs/ui/composition',
             description:
               'Put component parts together and customize them with shared themes.',
+          },
+          {
+            title: 'React Native components',
+            href: '/docs/ui/native',
+            description:
+              'Install native component source and configure app-wide appearance.',
           },
         ],
       },

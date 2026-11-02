@@ -1,21 +1,21 @@
 ---
 title: Components & styling
-description: 'Editable components for Astro, React, and Solid, with the same tokens, variants, and interaction rules.'
+description: 'Editable web and React Native components with shared design foundations and platform-specific interactions.'
 ---
 
 import PackageDemoFrame from '@/components/site/PackageDemoFrame.astro'
 
 import ComponentPreview from '@/components/docs/ComponentPreview.astro'
 
-`@hulla/ui` is a collection of components for Astro, React, and Solid. Install the source files into your app, then compose them into pages with shared colors, spacing, and interaction behavior.
+`@hulla/ui` supplies component source for Astro, React, Solid, and React Native. Install the files into your app, then compose them using the platform's own elements, events, and accessibility props.
 
 <PackageDemoFrame kind="ui" class="my-8" />
 
-Build a [reading counter](/guides/ui/quick-start) for a first example, or [find a component](/docs/ui/components) for your next page.
+Build a [reading counter](/guides/ui/quick-start) for a first web example, set up [React Native components](/docs/ui/native), or [find a component](/docs/ui/components) for your next screen.
 
 ## One design, across frameworks
 
-`@hulla/ui` provides components for Astro, React, and Solid. The generated components use the same design tokens and public variants across all three frameworks.
+The Astro, React, and Solid targets share web tokens and public variants. React Native uses the same semantic colors and visual language through native style objects. Touch targets, modal presentation, and available parts follow the native platform; matching component names do not promise identical props or dimensions.
 
 <ComponentPreview />
 
@@ -46,7 +46,7 @@ import CardContent from '@/components/card/card-content.astro'
 
 ## Keep the shared styles together
 
-Component source and the shared stylesheet are a pair. Update both when you update the components. The stylesheet includes the fonts, theme tokens, and supporting rules used by the generated source.
+For web targets, component source and the shared stylesheets are a pair. Keep both from the same registry revision. The stylesheets include the fonts, theme tokens, and supporting rules used by the generated source. Native components use installed theme helpers and tokens instead of CSS; their [provider setup](/docs/ui/native#configure-the-app-theme) lives at the app boundary.
 
 | Layer        | Responsibility                                           |
 | ------------ | -------------------------------------------------------- |

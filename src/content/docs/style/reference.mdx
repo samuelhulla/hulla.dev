@@ -13,7 +13,7 @@ import { style } from '@hulla/style'
 const { cn, vn } = style()
 ```
 
-Both configuration properties are optional. `serializer` defaults to `defaultSerializer`; `composer` defaults to `defaultComposer`. The returned `cn` and `vn` share the same configured pipeline. `style()` does not generate CSS or know framework-specific class props.
+With the class-string configuration, both properties are optional. `serializer` defaults to `defaultSerializer`; `composer` defaults to `defaultComposer`. The returned `cn` and `vn` share the same configured pipeline. `style()` does not generate CSS or know framework-specific class props.
 
 ## Pass supported class inputs
 
@@ -96,4 +96,43 @@ A custom composer receives those strings in order and decides how to combine the
 
 `VariantsDefinition` describes a variant map, `Variant<V>` types its callable function and `.infer`, and `StyleConfig` holds the two hooks. See [Custom merging](/docs/style/custom-merging) for a Tailwind example.
 
-The package exports `style(config?: StyleConfig)`, `defaultSerializer(input: ClassName): string`, `defaultComposer(...strings: string[]): string`, and the public types `ClassName`, `Serializer`, `Composer`, `VariantsDefinition`, `StyleConfig`, and `Variant`. The `Variant<V>` shape is `((prop: keyof V) => string) & { infer: keyof V }`.
+The class-string API exports `style(config?: StyleConfig)`, `defaultSerializer(input: ClassName): string`, `defaultComposer(...strings: string[]): string`, and the public types `ClassName`, `Serializer`, `Composer`, `VariantsDefinition`, `StyleConfig`, and `Variant`. The `Variant<V>` shape is `((prop: keyof V) => string) & { infer: keyof V }`.
+
+## Compose values other than class strings
+
+Generic hook types are available from `@hulla/style` 0.5.0. Supply both
+`serializer` and `composer` when changing the pipeline's input, intermediate, or
+output type. The same core pipeline creates `cn` and `vn`; no additional
+configuration property is needed. See [React Native styles](/docs/style/native)
+for a separately installed native configuration.
+
+```ts
+import { style, type StylePipeline } from '@hulla/style'
+
+const pipeline: StylePipeline<number, { value: number }, number> = {
+  serializer: (value) => ({ value }),
+  composer: (...entries) =>
+    entries.reduce((sum, entry) => sum + entry.value, 0),
+}
+const { cn, vn } = style(pipeline)
+const $amount = vn({ small: 2, large: 5 })
+cn($amount('small'), 3) // 5
+```
+
+In this minimal custom pipeline, the serializer turns each number into an object,
+then the composer sums their values. `StylePipeline<Input, Serialized, Output>`
+requires `Serializer<Input, Serialized>` and `Composer<Serialized, Output>`.
+TypeScript checks that the intermediate types agree and returns
+`StyleHelpers<Input, Output>`. Hook aliases keep their original string-based
+defaults when no type arguments are supplied.
+
+`VariantsDefinition<Input>` checks the map values, and `Variant<V, Output>`
+retains the map keys in `.infer` while changing the return type. The default
+`Variant<V>` still returns strings. The native configuration uses an identity
+serializer to preserve objects and arrays before its composer receives them.
+
+With an identity serializer and a composer that preserves single values (or drops
+them as `undefined`), the factory retains the composer's per-call signatures via
+`PreservingStyleHelpers<C>`. Each variant key then keeps its selected value's type,
+plus `undefined`. The native preset uses this to share one helper pair across view,
+text, and image recipes without broadening every result to all native style types.

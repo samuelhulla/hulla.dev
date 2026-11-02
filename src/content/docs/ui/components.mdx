@@ -3,7 +3,7 @@ title: Choose a component
 description: Find a shared primitive for content, navigation, forms, overlays, and feedback.
 ---
 
-Install components by registry name with [`hulla ui add`](/docs/cli/ui). The registry supplies Astro, React, and Solid source; choose the framework your page uses.
+Install components by registry name with [`hulla ui add`](/docs/cli/ui). Choose the framework your app uses; this page shows web compositions. [React Native components](/docs/ui/native) use native props, explicit text parts, and an app-wide theme provider.
 
 ```sh
 hulla ui add --framework astro alert card stepper
@@ -66,6 +66,7 @@ The stylesheet owns paragraph, heading, list, link, and inline-code defaults usi
 | Family              | Use it for                                     |
 | ------------------- | ---------------------------------------------- |
 | `navigation-menu`   | Links to other pages.                          |
+| `link-card`         | A destination with a title and description.    |
 | `breadcrumbs`       | The path from a section to the current page.   |
 | `sidebar`           | Persistent navigation through a large section. |
 | `table-of-contents` | Links to sections within a long page.          |
@@ -73,6 +74,30 @@ The stylesheet owns paragraph, heading, list, link, and inline-code defaults usi
 | `command`           | Searchable actions or destinations.            |
 
 Keep required tutorial steps visible in order. Tabs suit equivalent install commands; they make poor hiding places for step two.
+
+### Link to a guide
+
+Install `link-card` with `hulla ui add --framework astro link-card`. In an Astro component, import the parts from their installed files:
+
+```astro
+---
+import LinkCard from '@/components/link-card/link-card.astro'
+import LinkCardContent from '@/components/link-card/link-card-content.astro'
+import LinkCardTitle from '@/components/link-card/link-card-title.astro'
+import LinkCardDescription from '@/components/link-card/link-card-description.astro'
+---
+
+<LinkCard href="/guides/api/quick-start">
+  <LinkCardContent>
+    <LinkCardTitle>Build your first route</LinkCardTitle>
+    <LinkCardDescription>
+      Contract, handler, and client in one example.
+    </LinkCardDescription>
+  </LinkCardContent>
+</LinkCard>
+```
+
+The whole card is one native link. It supports standard attributes such as `target`, `rel`, and `aria-current`; its parts and any decorative icon are optional children. Keep buttons and other links outside the card. Use `Card` when the content contains several independent actions, or `navigation-menu` for a menu with disclosures.
 
 ## Accept input and show feedback
 

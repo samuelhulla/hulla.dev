@@ -1,0 +1,164 @@
+---
+title: React Native styles
+description: 'Compose native style objects and infer variant props with the optional @hulla/style-native adapter.'
+---
+
+Pass the configuration from `@hulla/style-native` to the existing `style()` factory to compose React Native style objects. The core supplies the same `cn`, `vn`, and variant inference used by your web components.
+
+Requires `@hulla/style` 0.5.0 or later, before 0.6, `@hulla/style-native` 1.0.0,
+and React Native 0.81 or later, before 1.0. Use TypeScript 5.4 or later for the typed examples.
+Install both packages in the native app:
+
+import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun add @hulla/style @hulla/style-native',
+    npm: 'npm install @hulla/style @hulla/style-native',
+    pnpm: 'pnpm add @hulla/style @hulla/style-native',
+    yarn: 'yarn add @hulla/style @hulla/style-native',
+  }}
+/>
+
+## Create native helpers
+
+Create one shared module in your native app. Import `style` from the core package, then pass the separately installed plugin's `native` configuration object. No provider is needed for style composition.
+
+```ts filename="src/lib/native-style.ts"
+import { style } from '@hulla/style'
+import { native } from '@hulla/style-native'
+
+export const { cn, vn } = style(native)
+```
+
+`native` supplies an identity `serializer` and a native `composer`; it uses the same hooks as a custom web composer. The shared helpers work with view, text, and image recipes, retaining each call's style types. Pass its output to a native `style` prop, with caller overrides last:
+
+```tsx filename="src/components/Surface.tsx"
+import { StyleSheet, View, type ViewProps } from 'react-native'
+import { cn } from '../lib/native-style'
+
+const styles = StyleSheet.create({
+  base: { padding: 12 },
+  muted: { opacity: 0.5 },
+})
+
+export function Surface({
+  muted = false,
+  style,
+  ...props
+}: ViewProps & { muted?: boolean }) {
+  return (
+    <View {...props} style={cn(styles.base, muted && styles.muted, style)} />
+  )
+}
+```
+
+`<Surface muted style={{ padding: 8 }} />` renders with padding 8 and opacity 0.5. `cn` preserves the order of the styles; React Native resolves their properties.
+
+## Select a native variant
+
+In a component module, define a map once and use its keys to type a prop:
+
+```ts
+import { cn, vn } from '../lib/native-style'
+
+const $size = vn({
+  compact: { padding: 8 },
+  regular: { padding: 12 },
+})
+
+type Size = typeof $size.infer // 'compact' | 'regular'
+const compact = $size('compact')
+cn(compact, { paddingHorizontal: 16 })
+```
+
+The shared variant function passes the selected value through `cn`. A native style object or array keeps its reference; empty values normalize to `undefined`. Choose defaults with JavaScript parameters such as `size = 'regular'`; `.infer` is a type helper whose runtime value is `undefined`.
+
+## Reuse the same helpers for text and images
+
+Import `cn` and `vn` from the shared module for every native component. A text
+variant and an image style can use that same pair:
+
+```ts
+import { cn, vn } from '../lib/native-style'
+
+const $weight = vn({
+  regular: { fontWeight: '400' },
+  strong: { fontWeight: '600' },
+})
+
+const labelStyle = cn($weight('strong'), { fontSize: 14 }) // Text.style
+const imageStyle = cn({ resizeMode: 'cover' }) // Image.style
+```
+
+Each call retains its input shape, and each variant key keeps its selected value's
+type. React Native validates the result at the consuming component's style prop.
+You do not need a separate style instance for each component type.
+
+## Check recipes where you declare them
+
+Use `satisfies` to validate a recipe against `ViewStyle`, `TextStyle`, or `ImageStyle`
+while retaining its inferred shape. In a style module, reuse the shared `cn`:
+
+```ts filename="src/styles/recipes.ts"
+import type { ImageStyle, TextStyle, ViewStyle } from 'react-native'
+import { cn } from '../lib/native-style'
+
+const containerStyle = cn({ padding: 16 } satisfies ViewStyle)
+const titleStyle = cn({ fontSize: 20, fontWeight: '600' } satisfies TextStyle)
+const photoStyle = cn({ resizeMode: 'cover' } satisfies ImageStyle)
+```
+
+TypeScript reports an error at the declaration if, for example, `fontWeight` is
+`'strong'`. `satisfies` does not convert the object or add runtime work.
+
+For a variant map, `satisfies Record<string, TextStyle>` checks every choice while
+preserving the actual keys for `.infer`:
+
+```ts
+import type { TextStyle } from 'react-native'
+import { vn } from '../lib/native-style'
+
+const $weight = vn({
+  regular: { fontWeight: '400' },
+  strong: { fontWeight: '600' },
+} satisfies Record<string, TextStyle>)
+
+type Weight = typeof $weight.infer // 'regular' | 'strong'
+```
+
+The same pattern works with `ViewStyle` and `ImageStyle` maps. `StyleSheet.create`
+is another option for validating static recipes. These checks belong to the recipe;
+the shared `style(native)` setup stays the same.
+
+## Compose pressed styles
+
+For interactions, call `cn` inside React Native's callback. With `cn` imported from your shared module, a pressable can compose its current state:
+
+```tsx
+import { Pressable, StyleSheet } from 'react-native'
+import { cn } from '../lib/native-style'
+
+const styles = StyleSheet.create({
+  base: { padding: 12 },
+  pressed: { opacity: 0.7 },
+})
+
+export function Action() {
+  return (
+    <Pressable
+      style={({ pressed }) => cn(styles.base, pressed && styles.pressed)}
+    />
+  )
+}
+```
+
+The adapter composes style values; React Native owns the callback and interaction state. When using `@hulla/ui`, keep theme configuration in `NativeThemeProvider`. Compose custom styles through the components' public `style` props, or `Button.contentStyle` for its visible surface.
+
+## Understand the cost and limits
+
+The core maps arguments through the identity serializer before passing them to the native composer. That intermediate argument array is new; style objects and nested arrays are not cloned. The composer omits falsy top-level inputs. With one active input it returns that input; with several it returns an ordered array. Nested arrays and style references stay intact. It scans the arguments without flattening, cloning, merging, or deduplicating their contents.
+
+The preset has no runtime imports and uses React Native's style types. Applications use the core's shared runtime; web consumers do not acquire the plugin or its native peers. Keep the identity serializer paired with the native composer: the default web serializer converts objects to class strings. TypeScript checks that the serializer output matches the composer input. Multiple active styles still require an array, and theme-driven styles still need to update when the theme changes. Declare static maps outside rendering where practical; this API does not promise faster rendering than native style arrays.
+
+CSS strings, Tailwind compilation, animations, gestures, and theme subscriptions remain outside the adapter. For web class strings and configurable class merging, use [`@hulla/style`](/docs/style).

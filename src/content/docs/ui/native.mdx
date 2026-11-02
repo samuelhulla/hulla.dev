@@ -1,0 +1,87 @@
+---
+title: React Native components
+description: Install native component source, configure app-wide appearance, and compose accessible controls.
+---
+
+Use the `react-native` registry target to install editable components into a React Native app. The components render native views, text, inputs, and modals with shared colors and visual variants.
+
+Start with an existing React Native or Expo app and a registry revision that lists `react-native` in `ui.config.ts`. Keep its React and React Native requirements aligned with your host app. The component sources do not require Expo or a CSS styling runtime.
+
+## Install the native target
+
+From the app directory, configure the registry and select `react-native`:
+
+```sh
+hulla ui init
+```
+
+For the examples below, choose `src` as the code and support-file root and `src/components/ui` as the component destination. Setup copies the native theme, color, date, and input-style helpers into `src/lib`. Ensure your app's bundler resolves `@/lib/*` to that directory, as recorded by the CLI's alias setup.
+
+Add the controls your screen needs:
+
+```sh
+hulla ui add --framework react-native button input
+```
+
+The CLI copies the full families, including their exported parts. [Composed components](/docs/cli/ui#install-composed-components), such as DatePicker, bring their component dependencies too. Native components consume style objects; the web Tailwind and global CSS setup does not apply to this target.
+
+## Compose a native action
+
+Create a button whose press prints a message. Import its text part explicitly, since strings inside native views need a text component:
+
+```tsx filename="src/SaveButton.tsx"
+import { Button, ButtonText } from './components/ui/button'
+
+export function SaveButton() {
+  return (
+    <Button onPress={() => console.log('Saved')}>
+      <ButtonText>Save</ButtonText>
+    </Button>
+  )
+}
+```
+
+Pass matching `variant` and `disabled` values to Button and ButtonText when you change those states. Parts keep those choices explicit; a wrapper does not infer them by inspecting its children. Give native inputs an accessible name with props such as `accessibilityLabel`, and connect field labels and descriptions explicitly.
+
+## Configure the app theme
+
+Wrap the app's content once to choose system appearance, a fixed mode, or custom fonts:
+
+```tsx filename="src/App.tsx"
+import { NativeThemeProvider } from './lib/native-theme'
+import { SaveButton } from './SaveButton'
+
+export default function App() {
+  return (
+    <NativeThemeProvider mode="system">
+      <SaveButton />
+    </NativeThemeProvider>
+  )
+}
+```
+
+`mode` accepts `system`, `light`, or `dark`. Components inherit the nearest provider; without a provider they use built-in colors that follow device appearance. A nested provider can scope mode, a custom `theme`, or `fonts` to one subtree. Ordinary component usage does not need a `theme` prop.
+
+Load your font assets with your app's font loader, then pass their family names through the provider's `fonts` keys: `regular`, `medium`, `semibold`, and `mono`. Without those values, components use platform fonts and preserve system text scaling.
+
+## Choose styles for the visible part
+
+Native `style` props accept React Native style objects and arrays. Button reserves a press region of at least 48 by 48 logical units around a compact painted surface. Its `style` prop controls layout and the press region; `contentStyle` controls the painted surface. Both accept Pressable's pressed-state callback.
+
+Use public component props for variants and state. For custom view, text, or image recipes, the optional [`@hulla/style-native` adapter](/docs/style/native) composes style objects through `style(native)`. The registry does not require that adapter, and it does not replace NativeThemeProvider.
+
+## Choose a native interaction
+
+Some native families present the same task differently from the web component:
+
+| Task                       | Native interaction                                                             |
+| -------------------------- | ------------------------------------------------------------------------------ |
+| Supplementary help         | Tooltip exposes a visible tap-to-reveal control.                               |
+| Contextual content         | Popover uses a dismissible modal surface.                                      |
+| Choosing an item or action | Select and DropdownMenu use sheets.                                            |
+| Repeated row actions       | SwipeActions reveals actions and offers a visible alternative.                 |
+| File attachments           | FileUpload composes selected files; the host app supplies the document picker. |
+
+FileUpload does not upload files. Keep the actual picker and transfer logic in the app. Native-only families also include KeyboardAware, List, NumberField, and EmptyState. Web-only families such as Sidebar, NavigationMenu, and the syntax highlighters are not advertised as native implementations.
+
+The browser catalog's React Native previews show the actual native target through React Native Web. Check touch, device back behavior, text scaling, and screen-reader interaction on the devices your app supports as well.

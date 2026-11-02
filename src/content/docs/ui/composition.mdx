@@ -5,7 +5,7 @@ description: 'Put component parts together and customize them with shared themes
 
 Compose a page from component parts such as `CardHeader`, `CardContent`, and `Button`. Use their props for variants and shared theme tokens for colors, so the same choices work across the app.
 
-The examples build on the [reading counter](/guides/ui/quick-start).
+The web examples build on the [reading counter](/guides/ui/quick-start). For native style props and app-wide appearance, follow [React Native components](/docs/ui/native).
 
 ## 1. Change the layout around the control
 
@@ -48,8 +48,7 @@ The CLI installs a global stylesheet and a shared [`style.ts` helper](/guides/st
 | Brand color, font, radius          | Shared theme tokens.          |
 | A new behavior used across the app | A shared component or helper. |
 
-> [!WARNING] Update source and theme together
-> A newer component can reference tokens or helpers absent from an older stylesheet. Select one registry revision, then refresh both through the [CLI UI workflow](/docs/cli/ui).
+Keep component source, support files, and theme styles from one registry revision. Refresh them together through the [CLI UI workflow](/docs/cli/ui) so every component can resolve its helpers and tokens.
 
 ## 4. Verify the states you changed
 
