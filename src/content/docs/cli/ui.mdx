@@ -17,9 +17,9 @@ Run setup from the project root. The CLI reads sources from `.hulla/ui.json` (or
 hulla ui init
 ```
 
-Choose the framework and destination paths that match your app. The built-in registry supports Astro, React, and Solid. Other targets need a registry that supplies them.
+Choose the framework and destination paths that match your app. A registry advertises its available targets in `ui.config.ts`; select a revision that supplies the target you need. For the `react-native` target, follow [React Native components](/docs/ui/native).
 
-Setup writes `lib/style.ts` with your chosen class composer. `cn` concatenates classes; `tailwind-merge` also resolves conflicting Tailwind utilities. Rerun `hulla ui init` to change the recorded choice.
+For web targets, setup writes `lib/style.ts` with your chosen class composer. `cn` concatenates classes; `tailwind-merge` also resolves conflicting Tailwind utilities. Rerun `hulla ui init` to change the recorded choice. Native targets install their own support files and use React Native style objects.
 
 > [!TIP] Load shared styles on every route
 > In Astro, import the installed global stylesheet from a shared layout. The CLI doesn't configure your MDX component map; wire that through the renderer if you use Markdown.
@@ -33,6 +33,18 @@ hulla ui add --framework astro button dialog
 ```
 
 The command requires one or more component names. It resolves each component's manifest, dependencies, aliases, and copy files. It reports changed file paths; review those diffs and run your app checks. Repeating the command with the same source revision should produce no meaningful source change.
+
+### Install composed components
+
+When a family imports another component family, `add` copies that source too, including further dependencies. With a native registry configured, install a date picker by naming its public family:
+
+```sh
+hulla ui add --framework react-native date-picker
+```
+
+The native date picker imports Button, Calendar, Drawer, and Select. The CLI includes those families once each, even when several imports need the same component. It keeps the dependency lookup inside the selected registry and framework; it cannot borrow a missing native component from the web target.
+
+Existing dependency files receive the same overwrite review as explicitly requested components. Declining an overwrite keeps your customized file. External package dependencies still go through the package installation step; shared `lib` files come from the registry's support-file setup.
 
 ## Update and remove deliberately
 

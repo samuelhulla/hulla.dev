@@ -3,7 +3,7 @@ title: hulla CLI reference
 description: Look up implemented hulla CLI commands, flags, config fields, and their exact defaults.
 ---
 
-Look up commands, flags, and configuration defaults for `hulla` beta `0.0.0-beta.1`. The npm package is named `hulla`, and its executable requires Bun.
+Look up commands, flags, and configuration defaults for the `hulla` CLI. The npm package is named `hulla`, and its executable requires Bun.
 
 ## Commands and aliases
 
@@ -11,7 +11,7 @@ Look up commands, flags, and configuration defaults for `hulla` beta `0.0.0-beta
 | ------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `hulla init`                    | `hulla initialize`     | Detects project package scripts and writes `.hulla/hulla.json`; `--clean` is accepted by the parser but currently has no separate behavior.              |
 | `hulla ui init`                 | `hulla ui i`           | Interactively configures registry sources, framework install destinations, support files, dependencies, class composer, and optional post-add formatter. |
-| `hulla ui add <components…>`    | `hulla ui a`           | Copies named component source files from the configured registry. Existing copied files may be updated.                                                  |
+| `hulla ui add <components…>`    | `hulla ui a`           | Copies named component families and their recursive source dependencies within the selected registry/framework. Existing files receive overwrite review. |
 | `hulla ui remove <components…>` | `hulla ui r`           | Requests confirmation before removing each named component directory.                                                                                    |
 | `hulla api init`                | —                      | Legacy generator initializer; output targets an older `@hulla/api` API.                                                                                  |
 | `hulla api generate`            | —                      | Loads and runs the legacy generator config. Not compatible with `@hulla/api` 2.0.                                                                        |
