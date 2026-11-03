@@ -172,7 +172,7 @@ function docsLanding(entries: readonly CollectionEntry<'docs'>[]): AiDoc {
       title: 'Documentation',
       description: 'Concepts and API references for the @hulla/* packages.',
       body:
-        `Follow a [guide](${SITE_ORIGIN}/guides.md) to build a project, or look up a package below.\n\n## Browse by package\n\n` +
+        `Follow a [guide](${SITE_ORIGIN}/guides.md) to build a project, or look up a package below. Working with a coding agent? [Install package skills](${SITE_ORIGIN}/docs/cli/agent-skills.md).\n\n## Browse by package\n\n` +
         packages
           .map(
             (entry) =>

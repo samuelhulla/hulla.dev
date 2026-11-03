@@ -9,6 +9,8 @@ tutorial:
       href: /guides/cli/quick-start
 ---
 
+import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
+
 You'll build a small page with **Read a page** and **Reset** buttons. The component files will live in your app, so you can read and edit the source as you go.
 
 ## 1. Install the components
@@ -24,6 +26,23 @@ Keep the generated global stylesheet import in your shared layout. It supplies t
 
 > [!TIP] Start with the default theme
 > Get the page working before changing tokens. Missing styles are easier to diagnose when the theme and components still match.
+
+### Optional agent skill
+
+> [!TIP] Working with a coding agent?
+>
+> Install [hulla-ui](https://github.com/hulladev/skills/tree/main/skills/hulla-ui) from the [hulladev/skills repository](https://github.com/hulladev/skills) for guidance on component composition, shared themes, and native behavior. Run this in your application directory:
+>
+> <DocsPackageManagerCommand
+>   commands={{
+>     bun: 'bunx --bun skills add hulladev/skills --skill hulla-ui',
+>     npm: 'npx skills add hulladev/skills --skill hulla-ui',
+>     pnpm: 'pnpm dlx skills add hulladev/skills --skill hulla-ui',
+>     yarn: 'yarn dlx skills add hulladev/skills --skill hulla-ui',
+>   }}
+> />
+>
+> Choose your agent in the installer and [check compatibility with your package version](/docs/cli/agent-skills#keep-guidance-aligned-with-your-dependencies).
 
 ## 2. Lay out the card
 

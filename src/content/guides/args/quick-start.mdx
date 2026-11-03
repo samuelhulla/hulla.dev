@@ -40,6 +40,23 @@ Install the parser and Zod in your project. Use Zod 3 for this release:
 > [!IMPORTANT] Use Zod 3 with this parser release
 > `@hulla/args@0.0.4` declares its schemas using Zod 3 types. Zod 4 schemas can fail TypeScript overload checks even when the runtime call works. Keep `zod@3` in this demo; the API package's Zod examples use a separate installation.
 
+### Optional agent skill
+
+> [!TIP] Working with a coding agent?
+>
+> Install [hulla-args](https://github.com/hulladev/skills/tree/main/skills/hulla-args) from the [hulladev/skills repository](https://github.com/hulladev/skills) for guidance on argv handling, validation, and omitted input. Run this in your application directory:
+>
+> <DocsPackageManagerCommand
+>   commands={{
+>     bun: 'bunx --bun skills add hulladev/skills --skill hulla-args',
+>     npm: 'npx skills add hulladev/skills --skill hulla-args',
+>     pnpm: 'pnpm dlx skills add hulladev/skills --skill hulla-args',
+>     yarn: 'yarn dlx skills add hulladev/skills --skill hulla-args',
+>   }}
+> />
+>
+> Choose your agent in the installer and [check compatibility with your package version](/docs/cli/agent-skills#keep-guidance-aligned-with-your-dependencies).
+
 ## 3. Define and run the command
 
 Save this as `src/cli.ts`. Bun's `argv` includes the executable and script path, so `argv.slice(2)` leaves only the words supplied by the user. This parser opts into case-sensitive matching, so option names must match their declared casing.

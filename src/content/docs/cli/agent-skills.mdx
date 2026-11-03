@@ -1,0 +1,64 @@
+---
+title: Install agent skills
+description: Give your coding agent package-specific guidance for using @hulla/* in your application.
+---
+
+import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
+
+Install the skills for the packages your application uses. Each skill gives a coding agent guidance on architecture, public APIs, and common mistakes, with links to focused documentation.
+
+The skills live in [hulladev/skills](https://github.com/hulladev/skills), a small repository containing instructions and references. Installing them does not require downloading the package source repositories.
+
+## Install into your application
+
+Run the following from your application directory. The external [skills CLI](https://github.com/vercel-labs/skills) lets you choose skills and a supported agent, including Codex, Claude Code, or Cursor:
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bunx --bun skills add hulladev/skills',
+    npm: 'npx skills add hulladev/skills',
+    pnpm: 'pnpm dlx skills add hulladev/skills',
+    yarn: 'yarn dlx skills add hulladev/skills',
+  }}
+/>
+
+This command belongs to the `skills` CLI; it is separate from the `hulla` CLI. Follow the installer's runtime requirements and review the selected destination before installing. Project installation makes the guidance available to agents working in that application.
+
+For example, select only the API skill for Codex:
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bunx --bun skills add hulladev/skills --skill hulla-api -a codex',
+    npm: 'npx skills add hulladev/skills --skill hulla-api -a codex',
+    pnpm: 'pnpm dlx skills add hulladev/skills --skill hulla-api -a codex',
+    yarn: 'yarn dlx skills add hulladev/skills --skill hulla-api -a codex',
+  }}
+/>
+
+After installation, ask the agent to use the selected skill for a relevant task, such as adding a route while keeping its server implementation out of the browser bundle. Discovery and activation depend on the agent and its configured skill locations; installing an npm package alone does not activate this guidance.
+
+## Choose the matching skill
+
+| Package                                  | Skill                                                                              | Guidance                                                                      |
+| ---------------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `@hulla/api`                             | [hulla-api](https://github.com/hulladev/skills/tree/main/skills/hulla-api)         | Shared contracts, server implementations, clients, and adapters.              |
+| `@hulla/ui`                              | [hulla-ui](https://github.com/hulladev/skills/tree/main/skills/hulla-ui)           | Installed source components, composition, themes, and native interactions.    |
+| `@hulla/db` and framework bindings       | [hulla-db](https://github.com/hulladev/skills/tree/main/skills/hulla-db)           | Schemas, transactions, restricted handlers, live clients, and authentication. |
+| `@hulla/style` and `@hulla/style-native` | [hulla-style](https://github.com/hulladev/skills/tree/main/skills/hulla-style)     | Shared helpers, variant inference, merging, and native style objects.         |
+| `@hulla/control`                         | [hulla-control](https://github.com/hulladev/skills/tree/main/skills/hulla-control) | Result branches, exception boundaries, and asynchronous payloads.             |
+| `@hulla/args`                            | [hulla-args](https://github.com/hulladev/skills/tree/main/skills/hulla-args)       | Argument declarations, omission, validation, and command execution.           |
+| `@hulla/gittar`                          | [hulla-gittar](https://github.com/hulladev/skills/tree/main/skills/hulla-gittar)   | Snapshot downloads, subpath copying, cache isolation, and freshness.          |
+
+Use `hulla-ui` when composing application components, rather than when developing a registry generator. Add the relevant parent skill for an adapter or framework binding; you do not need a separate skill for every integration.
+
+## Keep guidance aligned with your dependencies
+
+Each skill records the package version and source revision it was reviewed against. Compare that compatibility information with your application's installed version before updating. Skills describe intended usage; they do not replace installed declarations, component source, runtime validation, or application tests.
+
+For a reproducible setup, install from a reviewed tag or commit using the source formats described in the [skills repository](https://github.com/hulladev/skills#install). Retain the chosen skills and installer lockfile with your project, and review changes before updating them.
+
+You can also copy an entire skill directory, including its references and license, into your agent's supported project location. For Codex, that is `.agents/skills/<skill-name>/`. Copying only `SKILL.md` can omit guidance loaded for native components, database handlers, or migrations.
+
+## Read documentation directly
+
+Agents that retrieve documentation can start with [`llms.txt`](/llms.txt) and follow the relevant Markdown pages. Use skills for the workflow and architecture guidance, then consult the matching package documentation for the specific API you are changing.

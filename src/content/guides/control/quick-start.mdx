@@ -38,6 +38,23 @@ Install `@hulla/control` in the TypeScript package that will define and call the
   }}
 />
 
+### Optional agent skill
+
+> [!TIP] Working with a coding agent?
+>
+> Install [hulla-control](https://github.com/hulladev/skills/tree/main/skills/hulla-control) from the [hulladev/skills repository](https://github.com/hulladev/skills) for guidance on Result branches, exception boundaries, and async payloads. Run this in your application directory:
+>
+> <DocsPackageManagerCommand
+>   commands={{
+>     bun: 'bunx --bun skills add hulladev/skills --skill hulla-control',
+>     npm: 'npx skills add hulladev/skills --skill hulla-control',
+>     pnpm: 'pnpm dlx skills add hulladev/skills --skill hulla-control',
+>     yarn: 'yarn dlx skills add hulladev/skills --skill hulla-control',
+>   }}
+> />
+>
+> Choose your agent in the installer and [check compatibility with your package version](/docs/cli/agent-skills#keep-guidance-aligned-with-your-dependencies).
+
 ## 2. Return both possible outcomes
 
 Create `src/titles.ts`. The function returns `ok()` with a title it finds, or `err()` with a message for a missing title:

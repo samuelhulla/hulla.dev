@@ -776,6 +776,12 @@ const packageGuides: readonly DocGroup[] = [
         description:
           'Run specified hulla CLI tasks without prompts in CI and project scripts.',
       },
+      {
+        title: 'Agent skills',
+        href: '/docs/cli/agent-skills',
+        description:
+          'Install package-specific architecture and usage guidance for your coding agent.',
+      },
     ],
   },
   {

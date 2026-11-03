@@ -33,6 +33,23 @@ In an empty project directory, initialize a package, then install `@hulla/style`
   }}
 />
 
+### Optional agent skill
+
+> [!TIP] Working with a coding agent?
+>
+> Install [hulla-style](https://github.com/hulladev/skills/tree/main/skills/hulla-style) from the [hulladev/skills repository](https://github.com/hulladev/skills) for guidance on shared helpers, variants, and web/native composition. Run this in your application directory:
+>
+> <DocsPackageManagerCommand
+>   commands={{
+>     bun: 'bunx --bun skills add hulladev/skills --skill hulla-style',
+>     npm: 'npx skills add hulladev/skills --skill hulla-style',
+>     pnpm: 'pnpm dlx skills add hulladev/skills --skill hulla-style',
+>     yarn: 'yarn dlx skills add hulladev/skills --skill hulla-style',
+>   }}
+> />
+>
+> Choose your agent in the installer and [check compatibility with your package version](/docs/cli/agent-skills#keep-guidance-aligned-with-your-dependencies).
+
 ## 2. Create shared helpers
 
 In `src/lib/style.ts`, create the `cn` and `vn` functions once and import them from components. `cn` accepts strings, arrays, and objects whose truthy keys should be included.
