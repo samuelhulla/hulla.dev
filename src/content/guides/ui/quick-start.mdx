@@ -22,11 +22,6 @@ hulla ui init
 hulla ui add --framework astro card button
 ```
 
-Keep the generated global stylesheet import in your shared layout. It supplies the colors, typography, focus rings, and other tokens used by the components. Check [CLI configuration](/docs/cli/configuration) if your component paths differ from `src/components`.
-
-> [!TIP] Start with the default theme
-> Get the page working before changing tokens. Missing styles are easier to diagnose when the theme and components still match.
-
 ### Optional agent skill
 
 > [!TIP] Working with a coding agent?
@@ -43,6 +38,11 @@ Keep the generated global stylesheet import in your shared layout. It supplies t
 > />
 >
 > Choose your agent in the installer and [check compatibility with your package version](/docs/cli/agent-skills#keep-guidance-aligned-with-your-dependencies).
+
+Keep the generated global stylesheet import in your shared layout. It supplies the colors, typography, focus rings, and other tokens used by the components. Check [CLI configuration](/docs/cli/configuration) if your component paths differ from `src/components`.
+
+> [!TIP] Start with the default theme
+> Get the page working before changing tokens. Missing styles are easier to diagnose when the theme and components still match.
 
 ## 2. Lay out the card
 

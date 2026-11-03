@@ -42,6 +42,24 @@ Install `@hulla/api` to define a contract and create a client or server. Add an 
           yarn: 'yarn add @hulla/api@2.0.0 zod',
         }}
       />
+
+### Optional agent skill
+
+> [!TIP] Working with a coding agent?
+>
+> Install [api](https://github.com/hulladev/skills/tree/main/skills/api) from the [hulladev/skills repository](https://github.com/hulladev/skills) for guidance on shared contracts, server/client boundaries, and adapters. Run this in your application directory:
+>
+> <DocsPackageManagerCommand
+>   commands={{
+>     bun: 'bunx --bun skills add hulladev/skills --skill api',
+>     npm: 'npx skills add hulladev/skills --skill api',
+>     pnpm: 'pnpm dlx skills add hulladev/skills --skill api',
+>     yarn: 'yarn dlx skills add hulladev/skills --skill api',
+>   }}
+> />
+>
+> Choose your agent in the installer and [check compatibility with your package version](/docs/cli/agent-skills#keep-guidance-aligned-with-your-dependencies).
+
       <Alert variant="important">
         <AlertIcon>
           <Lightbulb />
@@ -62,6 +80,7 @@ Install `@hulla/api` to define a contract and create a client or server. Add an 
         tradeoff is intentional.
       </small>
     </StepperPanel>
+
   </StepperItem>
 
   <StepperItem id="connect-the-server-boundary" data-toc-section data-toc-label="Connect the server boundary" class="scroll-mt-24">
@@ -147,20 +166,3 @@ Install `@hulla/api` to define a contract and create a client or server. Add an 
 
   </StepperItem>
 </Stepper>
-
-## Optional agent skill
-
-> [!TIP] Working with a coding agent?
->
-> Install [api](https://github.com/hulladev/skills/tree/main/skills/api) from the [hulladev/skills repository](https://github.com/hulladev/skills) for guidance on shared contracts, server/client boundaries, and adapters. Run this in your application directory:
->
-> <DocsPackageManagerCommand
->   commands={{
->     bun: 'bunx --bun skills add hulladev/skills --skill api',
->     npm: 'npx skills add hulladev/skills --skill api',
->     pnpm: 'pnpm dlx skills add hulladev/skills --skill api',
->     yarn: 'yarn dlx skills add hulladev/skills --skill api',
->   }}
-> />
->
-> Choose your agent in the installer and [check compatibility with your package version](/docs/cli/agent-skills#keep-guidance-aligned-with-your-dependencies).
