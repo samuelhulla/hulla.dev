@@ -28,10 +28,10 @@ For example, select only the API skill for Codex:
 
 <DocsPackageManagerCommand
   commands={{
-    bun: 'bunx --bun skills add hulladev/skills --skill hulla-api -a codex',
-    npm: 'npx skills add hulladev/skills --skill hulla-api -a codex',
-    pnpm: 'pnpm dlx skills add hulladev/skills --skill hulla-api -a codex',
-    yarn: 'yarn dlx skills add hulladev/skills --skill hulla-api -a codex',
+    bun: 'bunx --bun skills add hulladev/skills --skill api -a codex',
+    npm: 'npx skills add hulladev/skills --skill api -a codex',
+    pnpm: 'pnpm dlx skills add hulladev/skills --skill api -a codex',
+    yarn: 'yarn dlx skills add hulladev/skills --skill api -a codex',
   }}
 />
 
@@ -39,21 +39,25 @@ After installation, ask the agent to use the selected skill for a relevant task,
 
 ## Choose the matching skill
 
-| Package                                  | Skill                                                                              | Guidance                                                                      |
-| ---------------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `@hulla/api`                             | [hulla-api](https://github.com/hulladev/skills/tree/main/skills/hulla-api)         | Shared contracts, server implementations, clients, and adapters.              |
-| `@hulla/ui`                              | [hulla-ui](https://github.com/hulladev/skills/tree/main/skills/hulla-ui)           | Installed source components, composition, themes, and native interactions.    |
-| `@hulla/db` and framework bindings       | [hulla-db](https://github.com/hulladev/skills/tree/main/skills/hulla-db)           | Schemas, transactions, restricted handlers, live clients, and authentication. |
-| `@hulla/style` and `@hulla/style-native` | [hulla-style](https://github.com/hulladev/skills/tree/main/skills/hulla-style)     | Shared helpers, variant inference, merging, and native style objects.         |
-| `@hulla/control`                         | [hulla-control](https://github.com/hulladev/skills/tree/main/skills/hulla-control) | Result branches, exception boundaries, and asynchronous payloads.             |
-| `@hulla/args`                            | [hulla-args](https://github.com/hulladev/skills/tree/main/skills/hulla-args)       | Argument declarations, omission, validation, and command execution.           |
-| `@hulla/gittar`                          | [hulla-gittar](https://github.com/hulladev/skills/tree/main/skills/hulla-gittar)   | Snapshot downloads, subpath copying, cache isolation, and freshness.          |
+Skill IDs use the package's unscoped name: `api` for `@hulla/api`, `ui` for `@hulla/ui`, and so on. The [Agent Skills format](https://agentskills.io/specification#name-field) does not allow `@` or `/` in IDs.
 
-Use `hulla-ui` when composing application components, rather than when developing a registry generator. Add the relevant parent skill for an adapter or framework binding; you do not need a separate skill for every integration.
+| Package                                  | Skill                                                                  | Guidance                                                                      |
+| ---------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `@hulla/api`                             | [api](https://github.com/hulladev/skills/tree/main/skills/api)         | Shared contracts, server implementations, clients, and adapters.              |
+| `@hulla/ui`                              | [ui](https://github.com/hulladev/skills/tree/main/skills/ui)           | Installed source components, composition, themes, and native interactions.    |
+| `@hulla/db` and framework bindings       | [db](https://github.com/hulladev/skills/tree/main/skills/db)           | Schemas, transactions, restricted handlers, live clients, and authentication. |
+| `@hulla/style` and `@hulla/style-native` | [style](https://github.com/hulladev/skills/tree/main/skills/style)     | Shared helpers, variant inference, merging, and native style objects.         |
+| `@hulla/control`                         | [control](https://github.com/hulladev/skills/tree/main/skills/control) | Result branches, exception boundaries, and asynchronous payloads.             |
+| `@hulla/args`                            | [args](https://github.com/hulladev/skills/tree/main/skills/args)       | Argument declarations, omission, validation, and command execution.           |
+| `@hulla/gittar`                          | [gittar](https://github.com/hulladev/skills/tree/main/skills/gittar)   | Snapshot downloads, subpath copying, cache isolation, and freshness.          |
+
+Use `ui` when composing application components, rather than when developing a registry generator. Add the relevant parent skill for an adapter or framework binding; you do not need a separate skill for every integration.
 
 ## Keep guidance aligned with your dependencies
 
 Each skill records the package version and source revision it was reviewed against. Compare that compatibility information with your application's installed version before updating. Skills describe intended usage; they do not replace installed declarations, component source, runtime validation, or application tests.
+
+If you installed an earlier `hulla-`-prefixed skill, install its short-name replacement and review the old entry before removing it with your installer. Older tagged snapshots retain their original names.
 
 For a reproducible setup, install from a reviewed tag or commit using the source formats described in the [skills repository](https://github.com/hulladev/skills#install). Retain the chosen skills and installer lockfile with your project, and review changes before updating them.
 
