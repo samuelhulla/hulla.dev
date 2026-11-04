@@ -88,7 +88,7 @@ With `--yes`, give explicit component names and resolve ambiguous framework choi
 | `cli.scripts.uninstall` | Yes              | Removal command, e.g. `bun remove`.                                                                      |
 | `cli.scripts.upgrade`   | Yes              | Update command, e.g. `bun update`.                                                                       |
 | `cli.cache`             | No               | Defaults to `true`; accepted in config but currently does not enable or disable cache reads/writes.      |
-| `cli.cacheDir`          | No               | Defaults to `.hulla/.cache`, resolved from the selected project root; used for the UI source cache file. |
+| `cli.cacheDir`          | No               | Defaults to `.hulla/.cache`, resolved from the config's project root; used for the UI source cache file. |
 | `cli.logs`              | No               | Defaults to `true`; accepted in config but currently does not change logging behavior.                   |
 | `configs.api`           | No               | `api.config.ts`.                                                                                         |
 | `configs.ui`            | No               | `.hulla/ui.json`.                                                                                        |
@@ -96,9 +96,9 @@ With `--yes`, give explicit component names and resolve ambiguous framework choi
 
 `--project-config <path>` names the project JSON file and resolves once from the selected app directory. UI and project setup also accept `--config`. A custom config under `.hulla/` belongs to its parent project; other config files use their containing directory as the project root.
 
-For UI settings, the config's directory is the project root, except that a config inside `.hulla/` uses its parent. `configs.ui` resolves from that root.
+For UI settings and `cli.cacheDir`, the config's directory is the project root, except that a config inside `.hulla/` uses its parent. Relative paths resolve from that root; absolute paths stay absolute.
 
-`hulla init` writes `.hulla/hulla.json` and records detected package scripts. Loading the file fills optional fields; an omitted `cli.cacheDir` resolves to `<project-root>/.hulla/.cache`. Relative custom cache paths also resolve from that root.
+`hulla init` writes `.hulla/hulla.json` and records detected package scripts. Loading the file fills optional fields and resolves an omitted `cli.cacheDir` to `<project-root>/.hulla/.cache`. Saving the config omits this default and preserves custom relative cache paths, keeping the file portable between checkouts. The generated editor schema also uses the relative default `.hulla/.cache`.
 
 `cli.cacheDir` controls the location of cache data used by UI registry resolution; the UI source record file is `ui.cache.json` inside that directory. The `cli.cache` boolean is currently stored but not consulted by those cache paths. `cli.logs` is also stored, but its true/false value currently has no effect on logging.
 

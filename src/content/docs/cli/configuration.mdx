@@ -26,6 +26,8 @@ The `hulla` CLI stores project-level defaults in `.hulla/hulla.json` and UI regi
 
 The script values shown are Bun defaults; `hulla init` writes values for the detected package manager. UI paths such as `configs.ui` resolve from the project root. For a config file in a custom location, pass its absolute path with `--config`; the current relative-path flow can resolve a relative value again from its containing directory. A config directly inside `.hulla/` uses the directory above `.hulla/` as the UI project root.
 
+`cli.cacheDir` defaults to `.hulla/.cache`, resolved from the same project root. A custom relative cache path also resolves from that root; an absolute path stays absolute. Saving the config omits the default and preserves custom relative paths, so the config can move between checkouts without carrying another checkout's absolute cache path.
+
 ## UI install records
 
 `.hulla/ui.json` records configured sources, installed library roots, framework targets, and an optional post-add formatting command. Let `hulla ui init` create and maintain the install records, especially when a library supports multiple frameworks or shared support files.
