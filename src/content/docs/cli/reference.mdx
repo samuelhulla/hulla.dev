@@ -20,8 +20,28 @@ Look up commands, flags, and configuration defaults for the `hulla` CLI. The npm
 
 The root command accepts `--version`, `--help`, `--yes`/`-y`, and `--config <path>` before a command. `hulla --version` prints the installed version.
 
-> [!WARNING] Nested help is not a dry run
-> Root `hulla --help` prints `Help output is not implemented yet.` Nested `--help` can continue into normal command behavior. Don't use it to preview file changes.
+### Command help
+
+With `hulla` 0.1.1 or newer, use `--help` or `-h` on any command to see its usage,
+aliases, subcommands, arguments, and options:
+
+```sh
+hulla --help
+hulla init --help
+hulla api generate --help
+hulla ui add -h
+```
+
+Help exits with code 0 before loading project configuration or running a command.
+It works outside a project and does not prompt, download, or write files. Aliases
+show the canonical command's help. Placing the help flag before a subcommand also
+shows the selected subcommand: `hulla --help ui add` and `hulla ui add --help`
+show the same usage.
+
+> [!WARNING] Older versions can execute commands when help is requested
+> In `hulla` 0.1.0 and earlier, root help is a placeholder and nested `--help` can
+> continue into normal command behavior. Check `hulla --version` before using
+> nested help in an older installation.
 
 `--yes` accepts confirmations but doesn't choose missing names or frameworks. Root `--config <path>` selects a project config for commands that load one; `hulla install --config <directory>` instead checks a directory.
 
@@ -38,7 +58,9 @@ The root command accepts `--version`, `--help`, `--yes`/`-y`, and `--config <pat
 
 Put root `--config <absolute-path>` before `ui` to select a different project config. Nested UI config fields don't select it.
 
-`--framework <name>` chooses between installed targets. Only `yes` has a short alias (`-y`); `help`, `version`, and `config` don't. The root parser supports grouped single-character short flags through `sharedDash`. `hulla ui add --yes` without component names returns an error.
+`--framework <name>` chooses between installed targets. Use `-h` for `--help` and
+`-y` for `--yes`. The root parser supports grouped single-character short flags
+through `sharedDash`. `hulla ui add --yes` without component names returns an error.
 
 ## Project config fields
 
