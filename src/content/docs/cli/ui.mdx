@@ -9,6 +9,37 @@ usefulFor:
 
 Use `hulla ui` to copy components from a registry into your app. It installs their source files and dependencies; your app builds from those files without contacting the registry.
 
+## Add your first component
+
+The command and path improvements in this section require the upcoming CLI release; they are not included in `hulla@0.1.0`.
+
+From an existing app directory, the first add configures the project and registry, then installs the named components:
+
+```sh
+hulla ui add button dialog
+```
+
+For a workspace app, stay in the repository root and select the app explicitly:
+
+```sh
+hulla ui add button dialog --cwd apps/mobile --framework react-native
+```
+
+The saved source and paths are reused on the next add. You can still run `hulla ui init` separately to review setup before installing components.
+
+### Supply paths directly
+
+Use setup flags to avoid the directory picker. This example runs against `apps/web`; the local registry path is relative to that app:
+
+```sh
+hulla ui init --cwd apps/web --source ./registry --framework react \
+  --code-root src --components-root src/components/ui --copy-root src --yes
+```
+
+`--source` replaces the configured source list with that registry. `--code-root` controls `@/` imports, `--components-root` controls component output, and `--copy-root` controls support-file output. Defaults come from the saved install or detected code root, with components under `<code-root>/components` and support files under `<code-root>`.
+
+Existing directories and new nested paths are accepted. Output roots must be project-relative; the component root must be inside the code root. Empty paths, control characters, files blocking a directory, and paths outside the project are rejected. Passing a source or root flag to `ui add` reruns setup before installing; changing roots does not move files from the previous destination.
+
 ## Configure the UI install
 
 Run setup from the project root. The CLI reads sources from `.hulla/ui.json` (or uses its built-in source), detects supported frameworks, and plans file, alias, style, and dependency changes. It shows diffs before replacing existing configuration files.
@@ -32,7 +63,7 @@ Name the components explicitly so the same operation can be repeated in a script
 hulla ui add --framework astro button dialog
 ```
 
-The command requires one or more component names. It resolves each component's manifest, dependencies, aliases, and copy files. It reports changed file paths; review those diffs and run your app checks. Repeating the command with the same source revision should produce no meaningful source change.
+Without names, interactive `add` opens a component selector. With `--yes`, supply one or more component names. It resolves each component's manifest, dependencies, aliases, and copy files. It reports changed file paths; review those diffs and run your app checks. Repeating the command with the same source revision should produce no meaningful source change.
 
 ### Install composed components
 

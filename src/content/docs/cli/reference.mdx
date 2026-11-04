@@ -7,61 +7,75 @@ Look up commands, flags, and configuration defaults for the `hulla` CLI. The npm
 
 ## Commands and aliases
 
-| Command                         | Alias                  | Behavior                                                                                                                                                 |
-| ------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `hulla init`                    | `hulla initialize`     | Detects project package scripts and writes `.hulla/hulla.json`; `--clean` is accepted by the parser but currently has no separate behavior.              |
-| `hulla ui init`                 | `hulla ui i`           | Interactively configures registry sources, framework install destinations, support files, dependencies, class composer, and optional post-add formatter. |
-| `hulla ui add <components…>`    | `hulla ui a`           | Copies named component families and their recursive source dependencies within the selected registry/framework. Existing files receive overwrite review. |
-| `hulla ui remove <components…>` | `hulla ui r`           | Requests confirmation before removing each named component directory.                                                                                    |
-| `hulla api init`                | —                      | Legacy generator initializer; output targets an older `@hulla/api` API.                                                                                  |
-| `hulla api generate`            | —                      | Loads and runs the legacy generator config. Not compatible with `@hulla/api` 2.0.                                                                        |
-| `hulla api dev`                 | —                      | Watches legacy generator inputs and regenerates; not compatible with `@hulla/api` 2.0.                                                                   |
-| `hulla install`                 | `hulla i`, `hulla add` | Currently checks that the selected directory exists and reports success; it does not install packages yet.                                               |
+The command behavior below describes the upcoming CLI release. The published `hulla@0.1.0` does not include the new path flags or help behavior yet.
 
-The root command accepts `--version`, `--help`, `--yes`/`-y`, and `--config <path>` before a command. `hulla --version` prints the installed version.
+| Command                         | Alias              | Behavior                                                                                                         |
+| ------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `hulla init`                    | `hulla initialize` | Write project configuration without configuring UI.                                                              |
+| `hulla ui init`                 | `hulla ui i`       | Configure the UI source, targets, support files, and output paths.                                               |
+| `hulla ui add [components…]`    | `hulla ui a`       | Configure UI on first use, then add or update component source and dependencies. Without names, open a selector. |
+| `hulla ui remove <components…>` | `hulla ui r`       | Confirm removal of each named component directory.                                                               |
+| `hulla api init/generate/dev`   | —                  | Existing legacy generator commands; not compatible with `@hulla/api` 2.0.                                        |
 
-> [!WARNING] Nested help is not a dry run
-> Root `hulla --help` prints `Help output is not implemented yet.` Nested `--help` can continue into normal command behavior. Don't use it to preview file changes.
+Bare `hulla`, `hulla ui`, and `hulla api` show help without initializing files. `--help`/`-h` works at every command level, and root `--version`/`-v` prints the installed version. Reserved `hulla install` (including aliases `i` and `add`) and `hulla init --clean` fail with an explanation instead of claiming success.
 
-`--yes` accepts confirmations but doesn't choose missing names or frameworks. Root `--config <path>` selects a project config for commands that load one; `hulla install --config <directory>` instead checks a directory.
+### Shared options
 
-| Invocation                                    | Declared arguments and behavior                                                                            |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `hulla`                                       | `--version`, `--help`, `--yes`/`-y`, `--config <path>`                                                     |
-| `hulla init`                                  | `--config`, `--help`, `--yes`/`-y`, `--clean`; `--clean` is parsed but has no separate effect.             |
-| `hulla install`                               | `--help`, `--yes`, `--config`, optional package-name tokens; currently only checks the selected directory. |
-| `hulla ui`                                    | `--help`, `--yes`, `--config`, `--framework`; place `--framework` here before `remove`.                    |
-| `hulla ui init`                               | `--help`, `--yes`, `--config`.                                                                             |
-| `hulla ui add <components…>`                  | `--help`, `--yes`, `--config`, `--framework`; requires one or more component names.                        |
-| `hulla ui remove <components…>`               | `--help`, `--yes`, `--config`; requires one or more component names.                                       |
-| `hulla api` and `hulla api init/generate/dev` | Each declares `--help`, `--yes`, and `--config`; the API runner reads its command-level config value.      |
+| Option                    | Purpose                                                                          |
+| ------------------------- | -------------------------------------------------------------------------------- |
+| `--cwd <directory>`       | Select the app directory; default is the invoking directory.                     |
+| `--project-config <path>` | Select a project config; default is `.hulla/hulla.json`.                         |
+| `--config <path>`, `-c`   | Project-config alias for UI/setup; API commands use it for the generator config. |
+| `--yes`, `-y`             | Prohibit prompts and accept confirmations, including overwrites and removal.     |
+| `--help`, `-h`            | Show usage, options, and examples without running setup.                         |
 
-Put root `--config <absolute-path>` before `ui` to select a different project config. Nested UI config fields don't select it.
+Shared options can appear before or after subcommands. Relative paths other than `--cwd` resolve from the selected app directory. Differing values for the same shared option across command levels return an error.
 
-`--framework <name>` chooses between installed targets. Only `yes` has a short alias (`-y`); `help`, `version`, and `config` don't. The root parser supports grouped single-character short flags through `sharedDash`. `hulla ui add --yes` without component names returns an error.
+```sh
+hulla --cwd apps/web ui add button --yes
+hulla ui add button --cwd apps/web --yes
+```
+
+These commands target the same app. Use a distinct `--project-config` when an API command also needs `--config` for generation.
+
+### UI setup options
+
+These options work on `hulla ui init` and `hulla ui add`, or before the subcommand on `hulla ui`:
+
+| Option                     | Purpose or default                                              |
+| -------------------------- | --------------------------------------------------------------- |
+| `--source <url-or-path>`   | Replace saved sources with this registry during setup.          |
+| `--framework <name>`, `-f` | Select the framework explicitly; also available on `ui remove`. |
+| `--code-root <path>`       | Saved or detected code root; otherwise `src`.                   |
+| `--components-root <path>` | Saved component root; otherwise `<code-root>/components`.       |
+| `--copy-root <path>`       | Saved support-file root; otherwise the code root.               |
+
+Paths must be project-relative directories. New nested paths are created; components must stay inside the code root. Explicit setup options on `ui add` rerun configuration. They do not relocate previously installed files. See [UI components](/docs/cli/ui) for the first-install workflow.
+
+With `--yes`, give explicit component names and resolve ambiguous framework choices with `--framework`.
 
 ## Project config fields
 
 `hulla init` writes `.hulla/hulla.json`; the schema also fills omitted optional defaults when loading it.
 
-| Field                   | Required in file | Default or purpose                                                                                  |
-| ----------------------- | ---------------- | --------------------------------------------------------------------------------------------------- |
-| `cli.scripts.add`       | Yes              | Package install command, e.g. `bun add`.                                                            |
-| `cli.scripts.addDev`    | Yes              | Development dependency command, e.g. `bun add -D`.                                                  |
-| `cli.scripts.uninstall` | Yes              | Removal command, e.g. `bun remove`.                                                                 |
-| `cli.scripts.upgrade`   | Yes              | Update command, e.g. `bun update`.                                                                  |
-| `cli.cache`             | No               | Defaults to `true`; accepted in config but currently does not enable or disable cache reads/writes. |
-| `cli.cacheDir`          | No               | Defaults to `<current-working-directory>/.hulla/.cache`; used for the UI source cache file.         |
-| `cli.logs`              | No               | Defaults to `true`; accepted in config but currently does not change logging behavior.              |
-| `configs.api`           | No               | `api.config.ts`.                                                                                    |
-| `configs.ui`            | No               | `.hulla/ui.json`.                                                                                   |
-| `$schema`               | No               | Editor/schema URL metadata.                                                                         |
+| Field                   | Required in file | Default or purpose                                                                                       |
+| ----------------------- | ---------------- | -------------------------------------------------------------------------------------------------------- |
+| `cli.scripts.add`       | Yes              | Package install command, e.g. `bun add`.                                                                 |
+| `cli.scripts.addDev`    | Yes              | Development dependency command, e.g. `bun add -D`.                                                       |
+| `cli.scripts.uninstall` | Yes              | Removal command, e.g. `bun remove`.                                                                      |
+| `cli.scripts.upgrade`   | Yes              | Update command, e.g. `bun update`.                                                                       |
+| `cli.cache`             | No               | Defaults to `true`; accepted in config but currently does not enable or disable cache reads/writes.      |
+| `cli.cacheDir`          | No               | Defaults to `.hulla/.cache`, resolved from the selected project root; used for the UI source cache file. |
+| `cli.logs`              | No               | Defaults to `true`; accepted in config but currently does not change logging behavior.                   |
+| `configs.api`           | No               | `api.config.ts`.                                                                                         |
+| `configs.ui`            | No               | `.hulla/ui.json`.                                                                                        |
+| `$schema`               | No               | Editor/schema URL metadata.                                                                              |
 
-`--config <path>` names a JSON file for commands that load project settings. Use an absolute path: the current relative-path flow can resolve the value twice.
+`--project-config <path>` names the project JSON file and resolves once from the selected app directory. UI and project setup also accept `--config`. A custom config under `.hulla/` belongs to its parent project; other config files use their containing directory as the project root.
 
 For UI settings, the config's directory is the project root, except that a config inside `.hulla/` uses its parent. `configs.ui` resolves from that root.
 
-`hulla init` writes `.hulla/hulla.json` and records detected package scripts. Loading the file fills optional fields; an omitted `cli.cacheDir` becomes `<current-working-directory>/.hulla/.cache`.
+`hulla init` writes `.hulla/hulla.json` and records detected package scripts. Loading the file fills optional fields; an omitted `cli.cacheDir` resolves to `<project-root>/.hulla/.cache`. Relative custom cache paths also resolve from that root.
 
 `cli.cacheDir` controls the location of cache data used by UI registry resolution; the UI source record file is `ui.cache.json` inside that directory. The `cli.cache` boolean is currently stored but not consulted by those cache paths. `cli.logs` is also stored, but its true/false value currently has no effect on logging.
 
@@ -84,6 +98,44 @@ Sources can be HTTP(S) URLs or local paths. Relative local paths resolve from th
 
 There are two caches: the project record at `<cli.cacheDir>/ui.cache.json`, and downloaded snapshots under `~/.cache/hulla/gittar`. Follow [UI components](/docs/cli/ui#update-and-remove-deliberately) to refresh them without clearing unrelated cache entries.
 
+## Check installed integrations
+
+Integration checks are part of the upcoming CLI release and are not included in `hulla@0.1.0`.
+From a workspace root, `doctor` detects declared UI, style, API, db, and control integrations and
+runs their individual checks. Use a namespace's `--check` to inspect just that integration:
+
+```sh
+hulla doctor
+hulla ui --check --cwd apps/mobile
+hulla api --check --cwd apps/server
+```
+
+`hulla style --check`, `hulla db --check`, and `hulla control --check` use the same runner.
+No initialization or `--yes` is needed. The checks read local files without importing application
+code, running package scripts, downloading registries, connecting to services, or changing files.
+
+At a workspace root, checks include the root and its declared workspaces. `--cwd` selects an app
+and its own workspaces. Detection uses declared dependencies and recognized config files; a
+missing declared package fails, while an absent integration is skipped. Explicit config options
+apply to the selected package, and child workspaces keep their own defaults.
+
+| Check     | What it validates                                                                                                   |
+| --------- | ------------------------------------------------------------------------------------------------------------------- |
+| `ui`      | UI config, output paths, component/code-root containment, inherited TypeScript aliases, and native UI dependencies. |
+| `style`   | Style packages, runtime entrypoints, and installed peer versions.                                                   |
+| `api`     | API packages/adapters, runtime entrypoints, peer ranges, and optional generator config syntax.                      |
+| `db`      | Database package, runtime entrypoint, peers, and optional `db.config.ts` syntax.                                    |
+| `control` | Package installation, declared version, runtime entrypoint, and peers.                                              |
+
+API runtime use does not require a generator config. Database package use does not require a
+`db.config.ts`. Config syntax checks do not evaluate imports, exports, or values. These checks do
+not validate connectivity, native binaries, rendering, stylesheet activation, or application types.
+Continue running your application's builds and tests.
+
+Results identify the package, directory, integration, and suggested fix. A failure returns exit
+status `1`; passes, warnings, and skips alone return `0`. A failing integration does not stop the
+remaining checks or sibling workspaces from reporting.
+
 ## Exit and error behavior
 
-A successful command returns exit code 0. Parser, config, filesystem, registry, and task errors are reported to stderr and return 1. Interactive cancellation may exit with 0. The CLI prints a general issue-report footer for caught failures. It does not run the consuming application's build or tests after copying files; run those checks in your project or CI. See [Automation](/docs/cli/automation) for a repeatable add command.
+A successful command returns exit code 0. Parser, config, filesystem, registry, and task errors are reported to stderr and return 1. Interactive cancellation may exit with 0. Caught failures show the error and a command-help hint. It does not run the consuming application's build or tests after copying files; run those checks in your project or CI. See [Automation](/docs/cli/automation) for a repeatable add command.
