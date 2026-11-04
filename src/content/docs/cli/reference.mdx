@@ -98,6 +98,44 @@ Sources can be HTTP(S) URLs or local paths. Relative local paths resolve from th
 
 There are two caches: the project record at `<cli.cacheDir>/ui.cache.json`, and downloaded snapshots under `~/.cache/hulla/gittar`. Follow [UI components](/docs/cli/ui#update-and-remove-deliberately) to refresh them without clearing unrelated cache entries.
 
+## Check installed integrations
+
+Integration checks are part of the upcoming CLI release and are not included in `hulla@0.1.0`.
+From a workspace root, `doctor` detects declared UI, style, API, db, and control integrations and
+runs their individual checks. Use a namespace's `--check` to inspect just that integration:
+
+```sh
+hulla doctor
+hulla ui --check --cwd apps/mobile
+hulla api --check --cwd apps/server
+```
+
+`hulla style --check`, `hulla db --check`, and `hulla control --check` use the same runner.
+No initialization or `--yes` is needed. The checks read local files without importing application
+code, running package scripts, downloading registries, connecting to services, or changing files.
+
+At a workspace root, checks include the root and its declared workspaces. `--cwd` selects an app
+and its own workspaces. Detection uses declared dependencies and recognized config files; a
+missing declared package fails, while an absent integration is skipped. Explicit config options
+apply to the selected package, and child workspaces keep their own defaults.
+
+| Check     | What it validates                                                                                                   |
+| --------- | ------------------------------------------------------------------------------------------------------------------- |
+| `ui`      | UI config, output paths, component/code-root containment, inherited TypeScript aliases, and native UI dependencies. |
+| `style`   | Style packages, runtime entrypoints, and installed peer versions.                                                   |
+| `api`     | API packages/adapters, runtime entrypoints, peer ranges, and optional generator config syntax.                      |
+| `db`      | Database package, runtime entrypoint, peers, and optional `db.config.ts` syntax.                                    |
+| `control` | Package installation, declared version, runtime entrypoint, and peers.                                              |
+
+API runtime use does not require a generator config. Database package use does not require a
+`db.config.ts`. Config syntax checks do not evaluate imports, exports, or values. These checks do
+not validate connectivity, native binaries, rendering, stylesheet activation, or application types.
+Continue running your application's builds and tests.
+
+Results identify the package, directory, integration, and suggested fix. A failure returns exit
+status `1`; passes, warnings, and skips alone return `0`. A failing integration does not stop the
+remaining checks or sibling workspaces from reporting.
+
 ## Exit and error behavior
 
 A successful command returns exit code 0. Parser, config, filesystem, registry, and task errors are reported to stderr and return 1. Interactive cancellation may exit with 0. Caught failures show the error and a command-help hint. It does not run the consuming application's build or tests after copying files; run those checks in your project or CI. See [Automation](/docs/cli/automation) for a repeatable add command.
