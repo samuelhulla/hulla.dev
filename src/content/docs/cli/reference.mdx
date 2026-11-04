@@ -19,7 +19,30 @@ The command behavior below describes the upcoming CLI release. The published `hu
 
 Bare `hulla`, `hulla ui`, and `hulla api` show help without initializing files. `--help`/`-h` works at every command level, and root `--version`/`-v` prints the installed version. Reserved `hulla install` (including aliases `i` and `add`) and `hulla init --clean` fail with an explanation instead of claiming success.
 
-### Shared options
+#### Command help
+
+With `hulla` 0.2.0 or newer, use `--help` or `-h` on any command to see its usage,
+aliases, subcommands, arguments, and options:
+
+```sh
+hulla --help
+hulla init --help
+hulla api generate --help
+hulla ui add -h
+```
+
+Help exits with code 0 before loading project configuration or running a command.
+It works outside a project and does not prompt, download, or write files. Aliases
+show the canonical command's help. Placing the help flag before a subcommand also
+shows the selected subcommand: `hulla --help ui add` and `hulla ui add --help`
+show the same usage.
+
+> [!WARNING] Older versions can execute commands when help is requested
+> In `hulla` 0.1.0 and earlier, root help is a placeholder and nested `--help` can
+> continue into normal command behavior. Check `hulla --version` before using
+> nested help in an older installation.
+
+## Shared options
 
 | Option                    | Purpose                                                                          |
 | ------------------------- | -------------------------------------------------------------------------------- |
