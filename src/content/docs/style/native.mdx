@@ -1,12 +1,11 @@
 ---
 title: React Native styles
-description: 'Compose native style objects and infer variant props with the optional @hulla/style-native adapter.'
+description: 'Compose React Native styles and variants, and derive opacity and mixed colors.'
 ---
 
 Pass the configuration from `@hulla/style-native` to the existing `style()` factory to compose React Native style objects. The core supplies the same `cn`, `vn`, and variant inference used by your web components.
 
-Requires `@hulla/style` 0.5.0 or later, before 0.6, `@hulla/style-native` 1.0.0,
-and React Native 0.81 or later, before 1.0. Use TypeScript 5.4 or later for the typed examples.
+Use `@hulla/style` and `@hulla/style-native` 1.1 or later, before 2.0, with React Native 0.81 or later, before 1.0. Typed examples require TypeScript 5.4 or later.
 Install both packages in the native app:
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
@@ -24,7 +23,7 @@ import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerComma
 
 Create one shared module in your native app. Import `style` from the core package, then pass the separately installed plugin's `native` configuration object. No provider is needed for style composition.
 
-```ts filename="src/lib/native-style.ts"
+```ts filename="src/lib/style.ts"
 import { style } from '@hulla/style'
 import { native } from '@hulla/style-native'
 
@@ -35,7 +34,7 @@ export const { cn, vn } = style(native)
 
 ```tsx filename="src/components/Surface.tsx"
 import { StyleSheet, View, type ViewProps } from 'react-native'
-import { cn } from '../lib/native-style'
+import { cn } from '../lib/style'
 
 const styles = StyleSheet.create({
   base: { padding: 12 },
@@ -60,7 +59,7 @@ export function Surface({
 In a component module, define a map once and use its keys to type a prop:
 
 ```ts
-import { cn, vn } from '../lib/native-style'
+import { cn, vn } from '../lib/style'
 
 const $size = vn({
   compact: { padding: 8 },
@@ -80,7 +79,7 @@ Import `cn` and `vn` from the shared module for every native component. A text
 variant and an image style can use that same pair:
 
 ```ts
-import { cn, vn } from '../lib/native-style'
+import { cn, vn } from '../lib/style'
 
 const $weight = vn({
   regular: { fontWeight: '400' },
@@ -102,7 +101,7 @@ while retaining its inferred shape. In a style module, reuse the shared `cn`:
 
 ```ts filename="src/styles/recipes.ts"
 import type { ImageStyle, TextStyle, ViewStyle } from 'react-native'
-import { cn } from '../lib/native-style'
+import { cn } from '../lib/style'
 
 const containerStyle = cn({ padding: 16 } satisfies ViewStyle)
 const titleStyle = cn({ fontSize: 20, fontWeight: '600' } satisfies TextStyle)
@@ -117,7 +116,7 @@ preserving the actual keys for `.infer`:
 
 ```ts
 import type { TextStyle } from 'react-native'
-import { vn } from '../lib/native-style'
+import { vn } from '../lib/style'
 
 const $weight = vn({
   regular: { fontWeight: '400' },
@@ -137,7 +136,7 @@ For interactions, call `cn` inside React Native's callback. With `cn` imported f
 
 ```tsx
 import { Pressable, StyleSheet } from 'react-native'
-import { cn } from '../lib/native-style'
+import { cn } from '../lib/style'
 
 const styles = StyleSheet.create({
   base: { padding: 12 },
@@ -154,6 +153,23 @@ export function Action() {
 ```
 
 The adapter composes style values; React Native owns the callback and interaction state. When using `@hulla/ui`, keep theme configuration in `NativeThemeProvider`. Compose custom styles through the components' public `style` props, or `Button.contentStyle` for its visible surface.
+
+## Resolve concrete colors
+
+Import `alpha` to make a color translucent and `mix` to derive a pressed or tinted surface. `isDark` checks a background's lightness. These utilities use React Native's color parser and can be used without installing the optional `@hulla/style` peer.
+
+```ts
+import { alpha, mix, isDark } from '@hulla/style-native/color'
+
+alpha('#12345680', 0.5) // '#12345640': existing alpha is preserved
+mix('#2258e5', 'transparent', 0.5) // premultiplied OKLab mixing
+isDark('#040404') // true
+```
+
+`alpha` multiplies existing opacity and `mix` weights the overlay; amounts are clamped to 0–1.
+Use concrete React Native color strings. Dynamic platform color objects are not accepted.
+If a string cannot be resolved, `alpha` returns the input, `mix` returns its base,
+and `isDark` returns false. Repeated opacity and mixing results are cached. Theme selection and font inheritance stay in the UI provider.
 
 ## Understand the cost and limits
 

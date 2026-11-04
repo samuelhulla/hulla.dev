@@ -17,16 +17,19 @@ If the component appears in more than one framework, `--framework` is required i
 
 ## Run initialization intentionally
 
-`hulla init --yes` can create project settings without asking to confirm. UI initialization may need framework, path, or registry choices; run it once interactively, review and commit `.hulla/ui.json`, then let repeatable add commands run in CI.
+`hulla init --yes` can create project settings without asking to confirm. Pass explicit framework, source, and output paths to initialize UI without prompts, as shown under [UI setup flags](/docs/cli/ui#supply-paths-directly). Review and commit `.hulla/ui.json` so later add commands reuse those choices.
 
-Pin the CLI beta version in the project and use a pinned registry source. This makes CLI behavior and copied component inputs reviewable alongside the resulting source changes. See [Configuration](/docs/cli/configuration) for the files to commit.
+Pin the CLI version in the project and use a pinned registry source. This makes CLI behavior and copied component inputs reviewable alongside the resulting source changes. See [Configuration](/docs/cli/configuration) for the files to commit.
 
 ## Check the result
+
+Run `hulla doctor` from the workspace root to check declared integrations, or select one with a command such as `hulla ui --check --cwd apps/mobile`. These checks read local files and return a nonzero exit status on failure. They do not initialize projects, download registries, or connect to services. See [integration checks](/docs/cli/reference#check-installed-integrations) for their scope.
 
 The CLI does not run the consuming application's full test suite for you. After adding or updating files, run the application's own checks and inspect the Git diff. In CI, `git diff --exit-code` can detect when a supposedly repeatable command changed committed files.
 
 ```sh
 hulla ui add --yes --framework astro button dialog
+hulla doctor
 git diff --exit-code
 bun run check
 ```

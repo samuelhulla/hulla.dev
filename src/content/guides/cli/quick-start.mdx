@@ -10,18 +10,18 @@ tutorial:
 
 Add a Button to an Astro page using the `hulla` CLI. The command copies the component into your project, where you can edit its source.
 
-## 1. Install the pinned beta
+## 1. Install the CLI
 
-Install the CLI as a development dependency in the application. The exact beta pin keeps team members and CI on the same CLI release; the `hulla` CLI itself requires Bun at runtime.
+Install the CLI as a development dependency in the application. The exact version pin keeps team members and CI on the same CLI release; the `hulla` CLI itself requires Bun at runtime.
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
 <DocsPackageManagerCommand
   commands={{
-    bun: 'bun add -D hulla@0.0.0-beta.1',
-    npm: 'npm install --save-dev hulla@0.0.0-beta.1',
-    pnpm: 'pnpm add -D hulla@0.0.0-beta.1',
-    yarn: 'yarn add -D hulla@0.0.0-beta.1',
+    bun: 'bun add -D hulla@0.3.0',
+    npm: 'npm install --save-dev hulla@0.3.0',
+    pnpm: 'pnpm add -D hulla@0.3.0',
+    yarn: 'yarn add -D hulla@0.3.0',
   }}
 />
 
@@ -29,14 +29,14 @@ Verify the installed executable before changing the project. These equivalent co
 
 <DocsPackageManagerCommand
   commands={{
-    bun: 'bunx hulla@0.0.0-beta.1 --version',
-    npm: 'npx hulla@0.0.0-beta.1 --version',
-    pnpm: 'pnpm dlx hulla@0.0.0-beta.1 --version',
-    yarn: 'yarn dlx hulla@0.0.0-beta.1 --version',
+    bun: 'bunx hulla@0.3.0 --version',
+    npm: 'npx hulla@0.3.0 --version',
+    pnpm: 'pnpm dlx hulla@0.3.0 --version',
+    yarn: 'yarn dlx hulla@0.3.0 --version',
   }}
 />
 
-The command prints `hulla v0.0.0-beta.1`. Keep that exact version in your project so another install uses the same CLI behavior.
+The command prints `hulla v0.3.0`. Keep that exact version in your project so another install uses the same CLI behavior.
 
 Package scripts can find a locally installed `hulla` executable automatically. For the terminal commands below, add the project's executable directory to your current shell's search path. Run this from the project root:
 
@@ -52,6 +52,8 @@ From the project root, create `.hulla/hulla.json`. The `--yes` flag accepts conf
 hulla init --yes
 ```
 
+In a workspace, initialization can inherit its package manager from the containing declared workspace. See [package-manager detection](/docs/cli/configuration#package-managers-in-workspaces).
+
 The success signal is a new `.hulla/hulla.json` containing the package scripts and references to subsystem configuration. Commit this file so local development and automation use the same choices.
 
 ## 3. Configure and add a component
@@ -64,6 +66,14 @@ hulla ui add --framework astro button
 ```
 
 The add command copies the Astro button's files and any declared dependencies or support files into the configured paths. Review the changed files and run the application's build or type checks so missing peer setup is visible in your own project. Use [UI components](/docs/cli/ui) for other framework targets.
+
+Check the recorded UI paths, package entrypoints and peers before using the component:
+
+```sh
+hulla ui --check
+```
+
+A successful check returns exit code 0. Continue running the app's own build and type checks; [integration diagnostics](/docs/cli/reference#check-installed-integrations) do not render components or test connectivity.
 
 ## 4. Put the component on a page
 

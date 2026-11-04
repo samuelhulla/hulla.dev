@@ -9,13 +9,24 @@ Start with an existing React Native or Expo app and a registry revision that lis
 
 ## Install the native target
 
-From the app directory, configure the registry and select `react-native`:
+From the app directory, initialize the native target and select the output paths:
 
 ```sh
-hulla ui init
+hulla ui init --framework react-native --code-root src \
+  --components-root src/components/ui --copy-root src
 ```
 
-For the examples below, choose `src` as the code and support-file root and `src/components/ui` as the component destination. Setup copies the native theme, color, date, and input-style helpers into `src/lib`. Ensure your app's bundler resolves `@/lib/*` to that directory, as recorded by the CLI's alias setup.
+Initialization installs `src/lib/theme.tsx` and editable design tokens in `src/lib/tokens.ts`. It installs `@hulla/style-native` for shared native color operations and configures `@/` imports for the selected code root. Expo apps retain their `expo/tsconfig.base` inheritance and existing compiler settings.
+
+Other support files are copied with the components that need them:
+
+| Support file                     | Installed with                                        |
+| -------------------------------- | ----------------------------------------------------- |
+| `lib/theme.tsx`, `lib/tokens.ts` | Native initialization                                 |
+| `lib/date.ts`                    | Calendar and DatePicker                               |
+| `lib/text-input-style.ts`        | Input, Textarea, Combobox, NumberField and TimePicker |
+
+The CLI follows transitive dependencies, so a component receives the helpers used by its component parts too. Existing support files remain editable application source and are preserved when adding components.
 
 Add the controls your screen needs:
 
@@ -48,7 +59,7 @@ Pass matching `variant` and `disabled` values to Button and ButtonText when you 
 Wrap the app's content once to choose system appearance, a fixed mode, or custom fonts:
 
 ```tsx filename="src/App.tsx"
-import { NativeThemeProvider } from './lib/native-theme'
+import { NativeThemeProvider } from './lib/theme'
 import { SaveButton } from './SaveButton'
 
 export default function App() {
@@ -64,11 +75,13 @@ export default function App() {
 
 Load your font assets with your app's font loader, then pass their family names through the provider's `fonts` keys: `regular`, `medium`, `semibold`, and `mono`. Without those values, components use platform fonts and preserve system text scaling.
 
+Custom styles can import `useNativeTheme`, `NativeTheme`, and `nativeThemes` from `@/lib/theme`. Use a built-in palette as the base for a custom `theme` passed to the provider. A custom palette can declare `mode: 'light'` or `mode: 'dark'`; otherwise its mode is resolved from the background's lightness. Replace the theme object when changing its configuration.
+
 ## Choose styles for the visible part
 
 Native `style` props accept React Native style objects and arrays. Button reserves a press region of at least 48 by 48 logical units around a compact painted surface. Its `style` prop controls layout and the press region; `contentStyle` controls the painted surface. Both accept Pressable's pressed-state callback.
 
-Use public component props for variants and state. For custom view, text, or image recipes, the optional [`@hulla/style-native` adapter](/docs/style/native) composes style objects through `style(native)`. The registry does not require that adapter, and it does not replace NativeThemeProvider.
+Use public component props for variants and state. For custom view, text, or image recipes, the optional [`@hulla/style-native` adapter](/docs/style/native) composes style objects through `style(native)`. The registry uses the package’s color entry point; opting into `style(native)` composition is separate. NativeThemeProvider continues to own appearance and font inheritance.
 
 ## Choose a native interaction
 

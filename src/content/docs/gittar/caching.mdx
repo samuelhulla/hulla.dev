@@ -27,18 +27,44 @@ If you omit `outDir`, the returned paths point into the cache. Editing those fil
 
 ## Decide when to check the remote
 
-| `update` | Cache hit                                             | Cache miss |
-| -------- | ----------------------------------------------------- | ---------- |
-| `commit` | Checks the branch; refreshes when its commit changed. | Downloads. |
-| `always` | Downloads again.                                      | Downloads. |
-| `never`  | Uses the snapshot without a remote check.             | Downloads. |
+| `update` | Existing snapshot                                                                         | Cache miss or another revision    |
+| -------- | ----------------------------------------------------------------------------------------- | --------------------------------- |
+| `commit` | Resolves the requested ref and refreshes when its commit changed.                         | Downloads the requested revision. |
+| `always` | Skips local cache reads and downloads again.                                              | Downloads the requested revision. |
+| `never`  | Reuses a snapshot identified as the requested revision, without a remote freshness check. | Downloads the requested revision. |
 
-> [!WARNING] Freshness checks can fall back to the cache
-> If the remote commit lookup fails, `commit` reuses an existing snapshot. A successful call therefore doesn't prove the remote was reachable or the files are current. Use `always` when a download failure should stop the operation.
+With `commit`, a failed remote lookup can reuse cached files only when their metadata identifies the requested revision. A cache for a different ref, or one without revision metadata, is not a fallback. A successful cached call still does not prove the remote was reachable.
+
+To require a download on every call, set `update: 'always'`:
+
+```ts filename="download.ts"
+const snapshot = await gittar({
+  url: 'hulladev/gittar',
+  branch: 'master',
+  update: 'always',
+  outDir: resolve('downloaded-source'),
+})
+```
+
+`always` still writes the downloaded snapshot and metadata to the cache for later reuse. It bypasses cache reads rather than disabling cache storage.
+
+## Select a branch, tag or commit
+
+The `branch` option accepts branch names, lightweight or annotated tag names, and full 40-character commit SHAs. For example, download a tagged revision:
+
+```ts filename="download.ts"
+const snapshot = await gittar({
+  url: 'hulladev/gittar',
+  branch: 'v0.0.6',
+  outDir: resolve('downloaded-source'),
+})
+```
+
+A branch takes precedence when a branch and tag share a name. Use `refs/tags/v0.0.6` to select the tag explicitly. The archive is downloaded by the resolved commit SHA, while `snapshot.branch` retains the requested ref name. A full SHA identifies its commit directly.
 
 ## Keep refs in separate caches
 
-The default location is `~/.cache/hulla/gittar/{owner}/{repo}`. It doesn't distinguish hosts, branches, or tags. Give each distinct source/ref its own `cacheDir`, especially with `never`:
+The default location is `~/.cache/hulla/gittar/{owner}/{repo}`. It does not encode the host or ref. Revision checks do not create separate storage, and switching refs replaces the directory's contents. Give different hosts, independently retained snapshots, or concurrent downloads their own `cacheDir`:
 
 ```ts
 cacheDir: resolve('.cache/gittar/github-hulladev-gittar-master'),

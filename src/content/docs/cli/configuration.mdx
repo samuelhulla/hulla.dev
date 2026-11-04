@@ -11,7 +11,7 @@ The `hulla` CLI stores project-level defaults in `.hulla/hulla.json` and UI regi
 
 ```json filename=".hulla/hulla.json"
 {
-  "$schema": "https://raw.githubusercontent.com/hulladev/cli/v0.0.0-beta.1/schemas/hulla.schema.json",
+  "$schema": "https://raw.githubusercontent.com/hulladev/cli/v0.3.0/schemas/hulla.schema.json",
   "cli": {
     "scripts": {
       "add": "bun add",
@@ -24,7 +24,23 @@ The `hulla` CLI stores project-level defaults in `.hulla/hulla.json` and UI regi
 }
 ```
 
-The script values shown are Bun defaults; `hulla init` writes values for the detected package manager. UI paths such as `configs.ui` resolve from the project root. For a config file in a custom location, pass its absolute path with `--config`; the current relative-path flow can resolve a relative value again from its containing directory. A config directly inside `.hulla/` uses the directory above `.hulla/` as the UI project root.
+The script values shown are Bun defaults; `hulla init` writes values for the detected package manager. UI paths such as `configs.ui` resolve from the project root.
+
+Use `--project-config .hulla/custom.json` to select another project file. The path resolves once from the app selected by `--cwd`; UI and project setup also accept `--config` as an alias. A config directly inside `.hulla/` belongs to its parent project. For other locations, the config's containing directory is the project root.
+
+### Package managers in workspaces
+
+Initialization reads `packageManager` and lockfiles from the app and its containing declared workspace. It recognizes `package.json` workspace patterns and `pnpm-workspace.yaml`, including exclusions, and stops at the Git boundary. An app's explicit `packageManager` takes precedence over its workspace's value; explicit fields take precedence over lockfile detection.
+
+For example, an app in `apps/mobile` inherits a workspace root's `"packageManager": "bun@1.4.0"` when it has no explicit manager of its own:
+
+```sh
+hulla init --cwd apps/mobile --yes
+```
+
+The CLI records Bun install, development-install, removal, and upgrade commands in that app's config. Without an explicit manager selection, conflicting lockfiles fail with a request to set `packageManager` or remove stale lockfiles. If no manager can be detected, `--yes` fails with corrective guidance; interactive initialization lets you choose the scripts.
+
+### Portable cache paths
 
 `cli.cacheDir` defaults to `.hulla/.cache`, resolved from the same project root. A custom relative cache path also resolves from that root; an absolute path stays absolute. Saving the config omits the default and preserves custom relative paths, so the config can move between checkouts without carrying another checkout's absolute cache path.
 

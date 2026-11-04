@@ -1,17 +1,17 @@
 ---
 title: hulla CLI
-description: 'Copy UI components into your project as editable source, then review updates through the same CLI.'
+description: 'Install editable UI components and check package setup across your application workspaces.'
 usefulFor:
   - You want to install @hulla/ui components as application source.
   - You need repeatable component updates across local development and CI.
-  - You are maintaining a project initialized by an earlier hulla CLI workflow.
+  - You need local integration checks across application workspaces.
 ---
 
 import PackageDemoFrame from '@/components/site/PackageDemoFrame.astro'
 
 import DocsConceptFlow from '@/components/docs/DocsConceptFlow.astro'
 
-The `hulla` CLI copies UI components into your application. You can read, edit, and commit those files like the rest of your code.
+The `hulla` CLI copies UI components into your application. You can read, edit, and commit those files like the rest of your code. Run `hulla doctor` to inspect declared package integrations and configuration across your workspaces.
 
 The CLI requires Bun. Your installed components build with your app and don't need the CLI at runtime.
 
@@ -21,14 +21,15 @@ Using a coding agent? [Choose and install package skills](/docs/cli/agent-skills
 
 ## Choose a workflow
 
-| Goal                                                             | Page                                     |
-| ---------------------------------------------------------------- | ---------------------------------------- |
-| Install the pinned beta and set up your first UI component       | [Quick start](/guides/cli/quick-start)   |
-| Understand `.hulla/hulla.json` and `.hulla/ui.json`              | [Configuration](/docs/cli/configuration) |
-| Configure registries and add, update, or remove component source | [UI components](/docs/cli/ui)            |
-| Understand the legacy API command boundary                       | [API commands](/docs/cli/api)            |
-| Look up commands, aliases, flags, and config fields              | [Reference](/docs/cli/reference)         |
-| Run repeatable commands without prompts                          | [Automation](/docs/cli/automation)       |
+| Goal                                                             | Page                                                                   |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Install the CLI and set up your first UI component               | [Quick start](/guides/cli/quick-start)                                 |
+| Understand `.hulla/hulla.json` and `.hulla/ui.json`              | [Configuration](/docs/cli/configuration)                               |
+| Configure registries and add, update, or remove component source | [UI components](/docs/cli/ui)                                          |
+| Understand the legacy API command boundary                       | [API commands](/docs/cli/api)                                          |
+| Diagnose installed integrations without changing files           | [Integration checks](/docs/cli/reference#check-installed-integrations) |
+| Look up commands, aliases, flags, and config fields              | [Reference](/docs/cli/reference)                                       |
+| Run repeatable commands without prompts                          | [Automation](/docs/cli/automation)                                     |
 
 ## From project to component
 

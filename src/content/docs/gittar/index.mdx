@@ -36,10 +36,10 @@ The full repository goes into the cache. A separate `outDir` receives a copy. Ad
 
 ## Choose a cache policy
 
-| Policy             | What a later call does                                                             |
-| ------------------ | ---------------------------------------------------------------------------------- |
-| `commit` (default) | Checks the remote branch and downloads if its commit changed.                      |
-| `always`           | Downloads again, even when cached files exist.                                     |
-| `never`            | Uses existing cached files without checking the remote. Downloads on a cache miss. |
+| Policy             | What a later call does                                                            |
+| ------------------ | --------------------------------------------------------------------------------- |
+| `commit` (default) | Resolves the requested ref and downloads if its commit changed.                   |
+| `always`           | Downloads again, even when cached files exist.                                    |
+| `never`            | Reuses a matching cached revision without a freshness check; otherwise downloads. |
 
 Read [Caching and copying](/docs/gittar/caching) before building an updater. Use the [reference](/docs/gittar/reference) to look up options, returned metadata, and error types.

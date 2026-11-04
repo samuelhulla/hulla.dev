@@ -7,7 +7,7 @@ Look up commands, flags, and configuration defaults for the `hulla` CLI. The npm
 
 ## Commands and aliases
 
-The command behavior below is available in `hulla@0.2.0` and newer.
+Use `hulla@0.3.0` or newer for the commands below.
 
 | Command                         | Alias              | Behavior                                                                                                         |
 | ------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------- |
@@ -15,13 +15,15 @@ The command behavior below is available in `hulla@0.2.0` and newer.
 | `hulla ui init`                 | `hulla ui i`       | Configure the UI source, targets, support files, and output paths.                                               |
 | `hulla ui add [components…]`    | `hulla ui a`       | Configure UI on first use, then add or update component source and dependencies. Without names, open a selector. |
 | `hulla ui remove <components…>` | `hulla ui r`       | Confirm removal of each named component directory.                                                               |
+| `hulla doctor`                  | —                  | Inspect detected integrations in the selected package and its workspaces.                                        |
+| `hulla <integration> --check`   | —                  | Inspect UI, style, API, db, or control setup without changing files.                                             |
 | `hulla api init/generate/dev`   | —                  | Existing legacy generator commands; not compatible with `@hulla/api` 2.0.                                        |
 
 Bare `hulla`, `hulla ui`, and `hulla api` show help without initializing files. `--help`/`-h` works at every command level, and root `--version`/`-v` prints the installed version. Reserved `hulla install` (including aliases `i` and `add`) and `hulla init --clean` fail with an explanation instead of claiming success.
 
-#### Command help
+### Command help
 
-With `hulla` 0.2.0 or newer, use `--help` or `-h` on any command to see its usage,
+Use `--help` or `-h` on any command to see its usage,
 aliases, subcommands, arguments, and options:
 
 ```sh
@@ -36,11 +38,6 @@ It works outside a project and does not prompt, download, or write files. Aliase
 show the canonical command's help. Placing the help flag before a subcommand also
 shows the selected subcommand: `hulla --help ui add` and `hulla ui add --help`
 show the same usage.
-
-> [!WARNING] Older versions can execute commands when help is requested
-> In `hulla` 0.1.0 and earlier, root help is a placeholder and nested `--help` can
-> continue into normal command behavior. Check `hulla --version` before using
-> nested help in an older installation.
 
 ## Shared options
 
@@ -123,7 +120,6 @@ There are two caches: the project record at `<cli.cacheDir>/ui.cache.json`, and 
 
 ## Check installed integrations
 
-Integration checks require `hulla@0.2.0` or newer.
 From a workspace root, `doctor` detects declared UI, style, API, db, and control integrations and
 runs their individual checks. Use a namespace's `--check` to inspect just that integration:
 

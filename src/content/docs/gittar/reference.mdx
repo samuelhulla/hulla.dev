@@ -16,14 +16,16 @@ const config: Config = { url: 'hulladev/gittar', branch: 'master' }
 const snapshot: GittarResult = await gittar(config)
 ```
 
-| Option     | Default                                    | Meaning                                                                      |
-| ---------- | ------------------------------------------ | ---------------------------------------------------------------------------- |
-| `url`      | Required                                   | Repository URL or `owner/repo` shorthand.                                    |
-| `branch`   | URL ref, otherwise `main` then `master`    | Branch, tag, or commit used for the archive. Explicit refs disable fallback. |
-| `subpath`  | URL subpath, otherwise the full repository | Directory to copy and list. The full archive is still cached.                |
-| `cacheDir` | `~/.cache/hulla/gittar/{owner}/{repo}`     | Extracted repository and metadata.                                           |
-| `outDir`   | `cacheDir`                                 | Copy destination.                                                            |
-| `update`   | `commit`                                   | `commit`, `always`, or `never`. See [cache policies](/docs/gittar/caching).  |
+| Option     | Default                                    | Meaning                                                                                                  |
+| ---------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| `url`      | Required                                   | Repository URL or `owner/repo` shorthand.                                                                |
+| `branch`   | URL ref, otherwise `main` then `master`    | Branch name, lightweight/annotated tag, or full 40-character commit SHA. Explicit refs disable fallback. |
+| `subpath`  | URL subpath, otherwise the full repository | Directory to copy and list. The full archive is still cached.                                            |
+| `cacheDir` | `~/.cache/hulla/gittar/{owner}/{repo}`     | Extracted repository and metadata.                                                                       |
+| `outDir`   | `cacheDir`                                 | Copy destination.                                                                                        |
+| `update`   | `commit`                                   | `commit`, `always`, or `never`. See [cache policies](/docs/gittar/caching).                              |
+
+Branches take precedence over tags with the same name; an explicit `refs/tags/<name>` selects the tag. See [revision selection](/docs/gittar/caching#select-a-branch-tag-or-commit) and [cache policies](/docs/gittar/caching#decide-when-to-check-the-remote).
 
 Paths beginning with `~/` expand to the user's home directory. Other relative paths stay relative; use `resolve()` when you need absolute returned paths.
 
@@ -37,7 +39,7 @@ Paths beginning with `~/` expand to the user's home directory. Other relative pa
 | `fromCache: boolean` | Whether the call reused an existing snapshot.                    |
 | `subpath?: string`   | Effective subpath filter.                                        |
 | `commit?: string`    | Commit from the remote lookup or cache metadata, when available. |
-| `branch?: string`    | Downloaded or cached ref, when available.                        |
+| `branch?: string`    | Requested ref name, or the default branch used, when available.  |
 
 The file listing uses a Bun glob with its default dotfile behavior. Don't use `files` as an exhaustive manifest of hidden configuration files. Copying a directory can include dotfiles even when the returned list doesn't.
 
