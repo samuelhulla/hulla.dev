@@ -9,6 +9,18 @@ usefulFor:
 
 Use `hulla ui` to copy components from a registry into your app. It installs their source files and dependencies; your app builds from those files without contacting the registry.
 
+## Find a component's install name
+
+Inspect the selected registry before installing. `list` reads family names, source exports, and filenames from the downloaded library; `search` is an alias that accepts the same query:
+
+```sh
+hulla ui list --framework react-native
+hulla ui search text --framework react-native
+hulla ui list --source ./my-registry
+```
+
+The output includes the library, framework, files, source exports, and an install command targeting that source. An export may belong to a family with a different name. An explicit `--source` inspects another registry without saving it. Discovery can download/cache a remote registry, but does not initialize the app, copy components, or install dependencies.
+
 ## Add your first component
 
 Use `hulla@0.3.0` or newer for the commands below.
@@ -64,6 +76,26 @@ hulla ui add --framework astro button dialog
 ```
 
 Without names, interactive `add` opens a component selector. With `--yes`, supply one or more component names. It resolves each component's manifest, dependencies, aliases, and copy files. It reports changed file paths; review those diffs and run your app checks. Repeating the command with the same source revision should produce no meaningful source change.
+
+If any requested family is unknown, `add` fails before copying component families and suggests matches from that registry. It does not silently substitute a family or skip a requested component. First-use setup validates after library/framework selection, before writing aliases or bootstrap files and installing dependencies; project configuration and empty destination directories may already exist.
+
+### Use the project's formatter command
+
+If the app defines a `format:files` script that accepts filenames, record that exact command during setup:
+
+```sh
+hulla ui init --post-add-command 'bun run format:files {files}' --yes
+```
+
+The command runs from the app root and is saved as `postAddUpdateStep`. `{files}` expands to shell-quoted file paths. Use `--post-add-command none` to disable it. Without the flag, setup offers formatter/custom choices; `--yes` retains the saved command or leaves the step empty. The CLI does not select a formatter based on dependency names.
+
+Keep this command limited to the supplied files. The CLI also runs it on temporary incoming copies before comparing existing components, so formatting-only differences count as unchanged. A failed preview stops the add rather than falling back to a misleading diff.
+
+### Share development tools in a workspace
+
+Setup and component adds can reuse any registry-declared development dependency supplied by a declared workspace root. They verify an installed version against the required range, or reuse an identical declaration, an unconstrained requirement, or a compatible exact version when it is not installed. An incompatible or unverifiable requirement fails with the package and root manifest named; the CLI does not silently update that root.
+
+Runtime dependencies remain app-local. Existing app declarations take precedence. The rule uses dependency metadata and workspace membership, without inferring which packages provide formatting or typechecking. A JavaScript registry without a TypeScript dependency or config template adds neither; selecting a typed registry does not convert its source to JavaScript.
 
 ### Install composed components
 

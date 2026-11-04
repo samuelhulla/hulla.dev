@@ -7,17 +7,18 @@ Look up commands, flags, and configuration defaults for the `hulla` CLI. The npm
 
 ## Commands and aliases
 
-Use `hulla@0.3.0` or newer for the commands below.
+Use `hulla --version` and `hulla --help` to inspect the installed release.
 
-| Command                         | Alias              | Behavior                                                                                                         |
-| ------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `hulla init`                    | `hulla initialize` | Write project configuration without configuring UI.                                                              |
-| `hulla ui init`                 | `hulla ui i`       | Configure the UI source, targets, support files, and output paths.                                               |
-| `hulla ui add [components…]`    | `hulla ui a`       | Configure UI on first use, then add or update component source and dependencies. Without names, open a selector. |
-| `hulla ui remove <components…>` | `hulla ui r`       | Confirm removal of each named component directory.                                                               |
-| `hulla doctor`                  | —                  | Inspect detected integrations in the selected package and its workspaces.                                        |
-| `hulla <integration> --check`   | —                  | Inspect UI, style, API, db, or control setup without changing files.                                             |
-| `hulla api init/generate/dev`   | —                  | Existing legacy generator commands; not compatible with `@hulla/api` 2.0.                                        |
+| Command                         | Alias                            | Behavior                                                                                                         |
+| ------------------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `hulla init`                    | `hulla initialize`               | Write project configuration without configuring UI.                                                              |
+| `hulla ui init`                 | `hulla ui i`                     | Configure the UI source, targets, support files, and output paths.                                               |
+| `hulla ui list [query…]`        | `hulla ui ls`, `hulla ui search` | Inspect the selected registry's families, source exports, and filenames.                                         |
+| `hulla ui add [components…]`    | `hulla ui a`                     | Configure UI on first use, then add or update component source and dependencies. Without names, open a selector. |
+| `hulla ui remove <components…>` | `hulla ui r`                     | Confirm removal of each named component directory.                                                               |
+| `hulla doctor`                  | —                                | Inspect detected integrations in the selected package and its workspaces.                                        |
+| `hulla <integration> --check`   | —                                | Inspect UI, style, API, db, or control setup without changing files.                                             |
+| `hulla api init/generate/dev`   | —                                | Existing legacy generator commands; not compatible with `@hulla/api` 2.0.                                        |
 
 Bare `hulla`, `hulla ui`, and `hulla api` show help without initializing files. `--help`/`-h` works at every command level, and root `--version`/`-v` prints the installed version. Reserved `hulla install` (including aliases `i` and `add`) and `hulla init --clean` fail with an explanation instead of claiming success.
 
@@ -62,15 +63,18 @@ These commands target the same app. Use a distinct `--project-config` when an AP
 
 These options work on `hulla ui init` and `hulla ui add`, or before the subcommand on `hulla ui`:
 
-| Option                     | Purpose or default                                              |
-| -------------------------- | --------------------------------------------------------------- |
-| `--source <url-or-path>`   | Replace saved sources with this registry during setup.          |
-| `--framework <name>`, `-f` | Select the framework explicitly; also available on `ui remove`. |
-| `--code-root <path>`       | Saved or detected code root; otherwise `src`.                   |
-| `--components-root <path>` | Saved component root; otherwise `<code-root>/components`.       |
-| `--copy-root <path>`       | Saved support-file root; otherwise the code root.               |
+| Option                         | Purpose or default                                                    |
+| ------------------------------ | --------------------------------------------------------------------- |
+| `--source <url-or-path>`       | Replace saved sources with this registry during setup.                |
+| `--framework <name>`, `-f`     | Select the framework explicitly; also available on `ui remove`.       |
+| `--code-root <path>`           | Saved or detected code root; otherwise `src`.                         |
+| `--components-root <path>`     | Saved component root; otherwise `<code-root>/components`.             |
+| `--copy-root <path>`           | Saved support-file root; otherwise the code root.                     |
+| `--post-add-command <command>` | Save a changed-file command containing `{files}`; `none` disables it. |
 
 Paths must be project-relative directories. New nested paths are created; components must stay inside the code root. Explicit setup options on `ui add` rerun configuration. They do not relocate previously installed files. See [UI components](/docs/cli/ui) for the first-install workflow.
+
+`ui list` also accepts `--source` and `--framework` to inspect a registry without configuring the app. Its `--source` does not replace saved sources.
 
 With `--yes`, give explicit component names and resolve ambiguous framework choices with `--framework`.
 
