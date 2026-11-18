@@ -83,9 +83,8 @@ An embedded native runtime executes registered functions against PostgreSQL.
 A native remote application uses `hulladb::remote` with verified session ownership
 and its own subscription lifecycle. Retire that runtime on an account change.
 
-The native remote client can use SQLite for durable recovery. That is a native
-client feature, not a browser table replica or the TypeScript SDK's cache model.
-Generic TypeScript `.withOptimistic` wrappers have no equivalent native prediction
+The native remote client can use SQLite to persist recovery state. Native Rust table execution still uses PostgreSQL. The [SQLite table adapter](/docs/db/sqlite) and [device replica APIs](/docs/db/replication) are available in TypeScript.
+Generic TypeScript `.optimistic` wrappers have no equivalent native prediction
 layer. Native callers can await committed writes and use a connected query's
 visibility fence when needed.
 

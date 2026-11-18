@@ -1,0 +1,106 @@
+---
+title: Run a SQLite database
+description: Provision storage, save a draft, and reopen it on Node, Bun, the web, or Expo.
+---
+
+A drafts table belongs to the SQLite instance that opens it. Saving a draft can finish while the device is offline, including the first time the app runs. The same setup works for a Node or Bun server that owns a persistent file.
+
+## Save a draft and reopen the file
+
+Install `@hulla/db` and `@hulla/db-sqlite` from the same release line. Put this declaration in a module that both startup code and handlers can import.
+
+```ts filename="db/schema.ts"
+import { defineSchema, defineTable, v } from '@hulla/db'
+
+export const schema = defineSchema({
+  drafts: defineTable({ title: v.string() }),
+})
+```
+
+On Node or Bun, run this script in a writable directory. The first instance provisions the file. The second reads the committed row from disk.
+
+```ts filename="check-drafts.ts"
+import { sqlite } from '@hulla/db-sqlite'
+import { schema } from './db/schema.ts'
+
+const options = { schema, filename: './drafts.sqlite' }
+const first = sqlite.initialize(options)
+const draft = await first.insert('drafts', { title: 'Visit notes' })
+await first.close()
+
+const reopened = sqlite(options)
+const saved = await reopened.select('drafts').where({ id: draft.id }).unique()
+console.log(saved?.title) // Visit notes
+await reopened.close()
+```
+
+Run `bun run check-drafts.ts` or, in a Node 24 ESM project, `node check-drafts.ts`. Both should print `Visit notes`.
+
+In a long-running application, create one instance at startup. Calls wait for it automatically. Use `ready()` to await startup explicitly, or `state` and `subscribe(listener)` to observe initialization and errors. Reserve `close()` for shutdown. To reopen, construct a new instance.
+
+`sqlite.initialize(...)` provisions an empty database and verifies a matching existing one. Ordinary `sqlite(...)` expects provisioned storage and checks the schema. A schema mismatch fails on open. The SQLite adapter currently has no schema migration command. Plan how existing installations will retain their data before shipping a schema change.
+
+## Choose a device connection
+
+| Runtime     | How to open durable storage                                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Node or Bun | Pass a persistent `filename` to `@hulla/db-sqlite`. The adapter selects the runtime's built-in SQLite driver.                   |
+| Browser     | Provide a dedicated SQLite WASM connection. Set up your WASM runtime and its storage, such as OPFS, in the context it requires. |
+| Expo        | Open a dedicated connection with `expo-sqlite` and wrap it with the Expo driver.                                                |
+
+For a browser using the SQLite WASM OO1 API, the example assumes your app already initialized `sqlite3` in an OPFS-capable worker. The adapter does not install the WASM runtime.
+
+```ts filename="db/browser.ts"
+import { sqlite, wasmSQLiteDriver } from '@hulla/db-sqlite/browser'
+import { schema } from './schema'
+
+const db = sqlite.initialize({
+  schema,
+  open: () => wasmSQLiteDriver(new sqlite3.oo1.OpfsDb('/drafts.sqlite', 'c')),
+})
+```
+
+For Expo, install the platform's `expo-sqlite` package. Supply a secure `randomBytes` provider if your runtime lacks Web Crypto. Both adapters take ownership of the dedicated connection returned by `open`.
+
+```ts filename="db/mobile.ts"
+import { sqlite, expoSQLiteDriver } from '@hulla/db-sqlite/expo'
+import * as SQLite from 'expo-sqlite'
+import { schema } from './schema'
+
+const db = sqlite.initialize({
+  schema,
+  open: async () =>
+    expoSQLiteDriver(await SQLite.openDatabaseAsync('drafts.sqlite')),
+})
+```
+
+## Run functions against this instance
+
+A reusable query takes its database from the handler context. Export it from a module beside the schema.
+
+```ts filename="db/drafts.ts"
+import { schema } from './schema'
+
+export const listDrafts = schema.query(({ db }) =>
+  db.select('drafts').orderBy('title')
+)
+```
+
+Pass a module loader when opening the instance to make those functions available locally. For the provisioned file above:
+
+```ts filename="db/local.ts"
+import { sqlite } from '@hulla/db-sqlite'
+import { schema } from './schema'
+
+export const db = sqlite({
+  schema,
+  filename: './drafts.sqlite',
+  functions: () => import('./drafts'),
+})
+
+const drafts = await db.functions.listDrafts()
+```
+
+Local mutations execute in a transaction. Local query subscriptions observe committed writes through this instance, including replica updates. Writes made by another SQLite connection do not trigger those subscriptions.
+
+SQLite supports scalar filters, ordering, CRUD, upserts, bulk writes, and ungrouped aggregates. It can store JSON, but querying inside JSON, grouped aggregates, pattern matching with `LIKE`, and pagination currently need another approach. For shared records, add [an authorized replica](/docs/db/replication) alongside your drafts.

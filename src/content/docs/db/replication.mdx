@@ -1,0 +1,199 @@
+---
+title: Replicas and offline edits
+description: Download authorized rows to SQLite, read them offline, and decide how a queued edit should behave if the row changes on the server.
+---
+
+Suppose Alice downloads her assigned tasks before a site visit. She can read their titles without a signal. If she renames one, the phone can remember the request. The team sees the new title only after the server accepts it. A private draft on the same phone never needs that round trip.
+
+There are three independent choices. A server query decides **which rows and fields may leave the server**. A device table opts into **storing those results**. Each device mutation separately opts into **queuing a call**. You can ship read-only offline access without enabling offline writes.
+
+## Decide what the server may send
+
+Give the server table a version so a later write can check what the editor originally saw. Use a bound table projection to list the fields that can reach devices. Keep the primary key so later results can identify the same row.
+
+```ts filename="db/schema.ts"
+import { defineSchema, defineTable, v } from '@hulla/db'
+
+export const schema = defineSchema({
+  tasks: defineTable({
+    owner: v.string(),
+    title: v.string(),
+    internalNotes: v.string(),
+    version: v.int64({ mode: 'bigint' }).default(0n),
+  }),
+})
+export const taskView = schema.tables.tasks.pick(
+  'id',
+  'owner',
+  'title',
+  'version'
+)
+```
+
+The projection protects columns. The query still has to protect rows. Here the service's auth verifier supplies a string user ID. Anonymous callers fail, and the owner filter uses the verified identity.
+
+```ts filename="db/tasks.ts"
+import { schema, taskView } from './schema'
+
+export const mine = schema.query({
+  replica: taskView,
+  handler: ({ db, identity }) => {
+    if (typeof identity !== 'string') throw new Error('Sign in required')
+    return db.select(taskView).where({ owner: identity })
+  },
+})
+```
+
+Return a selection of the declared projection. Mapping rows or returning a computed summary loses the relationship the client needs to maintain the table. Ordinary queries remain available for totals and other computed views.
+
+## Bind a device to the source
+
+Register the task module on a PostgreSQL instance. Generate from `db/server.ts` with `hulla-db generate ./db/server.ts`. The filename determines the `_generated/server/` directory, and the registered `tasks` module supplies its function references.
+
+```ts filename="db/server.ts"
+import { postgres } from '@hulla/db-postgres'
+import { schema } from './schema'
+
+export const primary = postgres({
+  schema,
+  functions: () => import('./tasks'),
+})
+```
+
+For private data, serve the generated entrypoint through a host config with `schema: 'db/server.ts'`, `database: { server: {} }`, and your provider's `auth(headers)` verifier. Start the service with that config. Supply the PostgreSQL URL on the server. See [verify the caller](/docs/db/authentication) and [deployment](/docs/db/deployment).
+
+In the device schema, import the generated source. Its metadata can be bundled on the device without importing the server initializer or its handlers.
+
+```ts filename="db/device-schema.ts"
+import { defineSchema, defineTable, v } from '@hulla/db'
+import { source } from './_generated/server/source'
+
+export const deviceSchema = defineSchema({
+  tasks: source.tables.tasks.pick('id', 'owner', 'title', 'version').replica(),
+  drafts: defineTable({ title: v.string() }),
+})
+```
+
+This Node or Bun device app receives its current account ID and token provider from your login code. Supply each replica source exactly once with its public service URL. For a browser or Expo app, substitute its [SQLite connection](/docs/db/sqlite#choose-a-device-connection) for `filename`.
+
+```ts filename="db/device.ts"
+import { sqlite } from '@hulla/db-sqlite'
+import { source } from './_generated/server/source'
+import { deviceSchema } from './device-schema'
+
+export function openDevice(userId: string, token: () => Promise<string>) {
+  return sqlite.initialize({
+    schema: deviceSchema,
+    filename: './device.sqlite',
+    sources: [
+      {
+        database: source,
+        url: 'https://api.example.com/db',
+        auth: { key: userId },
+        headers: async () => ({ Authorization: 'Bearer ' + (await token()) }),
+      },
+    ],
+  })
+}
+```
+
+The bearer token authenticates the request. The `auth.key` partitions local data. On sign-out or account change, call `device.setAuth(source, null)` or supply the new account key and update the credentials provider. Protected reads and queue recovery follow the active scope. Local-only drafts stay in the file across account changes. Choose separate files or manage ownership yourself if those drafts are private to an account on a shared device.
+
+## Understand what is on disk
+
+Given the `device` returned by `openDevice`, bind the generated call to that instance. Call it once online to populate the copy, or subscribe to keep receiving changes.
+
+```ts filename="app/tasks.ts"
+import { mine } from '../db/_generated/server/tasks'
+
+const myTasks = device.bind(mine)
+await myTasks() // authorized download
+const saved = await device.select('tasks') // local read
+await device.insert('drafts', { title: 'Site visit notes' })
+```
+
+A replica declaration by itself downloads **zero rows**. If Alice has 100 tasks and only downloads a query covering 10, a local select can return those 10. It cannot infer anything about the other 90. Two downloaded results containing the same task contribute one row. If a fresh result drops the task, another saved result can still cover it. After releasing active subscriptions, `await device.forgetQuery(myTasks)` drops that query’s saved coverage.
+
+A previously downloaded query may return its last result with `isStale` while disconnected. A local read sees confirmed downloaded rows. Neither a ready SQLite connection nor a successful local select proves the server is reachable. If a dispatcher reassigns a task while Alice is offline, her phone cannot learn that change until it reconnects. Choose fields with that period of offline access in mind.
+
+## Queue a rename with an explicit conflict policy
+
+Keep every shared write in a server mutation. For this example, add `rename` to `db/tasks.ts` and regenerate. The input carries the version Alice saw as decimal text. The handler checks current ownership, compares versions, and makes the write conditional in the same transaction.
+
+```ts filename="db/tasks.ts"
+import { DatabaseError } from '@hulla/db'
+import { z } from 'zod'
+// schema is already imported above.
+export const rename = schema.mutation({
+  input: z.object({
+    id: z.string().uuid(),
+    title: z.string().min(1),
+    version: z.string(),
+  }),
+  handler: async ({ db, identity }, input) => {
+    const task = await db.select('tasks').where({ id: input.id }).unique()
+    if (!task || task.owner !== identity) throw new Error('Task unavailable')
+    if (task.version.toString() !== input.version) {
+      throw new DatabaseError({
+        code: 'stale_task',
+        message: 'The task has changed',
+      })
+    }
+    return db
+      .update('tasks', { title: input.title, version: task.version + 1n })
+      .where({ id: task.id, version: task.version })
+      .expectRows(1)
+      .returning(['id'])
+  },
+})
+```
+
+Register the device policy at startup so it is also present when reopening an existing queue. This app asks the user to review a stale title and rejects other definitive conflicts.
+
+```ts filename="app/edit-task.ts"
+import { rename } from '../db/_generated/server/tasks'
+
+const renameOffline = device
+  .bind(rename)
+  .offline(({ error }) =>
+    error.code === 'stale_task' ? { action: 'defer' } : { action: 'reject' }
+  )
+
+// In the save action, task is the downloaded row Alice edited.
+await renameOffline({
+  id: task.id,
+  title: 'North entrance',
+  version: task.version.toString(),
+})
+```
+
+The device persists the **call and its input**. The returned handle waits for an outcome. The device needs one prior verified session for that source and account before it can queue while disconnected. On reconnect, queued calls run in order per source and account. Each one goes through server authorization again. Calling the bound mutation without `.offline(...)` uses the normal online path, even when the table has a replica.
+
+### What Alice sees when someone else edited first
+
+Suppose Alice edited version 4 on the train. Bob saved version 5 before she reconnected. The server rejects Alice's version 4 call with `stale_task`. The callback runs on Alice's device. Her app owns the review screen and can offer these decisions:
+
+| Decision                     | Consequence                                                                                                                                             |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{ action: 'defer' }`        | Keep the intent in conflict. The current call reports `offline_conflict`. Her UI can reopen it after a restart.                                         |
+| `{ action: 'retry', input }` | Make a new server attempt with explicit revised input. After showing both titles, the UI could send Alice's chosen title with the freshly read version. |
+| `{ action: 'reject' }`       | End the queued edit as failed. The confirmed server title stays in place.                                                                               |
+
+Use `await device.pendingMutations()` to list entries for the active account. Pass the selected conflict entry and decision to `device.resolveConflict(entry, decision)`. For example, after Alice reviews the latest server version, her UI can submit the title she chose. Here `entry` is the selected conflict from `pendingMutations()`, and `latest` is the freshly fetched task she reviewed.
+
+```ts
+await device.resolveConflict(entry, {
+  action: 'retry',
+  input: {
+    id: latest.id,
+    title: chosenTitle,
+    version: latest.version.toString(),
+  },
+})
+```
+
+The server checks that version again. If someone else has already edited it, Alice can get another conflict. Once the entry is committed or failed, `await device.acknowledgeMutation(entry)` removes it. An unresolved first edit can hold up later edits in the same queue.
+
+If the server may have committed but its reply was lost, the SDK checks the receipt for the original attempt. A missing reply alone does not justify sending the rename twice. Queue recovery is automatic when possible, and `device.flush()` explicitly requests another pass.
+
+For immediate visual feedback, add [`.optimistic(...)`](/docs/db/optimistic-writes) to the bound mutation. It predicts an already-loaded query result and marks it `isOptimistic`. The SQLite replica retains the confirmed title until an authorized result updates it.

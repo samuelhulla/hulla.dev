@@ -4,8 +4,7 @@ description: Declare browser-callable reads and atomic writes, with typed input 
 ---
 
 A query reads a consistent database snapshot. A mutation writes in one
-transaction. Both handlers run on the service; the browser imports generated
-callables rather than the handler module.
+transaction. In the PostgreSQL service workflow shown here, both run on the service and the browser imports generated callables. With an adapter instance, declare functions on the schema and register them where they should execute. See [local execution](/docs/db/sqlite#run-functions-against-this-instance) and [replica queries](/docs/db/replication#decide-what-the-server-may-send).
 
 After [generation](/docs/db/code-generation), import the schema-bound constructors
 from `./_generated/functions`. The examples use the quickstart's `tasks` table.

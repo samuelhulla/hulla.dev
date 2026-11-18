@@ -21,11 +21,23 @@ Look up package entrypoints, query states, configuration defaults, and runtime l
 | `@hulla/db-better-auth/schema` | `betterAuthTables`, `generateAuthSchema`                         |
 | `@hulla/db-studio`             | `startStudio` for an optional local operator workbench           |
 
-Schema-bound constructors, callables and the direct database come from your
+In the config-based PostgreSQL workflow, schema-bound constructors, callables and the direct database come from your
 [generated modules](/docs/db/code-generation#import-the-generated-surface-for-your-code).
 `Input<typeof fn>` and `Output<typeof fn>` work with declarations, generated
 callables and optimistic wrappers. Output describes resolved data rather than
 an invocation handle; query results are recursively readonly.
+
+## Adapter instances
+
+| Import or method                                    | Use                                                                               |
+| --------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `defineSchema`, `defineTable`, `v` from `@hulla/db` | Declare tables and type queries and mutations on the schema.                      |
+| `sqlite` from `@hulla/db-sqlite`                    | Open local storage. Use `sqlite.initialize(options)` to provision an empty file.  |
+| `postgres` from `@hulla/db-postgres`                | Open the server connection. Use `postgres.initialize(options)` for fresh storage. |
+| `device.bind(reference)`                            | Bind a generated source query or mutation to this SQLite instance.                |
+| `boundMutation.offline(resolveConflict)`            | Persist the server call for recovery with an explicit device policy.              |
+
+See [SQLite setup](/docs/db/sqlite) and the [replication lifecycle](/docs/db/replication) for startup, account changes, and conflict decisions.
 
 ## Configuration fields
 
@@ -86,7 +98,7 @@ cannot be redeclared by another stage or the final input schema. See
 | `const call = list(input)`                  | Starts a read and returns an inspectable, awaitable handle    |
 | `list.subscribe(input, listener, options?)` | Observes live snapshots; returns cleanup                      |
 | `await create(input)`                       | Resolves the mutation's server result after commit            |
-| `create.withOptimistic(...targets)`         | Returns a mutation wrapper with shared prediction behavior    |
+| `create.optimistic(...targets)`             | Returns a mutation wrapper with shared prediction behavior    |
 | `list.paginate(cursor => input)`            | Returns a live growing-list handle for an eligible page query |
 
 No-input functions omit the input argument. Query call options accept a `signal`;
@@ -96,7 +108,7 @@ need a standard promise's methods.
 
 ### Optimistic targets
 
-Pass target objects to `mutation.withOptimistic(...targets)`. Each identifies a
+Pass target objects to `mutation.optimistic(...targets)`. Each identifies a
 query and returns its replacement result through `update`:
 
 | Target query            | Selection                                                          |
@@ -138,8 +150,7 @@ Call `setAuth(null | { key, expiresAt? } | promise)` when provider state changes
 | `streamIdleTimeoutMs`   | 30 seconds without stream activity                  |
 
 Inactive query results have a five-minute grace period, bounded to 128 entries and
-16 MiB of encoded keys/results. Active queries remain pinned. A fresh browser
-page has no persisted result cache. One live set supports 128 distinct queries;
+16 MiB of encoded keys/results. Active queries remain pinned. In the HTTP-only setup, a fresh page starts with an empty result cache. A configured SQLite replica can retain previously downloaded rows. One live set supports 128 distinct queries;
 loaded page ranges share that budget. Separate tabs have separate caches.
 
 ## Execution limits

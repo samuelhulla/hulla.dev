@@ -27,7 +27,7 @@ const features: {
     kind: 'db',
     title: 'Buy in the app. Watch the database change.',
     description:
-      'Your app writes through the server; subscribed queries publish the committed result. Keep your own PostgreSQL database and let the client follow changes from either side.',
+      'This demo shows a shared inventory. The server commits a sale and sends the new stock count to subscribers. An app that needs those rows offline can also keep a SQLite replica.',
     prompt:
       'Edit a table cell, rename a product in the app, or buy one. This workspace models the database and server locally.',
     layout: 'wide',

@@ -5,7 +5,7 @@ description: Start the supplied query service, connect browser functions and con
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-The database service runs your queries and mutations and sends live results to the browser. Start it alongside your app and PostgreSQL when you use browser functions.
+The database service runs your queries and mutations and sends live results to the browser. Start it alongside your app and PostgreSQL when you use its remote functions. A [local SQLite database](/docs/db/sqlite) opens inside its application and needs no service.
 
 This page configures the service created in [Build a live task list](/guides/db/quick-start).
 
@@ -20,7 +20,7 @@ This page configures the service created in [Build a live task list](/guides/db/
 | `serve`    | Verifies storage and runs prepared artifacts without a watcher             |
 | `studio`   | Opens the optional local schema and data workbench                         |
 
-With the [bundled development build](/docs/db/installation#local-development-requirements),
+With the [bundled development tooling](/docs/db/installation#local-development-requirements),
 start local development from your app directory:
 
 <DocsPackageManagerCommand

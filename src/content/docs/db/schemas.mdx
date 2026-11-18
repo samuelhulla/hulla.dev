@@ -1,6 +1,6 @@
 ---
 title: Schemas and constraints
-description: Define tables once, infer application types and enforce storage rules in PostgreSQL.
+description: Define tables, infer row types, and choose which fields a device can store.
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
@@ -9,7 +9,7 @@ Put your database structure in `db/schema.ts`. `defineTable` describes fields;
 the object keys passed to `defineSchema` are the table names used in queries.
 
 ```ts filename="db/schema.ts"
-import { defineSchema, defineTable, v } from '@hulla/db/schema'
+import { defineSchema, defineTable, v } from '@hulla/db'
 
 export const tasks = defineTable({
   title: v.string().min(1).max(200),
@@ -24,6 +24,20 @@ default. Constraints such as `min`, `max` and `oneOf` validate values and become
 storage constraints; they are not only TypeScript annotations. These bounds
 apply to scalar columns. Nested JSON members use JSON shape validation; put
 additional member rules in function validation or an explicit SQL check.
+
+## Reuse a row shape or share its data
+
+A standalone table can be extended, picked, or omitted to derive another table. Each declaration has its own rows. Here a publication starts with the same fields as a draft and adds a timestamp.
+
+```ts filename="db/articles.ts"
+import { defineSchema, defineTable, v } from '@hulla/db'
+
+const drafts = defineTable({ title: v.string(), body: v.string() })
+const publications = drafts.extend({ publishedAt: v.timestamp() })
+export const articles = defineSchema({ drafts, publications })
+```
+
+When a device needs the _same rows_ as a server query, project a bound table and declare a replica in the device schema. The query and device projection must retain the primary key. See [replicas and offline edits](/docs/db/replication).
 
 ## Choose fields and defaults
 
@@ -166,7 +180,9 @@ do not insert database defaults or silently coerce values. Resolve a schema with
 
 ## Change an existing schema
 
-The [bundled development build](/docs/db/installation#local-development-requirements)
+SQLite verifies a matching schema on open and has no automatic migration support. The following commands apply to PostgreSQL.
+
+The [bundled development tooling](/docs/db/installation#local-development-requirements)
 applies supported schema changes automatically when `dev` owns PostgreSQL. For an
 external database, `migrate` applies the change and `migrate --check` previews it.
 Use matching SDK and native executables from that build.

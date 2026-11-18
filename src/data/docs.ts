@@ -503,13 +503,13 @@ export const dbGuides: readonly DocGroup[] = [
     title: 'Get started',
     href: '/docs/db/guides',
     description:
-      'Set up PostgreSQL access and learn how browser queries stay up to date.',
+      'Choose a server, device, or replicated database and install its adapter.',
     entries: [
       {
         title: 'Introduction',
         href: '/docs/db',
         description:
-          'Read and write PostgreSQL with a typed SDK, and keep browser queries up to date automatically.',
+          'Choose where rows live and how readers receive changes with PostgreSQL and SQLite.',
       },
       {
         title: 'Installation',
@@ -518,10 +518,10 @@ export const dbGuides: readonly DocGroup[] = [
           'Choose the database package and prepare the tools needed to run it locally.',
       },
       {
-        title: 'Mental model',
+        title: 'Choose a database architecture',
         href: '/docs/db/mental-model',
         description:
-          'Understand where your schema, server code and live browser functions run.',
+          'Compare server-only storage, local device tables, live views, and offline replicas.',
       },
     ],
   },
@@ -532,10 +532,21 @@ export const dbGuides: readonly DocGroup[] = [
       'Define storage rules, read rows and expose the database functions your UI needs.',
     entries: [
       {
+        title: 'Run a SQLite database',
+        href: '/docs/db/sqlite',
+        description: 'Save local rows on Node, Bun, the web, or Expo.',
+      },
+      {
+        title: 'Replicas and offline edits',
+        href: '/docs/db/replication',
+        description:
+          'Download authorized rows and resolve queued writes after reconnecting.',
+      },
+      {
         title: 'Schemas and constraints',
         href: '/docs/db/schemas',
         description:
-          'Define tables once, infer application types and enforce storage rules in PostgreSQL.',
+          'Define tables, infer row types, and choose which fields a device can store.',
       },
       {
         title: 'Data types and codecs',
@@ -1043,11 +1054,7 @@ const packageDefinitions: readonly DocPackage[] = [
           reference.href.startsWith(`/docs/${kind}/`)
         ),
       ],
-      ...(kind === 'db'
-        ? { status: 'Private' }
-        : kind === 'cli'
-          ? { status: 'Beta' }
-          : {}),
+      ...(kind === 'cli' ? { status: 'Beta' } : {}),
     }
   }),
 ]

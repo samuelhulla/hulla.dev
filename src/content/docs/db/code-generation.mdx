@@ -5,9 +5,11 @@ description: 'Generate typed database imports and browser functions from your sc
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-Run `hulla-db generate` to create typed imports from your schema and function declarations. Server code gets database builders, and browser code gets functions it can call without importing server handlers.
+For an adapter entrypoint such as `db/server.ts`, run `hulla-db generate ./db/server.ts`. It uses the registered functions and emits `db/_generated/server/source` plus operation modules beside it. A SQLite device imports the source and binds operations to its own instance. Local-only CRUD needs no generation. See the [replica example](/docs/db/replication#bind-a-device-to-the-source).
 
-The [bundled development build](/docs/db/installation#local-development-requirements)
+For the config-based PostgreSQL workflow below, run `hulla-db generate` to create typed imports from your schema and function declarations. Server code gets database builders, and browser code gets functions it can call without importing server handlers.
+
+The [bundled development tooling](/docs/db/installation#local-development-requirements)
 includes the runtime and compiler used by generation.
 
 <DocsPackageManagerCommand

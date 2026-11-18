@@ -5,7 +5,7 @@ tutorial:
   outcome: A React task list that saves to PostgreSQL and updates in two browser tabs.
   prerequisites:
     - title: A React TypeScript Vite app.
-    - title: The @hulla/db development build with bundled tools on a supported native platform.
+    - title: The @hulla/db SDK with bundled development tools on a supported native platform.
       href: /docs/db/installation#local-development-requirements
 ---
 
@@ -24,7 +24,7 @@ every open copy of the page receives the updated list without reloading.
 ## Prepare the project
 
 Start in a React TypeScript Vite app with Zod and the
-[database development build](/docs/db/installation#local-development-requirements).
+[database development tools](/docs/db/installation#local-development-requirements).
 Keep the Vite entrypoints `src/main.tsx` and `src/App.tsx`. This guide lets `dev`
 own local PostgreSQL, so leave `DATABASE_URL` unset. The package supplies the
 development runtime, compiler and database executable.

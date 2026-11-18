@@ -117,14 +117,14 @@ cn($space('roomy'), 'px-6') // 'px-6'
 type Space = typeof $space.infer // 'roomy'`,
   },
   db: {
-    purpose: 'PostgreSQL & live queries',
+    purpose: 'PostgreSQL & SQLite',
     summary:
-      'Read and write your own PostgreSQL database with a typed SDK, and refresh subscribed browser queries after committed writes.',
-    headline: 'Update PostgreSQL. Let subscribed views update with it.',
+      'Use typed tables with PostgreSQL or SQLite, from a local notebook to a shared app with offline edits.',
+    headline: 'Keep a draft on the device or share a task across a team.',
     description:
-      'Use a typed SDK on the server and declared queries in the browser. After a write commits, affected queries rerun and publish their results. Keep your PostgreSQL database, framework, and auth provider.',
+      'Store private drafts in SQLite. Serve shared tasks from PostgreSQL and choose which rows a device can download and which edits it can queue offline.',
     useCase:
-      'Dashboards and collaborative views backed by your own PostgreSQL.',
+      'Local tools, live dashboards, and field apps with offline access.',
     caption:
       'Edit the database table or the client storefront. Writes pass through a server model, commit, and publish to a separate subscribed view.',
     demo: 'db',

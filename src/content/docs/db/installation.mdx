@@ -1,63 +1,58 @@
 ---
 title: Installation
-description: Choose the database package and prepare the tools needed to run it locally.
+description: Choose the adapter for each application and the storage its runtime can open.
 ---
-
-Install `@hulla/db` in the application that defines your schema. Add a UI package
-only when that application observes queries through a framework.
-
-| Application                     | Packages                           |
-| ------------------------------- | ---------------------------------- |
-| Server code or plain JavaScript | `@hulla/db`                        |
-| React, including Next.js        | `@hulla/db` and `@hulla/db-react`  |
-| Vue, including Nuxt             | `@hulla/db` and `@hulla/db-vue`    |
-| Svelte, including SvelteKit     | `@hulla/db` and `@hulla/db-svelte` |
-| Solid, including SolidStart     | `@hulla/db` and `@hulla/db-solid`  |
-
-The core does not install the UI frameworks. Each binding uses your application's
-framework as a peer dependency. Zod is used by the examples; other Standard Schema
-validators can validate function inputs too.
-
-## Local development requirements
-
-The bundled local setup and `migrate --check` workflow require the updated
-development build of `@hulla/db`. These changes have not yet been published.
-Use matching SDK, native executables and framework bindings from that build when
-following the [quickstart](/guides/db/quick-start) or
-[schema authoring](/docs/db/schemas#change-an-existing-schema).
-
-That build includes a private development runtime, compiler and local PostgreSQL.
-You need Node 22.18+ or Bun and permission to launch native processes; Bun,
-TypeScript, PostgreSQL and Docker need not be installed separately for the local
-workflow. PostgreSQL data stays in the application's `.hulla/` directory.
-
-For the published `0.1.0` installation commands below, prepare the existing
-external-database workflow with:
-
-- **Bun** for generation and the development watcher.
-- **TypeScript 7.0.2** in the build environment for schema/function inference.
-- **PostgreSQL** and a connection URL for a database you can provision.
-- **Node 22.18+ or Bun** with permission to launch native processes for server
-  database access and the persistent service. A framework can require a newer Node.
-
-Browser code needs none of the native executables. A static browser application
-can connect to the service even when its asset host cannot run the database SDK.
-Production always needs an explicitly configured PostgreSQL connection.
-
-## Install the published packages
-
-For the published React packages, install the core, React binding and Zod from npm:
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
+The adapter APIs in these guides target the **0.2 release line**. Install `@hulla/db` where you author a schema. Install the storage adapter in the application that opens the database. For example, a mobile app with offline tasks needs the SQLite adapter, while the service that supplies those tasks uses PostgreSQL.
+
+## SQLite on a device or server
+
 <DocsPackageManagerCommand
   commands={{
-    bun: 'bun add @hulla/db@0.1.0 @hulla/db-react@0.1.0 zod',
-    npm: 'npm install @hulla/db@0.1.0 @hulla/db-react@0.1.0 zod',
-    pnpm: 'pnpm add @hulla/db@0.1.0 @hulla/db-react@0.1.0 zod',
-    yarn: 'yarn add @hulla/db@0.1.0 @hulla/db-react@0.1.0 zod',
+    bun: 'bun add @hulla/db@^0.2.0 @hulla/db-sqlite@^0.2.0',
+    npm: 'npm install @hulla/db@^0.2.0 @hulla/db-sqlite@^0.2.0',
+    pnpm: 'pnpm add @hulla/db@^0.2.0 @hulla/db-sqlite@^0.2.0',
+    yarn: 'yarn add @hulla/db@^0.2.0 @hulla/db-sqlite@^0.2.0',
   }}
 />
+
+Node and Bun can open a local file. Browser apps provide their own SQLite WASM runtime and persistent storage. Expo apps provide `expo-sqlite`. None of these needs a PostgreSQL server to save local rows. [Save and reopen your first draft](/docs/db/sqlite).
+
+## PostgreSQL on a server
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun add @hulla/db@^0.2.0 @hulla/db-postgres@^0.2.0',
+    npm: 'npm install @hulla/db@^0.2.0 @hulla/db-postgres@^0.2.0',
+    pnpm: 'pnpm add @hulla/db@^0.2.0 @hulla/db-postgres@^0.2.0',
+    yarn: 'yarn add @hulla/db@^0.2.0 @hulla/db-postgres@^0.2.0',
+  }}
+/>
+
+For a server route or job, `postgres({ schema, url })` opens existing storage. Use `postgres.initialize({ schema, url })` when provisioning a fresh database. If devices need shared rows, expose [authorized queries and mutations](/docs/db/replication) through the PostgreSQL service. Only the HTTP endpoint and public source declarations belong on the client.
+
+## Local development requirements
+
+The `hulla-db` CLI ships with `@hulla/db`. The managed PostgreSQL workflow requires Node 22.18+ or Bun on a supported native host (macOS arm64 or Linux x64/glibc) with permission to launch subprocesses. The development runtime, compiler, and local PostgreSQL are bundled. The [deployment guide](/docs/db/deployment) covers production host requirements.
+
+For an adapter entrypoint, run `hulla-db dev ./db/server.ts`. With both `url` and `DATABASE_URL` unset, dev provisions its own local PostgreSQL and keeps data under `.hulla/`. To use an existing development database, supply `url` or set `DATABASE_URL`. An explicit URL takes precedence. Provision or migrate external storage explicitly. Outside the dev launcher, the PostgreSQL adapter requires a connection URL.
+
+## Framework bindings
+
+The [live task list quickstart](/guides/db/quick-start) uses the config-based PostgreSQL service and React. In an existing React app, install:
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun add @hulla/db@^0.2.0 @hulla/db-react@^0.2.0 zod',
+    npm: 'npm install @hulla/db@^0.2.0 @hulla/db-react@^0.2.0 zod',
+    pnpm: 'pnpm add @hulla/db@^0.2.0 @hulla/db-react@^0.2.0 zod',
+    yarn: 'yarn add @hulla/db@^0.2.0 @hulla/db-react@^0.2.0 zod',
+  }}
+/>
+
+For Vue, Svelte, or Solid, use `@hulla/db-vue`, `@hulla/db-svelte`, or `@hulla/db-solid`. Match the core release line. A plain TypeScript app can use query subscriptions directly. The [Better Auth adapter](/docs/db/better-auth) and the native [Rust crate](/docs/db/rust) have their own setup.
 
 ### Optional agent skill
 
@@ -75,38 +70,3 @@ import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerComma
 > />
 >
 > Choose your agent in the installer and [check compatibility with your package version](/docs/cli/agent-skills#keep-guidance-aligned-with-your-dependencies).
-
-These versioned commands install the published release, not the development build
-required for the new local workflow. Add the compiler for this release as a
-development dependency:
-
-<DocsPackageManagerCommand
-  commands={{
-    bun: 'bun add --dev typescript@7.0.2',
-    npm: 'npm install --save-dev typescript@7.0.2',
-    pnpm: 'pnpm add --save-dev typescript@7.0.2',
-    yarn: 'yarn add --dev typescript@7.0.2',
-  }}
-/>
-
-These commands assume React and React DOM are already installed by your app
-scaffold. For another framework, install its matching binding instead. Add
-`@hulla/db-better-auth@0.1.0` and `better-auth` when the application uses the
-[Better Auth storage adapter](/docs/db/better-auth).
-
-## Native executables are included
-
-The core package contains compiled JavaScript, declarations and native
-executables for macOS arm64 and Linux x64/glibc. Installation does not compile Rust
-or download additional native executables. Linux musl/Alpine, Linux arm64 and
-macOS x64 are not included; see [deployment](/docs/db/deployment) for host requirements.
-Browser bindings do not launch native processes.
-
-For a native Rust application, install the crate from crates.io:
-
-```sh
-cargo add hulladb@0.1.0
-```
-
-Continue with the [Rust guide](/docs/db/rust) for native authoring, or the
-[first working live list](/guides/db/quick-start) for the React TypeScript example.

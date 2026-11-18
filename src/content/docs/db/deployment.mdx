@@ -5,7 +5,9 @@ description: Deploy your application, persistent query service and PostgreSQL wi
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-An application with live browser queries has three parts: your app, the persistent
+A server-only SQLite app needs a persistent file on its application host. A local-only device app needs its platform’s SQLite storage. Neither requires a subscription service. The supplied HTTP service for shared live views and device replicas currently runs on PostgreSQL. See [architecture choices](/docs/db/mental-model).
+
+An application using that service has three parts: your app, the persistent
 `@hulla/db` service and PostgreSQL. Your framework deploys as usual; the service
 maintains subscriptions and runs declared database functions.
 
@@ -24,8 +26,7 @@ serve the frontend or call an application API. Next.js does not require Vercel.
 ## Use self-hosted or managed PostgreSQL
 
 Supply the PostgreSQL connection URL in server config. A self-hosted instance and
-a compatible managed endpoint use the same application API. SQLite services are
-not PostgreSQL backends.
+a compatible managed endpoint use the same PostgreSQL adapter. Devices connect to the HTTP service URL. Keep the database URL on the server.
 
 Check TLS, schema privileges, connection limits and session behavior against the
 endpoint you will actually use. A transaction-pooler URL can behave differently
@@ -35,9 +36,7 @@ support for the package's session settings.
 ## Generate during the build
 
 Install the matching SDK and native artifacts described in
-[installation](/docs/db/installation#local-development-requirements). The migration
-workflow below requires the updated development build. Generate during the build;
-that build includes its own development runtime and compiler:
+[installation](/docs/db/installation#local-development-requirements). Generate during the application build using the bundled runtime and compiler:
 
 <DocsPackageManagerCommand
   commands={{

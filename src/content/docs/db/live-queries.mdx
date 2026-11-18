@@ -116,8 +116,7 @@ Do not automatically create a replacement mutation on that basis.
 
 Optimistic changes are removed when transport fails, so the UI does not keep a
 prediction that disappears on reload. Live queries continue to reflect the
-server's confirmed state. Browser recovery metadata stays in memory; there is no
-persistent browser mutation journal or offline write queue.
+server's confirmed state. In this HTTP-only setup, recovery metadata stays in memory. To keep a call through a reload, opt into a [SQLite-backed offline queue](/docs/db/replication#queue-a-rename-with-an-explicit-conflict-policy).
 
 ## Reuse recently observed results
 

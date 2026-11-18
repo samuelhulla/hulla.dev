@@ -1,71 +1,53 @@
 ---
-title: Mental model
-description: Understand where your schema, server code and live browser functions run.
+title: Choose a database architecture
+description: Decide who owns each row, where handlers execute, and what the application can do without a network connection.
 ---
 
-Your schema types the database. Server code uses `db` directly. Browser code calls
-generated functions whose handlers execute on the service, beside PostgreSQL.
+Start with the write. If a note belongs to one device, saving it can finish as soon as SQLite commits. If teammates can edit the same note, one server needs to decide whether an edit is still valid. Putting a copy on a phone changes when the phone can read it. The server still decides when a shared edit is accepted.
 
-| Code                                  | Runs in            | Has access to                                         |
-| ------------------------------------- | ------------------ | ----------------------------------------------------- |
-| `db/schema.ts`                        | Build and server   | Table definitions and storage rules                   |
-| `db/tasks.ts` query/mutation handlers | Database service   | `ctx.db` and verified `ctx.identity`                  |
-| `db/_generated/client/tasks`          | Browser            | Typed calls and subscriptions                         |
-| Your route, server action or job      | Application server | Direct `db`, your auth provider and external services |
+## Run only on the server
 
-## Follow a browser write
+A server-rendered app or background job can use an adapter directly. For a shared backend serving several application processes, PostgreSQL gives them one database endpoint. Choose it also when you need the supplied HTTP/subscription service, managed migrations, or query features such as live pagination.
 
-1. A component calls a generated mutation, such as `create({ title })`.
-2. The service verifies its credentials and validates input.
-3. The handler executes in a database transaction. A failure rolls its writes back.
-4. After commit, the call resolves with the server result.
-5. The service reevaluates affected live queries and publishes their new results.
+```ts filename="db/server.ts"
+import { postgres } from '@hulla/db-postgres'
+import { schema } from './schema'
 
-A query handler is ordinary typed code, so it can filter rows, join results in
-application code or return a calculated value. Its tracked database reads tell the
-service when it needs another evaluation.
+export const db = postgres({ schema, url: process.env.DATABASE_URL })
+```
 
-The browser stores query results in memory. A fresh page waits for the first
-authorized server result. An already-open view can retain its last result while
-reconnecting; it does not query a local SQLite database or queue offline writes.
+After provisioning, a route can `await db.insert('tasks', { title: 'Book a room' })`. Your route owns authorization. You can omit function registration and generation for direct database access. The [database builders](/docs/db/database) cover filters, writes, and transactions.
 
-## Choose a transaction boundary
+For a single application process with durable disk, SQLite keeps the same call in-process. For example, a small internal tool can use `sqlite({ schema, filename: './tasks.sqlite' })` from `@hulla/db-sqlite` and expose its own routes. Give the process a persistent volume and back up the file. Separate files on two app hosts hold independent rows. See [SQLite storage setup](/docs/db/sqlite).
 
-| Operation                       | Database behavior                                                       |
-| ------------------------------- | ----------------------------------------------------------------------- |
-| A declared `query`              | Read-only, consistent snapshot                                          |
-| A declared `mutation`           | One atomic transaction, with bounded OCC conflict retries               |
-| Separate direct `db` operations | Each executes independently                                             |
-| `db.transaction(async tx => …)` | One group commits or rolls back together; callback runs once by default |
+## Run only on the device
 
-OCC is optimistic concurrency control: if concurrent work invalidates a mutation's
-snapshot, the failed attempt rolls back and eligible conflicts can retry against
-current data. It does not guarantee click order. Separate mutations may run in
-parallel; sequential `await`s express a dependency.
+A notebook app can initialize SQLite on first launch, save a draft, close, and read the draft on its next launch. It needs no account, service URL, or initial download. Node and Bun can open a file directly. Browsers use an application-provided SQLite WASM connection, and Expo apps can supply an Expo SQLite connection.
 
-## Keep application work in the application
+A local query or mutation registered on this instance runs against its own `ctx.db`. Its identity is currently `null`. A subscription observes writes committed through the instance. If two people install the app, each has a separate notebook. [Open a local database](/docs/db/sqlite).
 
-Queries and mutations can use database operations and bundled computation or
-validation code. They cannot call an email service, open files or use a framework's
-request APIs. That restriction keeps tracked reads and retryable writes safe.
+## Give a browser live server results
 
-Send emails, call payments or schedule jobs from ordinary application server code.
-Use direct `db` operations there. To share database logic with a declaration,
-extract a helper accepting `ReadDatabase` or `WriteDatabase`; there is no need to
-make it a public endpoint.
+A shared dashboard can omit device storage entirely. A component calls a generated mutation, the service verifies the caller, and the handler writes to PostgreSQL. After commit, the service reevaluates affected subscriptions and sends their results to browsers. Results can include a computed total or a page of rows.
 
-## Generation separates implementation from calling
+An open tab may display its previous result while reconnecting. A fresh tab needs the service to get its first result. Optimistic feedback can show a pending edit immediately. Persistence through a restart requires the SQLite path below. [Follow an online write](/guides/db/quick-start).
 
-You write a query or mutation once. Generation emits a browser-safe callable with
-the same input/result types, without bundling the handler or database credentials.
-It also binds the declaration constructors and server database to your schema.
-You do not maintain an `api.ts` registry or duplicate the declaration for each UI.
+## Combine a server with device storage
 
-Framework bindings subscribe after mount and release subscriptions on unmount.
-Server-rendered data can be passed as `initialData` for the first render, then
-replaced by the live result. A Server Component or loader does not itself become
-a live subscription.
+A technician can carry a copy of assigned jobs and write private notes between visits. Model the notes as ordinary device tables. Model the jobs as replicas of a server query that filters by the verified technician and selects only the fields needed on site.
 
-Continue with [the working example](/guides/db/quick-start),
-[direct database access](/docs/db/database), or
-[query/mutation authoring](/docs/db/functions).
+| In the same device file | What happens without connectivity?                                             | What happens on reconnect?                                                     |
+| ----------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Local note              | An insert commits immediately.                                                 | It stays on this device.                                                       |
+| Downloaded job          | SQLite can read the rows already downloaded for the active account.            | Fresh authorized query results update the copy.                                |
+| Edit to a shared job    | An opted-in mutation can record a pending call after a prior verified session. | The server checks current permissions and any version guard before committing. |
+
+Use PostgreSQL as the source for the supplied managed service and SQLite on devices. PostgreSQL has no device-replica adapter. SQLite on both ends is viable for two independent stores or an application-owned API, but the SDK currently supplies no SQLite-backed HTTP replica host. Pointing a device at another SQLite file or a hosted SQLite URL does not implement the sync protocol. See [how downloads and queued calls work](/docs/db/replication).
+
+## Share code between applications
+
+An inert schema describes row shapes and exposes `schema.query` and `schema.mutation`. A function receives the database of the instance that registered it through `ctx.db`. Apps using the same schema can register shared declarations and add app-specific ones in a single barrel. Each instance still owns its own data, subscriptions, and lifetime.
+
+When a handler runs in the managed service, keep email, payment calls, and other external effects in application code. A declared PostgreSQL mutation can retry a serialization conflict. An email sent inside a retried transaction could reach its recipient twice.
+
+Keep credentials and connection setup in the owning app. A remote caller imports generated function references, while a local caller can use its registered functions directly. See [local functions](/docs/db/sqlite#run-functions-against-this-instance) or [generated modules](/docs/db/code-generation).
