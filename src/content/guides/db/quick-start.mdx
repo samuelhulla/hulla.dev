@@ -29,6 +29,9 @@ Keep the Vite entrypoints `src/main.tsx` and `src/App.tsx`. This guide lets `dev
 own local PostgreSQL, so leave `DATABASE_URL` unset. The package supplies the
 development runtime, compiler and database executable.
 
+The generated modules use explicit `.ts` imports. Keep
+`compilerOptions.allowImportingTsExtensions` enabled in `tsconfig.app.json`.
+
 > [!WARNING] Local demo, public functions
 > These declarations don't authenticate callers. Use a local development database with disposable data. Add [authentication](/docs/db/authentication) before using private data.
 
