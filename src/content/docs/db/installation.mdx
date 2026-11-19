@@ -5,16 +5,16 @@ description: Choose the adapter for each application and the storage its runtime
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-The adapter APIs in these guides target the **0.3.1 or newer**. Install `@hulla/db` where you author a schema. Install the storage adapter in the application that opens the database. Start with PostgreSQL for your main database. Web and mobile apps can use the generated HTTP client on its own. Add the SQLite adapter to an app that owns local data or stores offline replicas.
+The adapter APIs in these guides use version **0.3.0**. Install `@hulla/db` where you author a schema. Install the storage adapter in the application that opens the database. Start with PostgreSQL for your main database. Web and mobile apps can use the generated HTTP client on its own. Add the SQLite adapter to an app that owns local data or stores offline replicas.
 
 ## PostgreSQL on a server
 
 <DocsPackageManagerCommand
   commands={{
-    bun: 'bun add @hulla/db@^0.3.1 @hulla/db-postgres@^0.3.1',
-    npm: 'npm install @hulla/db@^0.3.1 @hulla/db-postgres@^0.3.1',
-    pnpm: 'pnpm add @hulla/db@^0.3.1 @hulla/db-postgres@^0.3.1',
-    yarn: 'yarn add @hulla/db@^0.3.1 @hulla/db-postgres@^0.3.1',
+    bun: 'bun add @hulla/db@0.3.0 @hulla/db-postgres@0.3.0',
+    npm: 'npm install @hulla/db@0.3.0 @hulla/db-postgres@0.3.0',
+    pnpm: 'pnpm add @hulla/db@0.3.0 @hulla/db-postgres@0.3.0',
+    yarn: 'yarn add @hulla/db@0.3.0 @hulla/db-postgres@0.3.0',
   }}
 />
 
@@ -24,10 +24,10 @@ For a server route or job, `postgres({ schema, url })` opens existing storage. U
 
 <DocsPackageManagerCommand
   commands={{
-    bun: 'bun add @hulla/db@^0.3.1 @hulla/db-sqlite@^0.3.1',
-    npm: 'npm install @hulla/db@^0.3.1 @hulla/db-sqlite@^0.3.1',
-    pnpm: 'pnpm add @hulla/db@^0.3.1 @hulla/db-sqlite@^0.3.1',
-    yarn: 'yarn add @hulla/db@^0.3.1 @hulla/db-sqlite@^0.3.1',
+    bun: 'bun add @hulla/db@0.3.0 @hulla/db-sqlite@0.3.0',
+    npm: 'npm install @hulla/db@0.3.0 @hulla/db-sqlite@0.3.0',
+    pnpm: 'pnpm add @hulla/db@0.3.0 @hulla/db-sqlite@0.3.0',
+    yarn: 'yarn add @hulla/db@0.3.0 @hulla/db-sqlite@0.3.0',
   }}
 />
 
@@ -45,10 +45,10 @@ The [live task list quickstart](/guides/db/quick-start) uses the config-based Po
 
 <DocsPackageManagerCommand
   commands={{
-    bun: 'bun add @hulla/db@^0.3.1 @hulla/db-react@^0.3.1 zod',
-    npm: 'npm install @hulla/db@^0.3.1 @hulla/db-react@^0.3.1 zod',
-    pnpm: 'pnpm add @hulla/db@^0.3.1 @hulla/db-react@^0.3.1 zod',
-    yarn: 'yarn add @hulla/db@^0.3.1 @hulla/db-react@^0.3.1 zod',
+    bun: 'bun add @hulla/db@0.3.0 @hulla/db-react@0.3.0 zod',
+    npm: 'npm install @hulla/db@0.3.0 @hulla/db-react@0.3.0 zod',
+    pnpm: 'pnpm add @hulla/db@0.3.0 @hulla/db-react@0.3.0 zod',
+    yarn: 'yarn add @hulla/db@0.3.0 @hulla/db-react@0.3.0 zod',
   }}
 />
 
