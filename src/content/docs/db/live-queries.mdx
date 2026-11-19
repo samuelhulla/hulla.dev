@@ -13,12 +13,12 @@ Components can subscribe with a [framework binding](/docs/db/framework-bindings)
 
 ## Keep a result current
 
-After [configuring the browser runtime](/docs/db/runtime), import the generated client query. This example assumes a `tasks.list` query with no input, declared as shown in [functions](/docs/db/functions). Put the subscription in the component or task that owns the view:
+After [configuring the browser runtime](/docs/db/runtime), import the generated client query. This example assumes a `list` query with no input, declared as shown in [functions](/docs/db/functions). Put the subscription in the component or task that owns the view:
 
 ```ts
-import { list } from './db/_generated/client/tasks'
+import { api } from './db/client'
 
-const stop = list.subscribe((snapshot) => {
+const stop = api.list.subscribe((snapshot) => {
   if (snapshot.data) renderTasks(snapshot.data)
   if (snapshot.status === 'pending') showLoading()
   if (snapshot.status === 'error') showError(snapshot.error)
@@ -30,9 +30,9 @@ stop()
 
 Snapshots use `pending`, `success`, or `error`. `data` is readonly; clone it before editing. A query with input takes that input before the callback. For the `unfinished`
 query in [queries and mutations](/docs/db/functions#validate-function-input), use
-`unfinished.subscribe({ limit: 20 }, listener)`.
+`api.unfinished.subscribe({ limit: 20 }, listener)`.
 
-Use `await list()` for a one-time result. Calling `list()` without awaiting returns a handle whose state you can inspect or subscribe to. A subscription is what keeps receiving changes; awaiting alone does not keep a live connection open.
+Use `await api.list()` for a one-time result. Calling `api.list()` without awaiting returns a handle whose state you can inspect or subscribe to. A subscription is what keeps receiving changes; awaiting alone does not keep a live connection open.
 
 Matching active queries share work within one browser runtime. Changes to several observed queries publish together after a complete server round, so a callback sees a consistent updated view.
 
@@ -43,9 +43,9 @@ Declare pagination inside the server query. Limit and cursor are ordinary input,
 ```ts
 // db/tasks.ts
 import { z } from 'zod'
-import { query } from './_generated/functions'
+import { schema } from './schema'
 
-export const pages = query({
+export const pages = schema.query({
   input: z.object({
     limit: z.number().int().min(1).max(100),
     cursor: z.string().nullable(),
@@ -60,9 +60,9 @@ Add authorization checks and row filters for protected data. Return the database
 In the browser, the helper combines loaded pages into one readonly array:
 
 ```ts
-import { pages } from './db/_generated/client/tasks'
+import { api } from './db/client'
 
-const tasks = pages.paginate((cursor) => ({ limit: 20, cursor }))
+const tasks = api.pages.paginate((cursor) => ({ limit: 20, cursor }))
 const stop = tasks.subscribe((snapshot) => {
   if (snapshot.data) renderTasks(snapshot.data)
   if (snapshot.status === 'error') showError(snapshot.error)
@@ -92,7 +92,7 @@ A disconnected subscription keeps its last complete result with `isStale: true` 
 
 That policy applies to the entire paginated list when an existing page fails to refresh. An append failure retains the already-loaded pages, since that failure affects new data only.
 
-Have your auth library call the generated runtime's `setAuth` when the user or authorization scope changes, and `setAuth(null)` on sign-out. Credentials travel separately through the configured request headers. Auth changes retire old handles and clear their data; create new subscriptions for the new identity. See [authentication](/docs/db/authentication) for credential and cache-identity setup.
+Have your auth library call `client.setAuth` when the user or authorization scope changes, and `client.setAuth(null)` on sign-out. Credentials travel separately through the configured request headers. Auth changes retire old handles and clear their data; create new subscriptions for the new identity. See [authentication](/docs/db/authentication) for credential and cache-identity setup.
 
 Call the returned `stop()` when a view is removed. Removing a paginated list's last observer disposes all its page subscriptions. If you load pages without subscribing, call `tasks.dispose()` when finished.
 

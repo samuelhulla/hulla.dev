@@ -1,127 +1,61 @@
 ---
 title: Code generation
-description: 'Generate typed database imports and browser functions from your schema.'
+description: Generate the typed HTTP client and service artifacts from your PostgreSQL operation catalogue.
 ---
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-For a PostgreSQL adapter entrypoint such as `db/server.ts`, run `hulla-db generate db/server.ts`. The generated `db/_generated/server/_client` module exports `createClient({ url })`. Import it in your app's client entrypoint and pass `client.functions` to screens. The catalogue follows the exports registered by the server.
-
-Generation also emits `db/_generated/server/source` and individual operation references. Use those in the [replica setup](/docs/db/replication#bind-a-device-to-the-source). Local SQLite functions use `db.functions` directly and can skip generation.
-
-For the config-based PostgreSQL workflow below, run `hulla-db generate` to create typed imports from your schema and function declarations. Server code gets database builders, and browser code gets functions it can call without importing server handlers.
-
-The [bundled development tooling](/docs/db/installation#local-development-requirements)
-includes the runtime and compiler used by generation.
+Register your queries and mutations in `db/server.ts`, then generate the client.
+The generator reads the registered operation catalogue and produces the TypeScript
+imports the browser uses to call it. [Register a query and mutation](/guides/db/quick-start#declare-the-functions).
 
 <DocsPackageManagerCommand
   commands={{
-    bun: 'bun --bun hulla-db generate',
-    npm: 'npx hulla-db generate',
-    pnpm: 'pnpm exec hulla-db generate',
-    yarn: 'yarn exec hulla-db generate',
+    bun: 'bun --bun hulla-db generate db/server.ts',
+    npm: 'npx hulla-db generate db/server.ts',
+    pnpm: 'pnpm exec hulla-db generate db/server.ts',
+    yarn: 'yarn exec hulla-db generate db/server.ts',
   }}
 />
 
-A successful run prints `Generated database entrypoints.` By default, it reads `db.config.ts`, loads `db/schema.ts`, and discovers query and mutation declarations beside the schema.
-
-On a first run with no declarations, it creates the constructors you'll use to write them.
+Use `db.config.ts` as the command argument when the service needs settings such
+as allowed origins or an auth verifier. Point its `schema` setting at
+`./db/server.ts`. Either command writes `db/_generated/server/` and prints
+`Generated database entrypoints.` Storage opens separately when the app starts.
+[Service settings](/docs/db/runtime#set-the-listener-and-browser-origin).
 
 ## Import the generated surface for your code
 
-Choose the module for where the importing file runs. These paths start at the project root; adjust them from nested files.
+| What you're doing                     | Import or file                                               |
+| ------------------------------------- | ------------------------------------------------------------ |
+| Declare queries and mutations         | `schema.query` and `schema.mutation` from your schema        |
+| Call remote operations                | `createClient` from `db/_generated/server/_client`           |
+| Run direct operations on the server   | Your adapter instance in `db/server.ts`                      |
+| Configure a device replica            | `source` and operation references in `db/_generated/server/` |
+| Read or write a local SQLite database | The instance's `db.functions`                                |
 
-| You want to                                    | Import                           |
-| ---------------------------------------------- | -------------------------------- |
-| Declare queries and mutations                  | `./db/_generated/functions`      |
-| Read or write directly on the server           | `./db/_generated/server`         |
-| Call functions from `db/tasks.ts` in a browser | `./db/_generated/client/tasks`   |
-| Configure browser auth and connection settings | `./db/_generated/client/runtime` |
-| Refer to tables and fields                     | `./db/_generated/tables`         |
-| Type rows, inserts, patches, and IDs           | `./db/_generated/types`          |
+Create the generated client once in your app and use `client.functions` from
+screens. Exported namespaces become namespaces on that object. A catalogue with
+`export * as tasks from './tasks'` lets screens call `api.tasks.list()`.
+[Connect the browser client](/docs/db/runtime#connect-browser-functions).
 
-Browser modules contain calling code and contracts. They do not ship server handlers to the browser. Generated worker files are service artifacts, not application entrypoints.
-
-### When to use a package import
-
-Use `@hulla/db/schema` to define storage and `@hulla/db/config` for connection and service settings. The package root supplies shared helpers such as `Input`, `Output`, and `DatabaseError`.
-
-For schema-typed `query` and `mutation` constructors, import `_generated/functions` instead of the package root.
-
-## Let discovery follow your source tree
-
-Export a `query(...)` or `mutation(...)` declaration to make it callable. Ordinary exported functions remain helpers, even when a declaration imports them. Declarations derived with `.extend(...)` are discovered too.
-
-Nested modules keep their relative paths:
-
-```text
-db/tasks.ts         → db/_generated/client/tasks.ts
-db/admin/reports.ts → db/_generated/client/admin/reports.ts
-```
-
-You don't need a manual function registry or another `api.ts` file. Keep the schema, config, helpers, and generated files out of blanket declaration re-exports.
-
-### Use a different source directory
-
-Only set `functions` when discovery needs to start somewhere other than beside the schema:
-
-```ts filename="db.config.ts"
-import { defineConfig } from '@hulla/db/config'
-
-export default defineConfig({
-  database: {
-    server: { url: process.env.DATABASE_URL! },
-    client: { url: 'http://localhost:3001', credentials: 'include' },
-  },
-  schema: 'data/schema.ts',
-  functions: 'data/functions',
-})
-```
-
-Paths resolve relative to the config. Generated output stays beside the resolved schema in `_generated/`.
+Generation evaluates declaration modules to read their contracts. Keep database
+calls and request-specific work inside handlers. Generated clients contain
+callable references and type contracts. The service loads the compiled handlers.
 
 ## Use the watcher during development
 
-<DocsPackageManagerCommand
-  commands={{
-    bun: 'bun --bun hulla-db dev',
-    npm: 'npx hulla-db dev',
-    pnpm: 'pnpm exec hulla-db dev',
-    yarn: 'yarn exec hulla-db dev',
-  }}
-/>
-
-The watcher regenerates code and restarts the service when source files change.
-For its owned local PostgreSQL database, it also applies supported schema changes
-after generation succeeds. Existing rows and IDs are preserved.
-
-`generate` itself opens no database. With an external database, run `init` for fresh
-storage or `migrate` for supported schema changes. Use `migrate --check` to inspect
-without changing data. See [changing an existing schema](/docs/db/schemas#change-an-existing-schema).
-
-Generation evaluates your trusted schema and declaration modules. Keep database calls and request-specific work inside handlers, rather than at module initialization. Unsupported handler imports produce a diagnostic.
+Run `hulla-db dev db/server.ts` alongside your app. The watcher regenerates the
+client on source changes and restarts the service. When a service config owns
+origins or authentication, run `hulla-db dev db.config.ts` instead.
 
 ## Build once, serve prepared artifacts
 
-Generate during your build:
+Run generation during your build and deploy `db/_generated/server/` with your
+server code, runtime dependencies and native assets. Start the service with
+`hulla-db serve db/server.ts` or pass your service config. Provide the production
+PostgreSQL URL in the server environment. The service loads the prepared files
+and verifies existing storage before accepting calls.
 
-<DocsPackageManagerCommand
-  commands={{
-    bun: 'bun --bun hulla-db generate',
-    npm: 'npx hulla-db generate',
-    pnpm: 'pnpm exec hulla-db generate',
-    yarn: 'yarn exec hulla-db generate',
-  }}
-/>
-
-Then start the service from the prepared artifacts:
-
-```sh
-node node_modules/@hulla/db/dist/cli.js serve
-```
-
-`serve` loads the existing output under Node. It does not run generation or start a watcher. Deploy the config, schema, generated files, runtime dependencies, and native assets together.
-
-Generated files have ownership headers. Keep application code outside `_generated/` and leave generated files unedited; the generator protects authored files and removes only its own obsolete output.
-
-See the [reference](/docs/db/reference#lower-level-entrypoints) for lower-level generation APIs. Most applications only need the commands on this page.
+Keep authored modules outside the generated directory. The generator recognizes
+its own output by the ownership header and protects authored files.

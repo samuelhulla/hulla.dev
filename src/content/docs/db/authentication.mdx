@@ -7,8 +7,8 @@ Keep your existing login and session system. The database service asks your auth
 provider to verify request credentials, then makes the verified identity available
 as `ctx.identity`. Your handlers decide which rows that caller can access.
 
-Browser calls are anonymous by default. Declaring a query or mutation makes it
-callable; it does not automatically protect the data it returns or changes.
+Browser calls are anonymous by default. Protect account data by checking the
+verified identity and scoping each registered operation to its caller.
 
 ## Verify credentials on the service
 
@@ -19,10 +19,8 @@ headers. With Better Auth, verification can use its existing server API:
 import { defineConfig } from '@hulla/db/config'
 
 export default defineConfig({
-  database: {
-    server: { url: process.env.DATABASE_URL! },
-    client: { url: 'http://localhost:3001', credentials: 'include' },
-  },
+  schema: './db/server.ts',
+  database: { server: {} },
   auth: async (headers) => {
     const { auth } = await import('./auth')
     const session = await auth.api.getSession({ headers })
@@ -37,7 +35,7 @@ export default defineConfig({
 ```
 
 This assumes `auth.ts` exports your configured Better Auth instance. The lazy
-import avoids a cycle when that instance uses the generated server database.
+import avoids a cycle when that instance uses the PostgreSQL instance from `db/server.ts`.
 Other providers use their own verification method inside the same callback;
 there is no required framework/provider adapter combination.
 
@@ -51,9 +49,9 @@ only the stable identity fields your handlers need.
 For example, keep the quickstart's public table and add a private table:
 
 ```ts filename="db/schema.ts"
-import { defineSchema, defineTable, v } from '@hulla/db/schema'
+import { defineSchema, defineTable, v } from '@hulla/db'
 
-export default defineSchema({
+export const schema = defineSchema({
   tasks: defineTable({
     title: v.string(),
     completed: v.boolean().default(false),
@@ -65,24 +63,39 @@ export default defineSchema({
 })
 ```
 
-Regenerate, then check the verified identity before each protected operation:
+Narrow the verified identity before accessing private tasks. Add this module to
+the catalogue registered in `db/server.ts`, then generate the client.
 
 ```ts filename="db/private-tasks.ts"
-import { query, mutation } from './_generated/functions'
+import { schema } from './schema'
 import { z } from 'zod'
 
-export const list = query((ctx) => {
-  if (!ctx.identity) throw new Error('Sign in required')
-  return ctx.db.select('privateTasks').where({ owner: ctx.identity.id })
-})
+function ownerId(identity: unknown) {
+  if (
+    !identity ||
+    typeof identity !== 'object' ||
+    !('id' in identity) ||
+    typeof identity.id !== 'string'
+  ) {
+    throw new Error('Sign in required')
+  }
+  return identity.id
+}
 
-export const create = mutation({
+export const list = schema.query(({ db, identity }) =>
+  db.select('privateTasks').where({ owner: ownerId(identity) })
+)
+```
+
+Use the same identity check when saving a task. Append the mutation to that module.
+
+```ts filename="db/private-tasks.ts"
+export const create = schema.mutation({
   input: z.object({ title: z.string().min(1) }),
   handler: (ctx, input) => {
-    if (!ctx.identity) throw new Error('Sign in required')
     return ctx.db.insert('privateTasks', {
       title: input.title,
-      owner: ctx.identity.id,
+      owner: ownerId(ctx.identity),
     })
   },
 })
@@ -98,11 +111,11 @@ Credentials and cache identity have different jobs. Cookies or a header callback
 carry credentials; `setAuth` tells the browser SDK which account owns its current
 view:
 
-```ts filename="src/database.ts"
-import { setAuth } from '../db/_generated/client/runtime'
+```ts filename="src/session.ts"
+import { client } from './db'
 
 // In your auth provider's existing session-change listener:
-setAuth(session ? { key: session.user.id } : null)
+client.setAuth(session ? { key: session.user.id } : null)
 ```
 
 Here `session` is the value provided by your auth library, not a database API.
@@ -117,16 +130,18 @@ omitted, your app must send expiry, sign-out and account-change updates itself.
 For bearer credentials, set a header callback that
 reads the current token from your auth library:
 
-```ts filename="src/database.ts"
-import { setHeaders } from '../db/_generated/client/runtime'
+```ts filename="src/session.ts"
+import { client } from './db'
 import { getAccessToken } from './auth-client'
 
-setHeaders(async () => ({ authorization: `Bearer ${await getAccessToken()}` }))
+client.setHeaders(async () => ({
+  authorization: `Bearer ${await getAccessToken()}`,
+}))
 ```
 
 Here `getAccessToken` is an application helper backed by the provider. Keep
 `setAuth` for cache identity; token values do not belong in its key. For cookies across origins, configure the exact allowed app origin and
-the provider's cookie policy along with `database.client.credentials: 'include'`.
+the provider's cookie policy along with `credentials: 'include'` in `createClient`.
 
 ## Authorize direct server database access yourself
 

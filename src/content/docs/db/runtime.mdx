@@ -112,8 +112,6 @@ export const api = client.functions
 The example uses a same-origin reverse proxy forwarding `/db` to the service.
 Use an absolute service URL when it runs on a different origin. On application
 teardown, call `client.dispose()`. Components release their own subscriptions.
-The older config-based generator uses `database.client` and
-`_generated/client/runtime`.
 
 For authenticated calls, use the [authentication guide](/docs/db/authentication).
 For framework startup and SSR, choose a [recipe](/docs/db/meta-frameworks).
