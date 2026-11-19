@@ -32,8 +32,10 @@ start local development from your app directory:
   }}
 />
 
-Commands default to `db.config.ts` in the current directory. An optional final
-path selects another config. Your app's own development server runs separately.
+Commands default to `db.config.ts` in the current directory. Pass
+`db/server.ts` to use a PostgreSQL adapter entrypoint directly. Use a config
+pointing to that entrypoint when you need to set allowed origins, authentication
+or the listener. Your app's development server runs separately.
 
 ## Let local schema changes reload automatically
 
@@ -61,10 +63,8 @@ data for the next run. For an external database, only the service is stopped.
 import { defineConfig } from '@hulla/db/config'
 
 export default defineConfig({
-  database: {
-    server: {},
-    client: { url: 'http://localhost:3001', credentials: 'include' },
-  },
+  schema: './db/server.ts',
+  database: { server: {} },
   service: {
     host: '127.0.0.1',
     port: 3001,
@@ -83,7 +83,7 @@ Set `database.server.url` or `DATABASE_URL` when using your own PostgreSQL insta
 
 When a CLI listener's address is in use, an interactive terminal offers the next available port, a custom address, or exit. Press Enter to choose the next available port. Without an interactive terminal, the CLI fails promptly; set `service.port` explicitly for automation.
 
-Development remembers the selected address across worker reloads. When `database.client` is omitted, generation uses the actual development service address. An explicit `database.client` remains your public endpoint choice and is not rewritten when a local port changes.
+Development remembers the selected address across worker reloads. Use the printed service URL when setting up your generated client.
 
 ## Inspect the database in Studio
 
@@ -99,14 +99,21 @@ Use `hulla-db studio --read-only` to inspect an already running database separat
 
 ## Connect browser functions
 
-Put the public URL, credentials mode and optional timeouts in `database.client`.
-Generation copies these settings into browser bindings; it never imports the server
-config or credentials into the browser. A root-relative URL such as `/db` resolves
-against the browser origin when calls start. Regenerate when changing environments.
+For a PostgreSQL adapter entrypoint, configure the generated client in one module
+that screens can import.
 
-Import generated callables directly. No startup call is required, and importing
-modules opens no connection. On application teardown, call generated `dispose()`;
-components release their subscriptions without disposing the shared runtime.
+```ts filename="db/client.ts"
+import { createClient } from './_generated/server/_client'
+
+export const client = createClient({ url: '/db', credentials: 'include' })
+export const api = client.functions
+```
+
+The example uses a same-origin reverse proxy forwarding `/db` to the service.
+Use an absolute service URL when it runs on a different origin. On application
+teardown, call `client.dispose()`. Components release their own subscriptions.
+The older config-based generator uses `database.client` and
+`_generated/client/runtime`.
 
 For authenticated calls, use the [authentication guide](/docs/db/authentication).
 For framework startup and SSR, choose a [recipe](/docs/db/meta-frameworks).

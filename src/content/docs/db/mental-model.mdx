@@ -3,7 +3,7 @@ title: Choose a database architecture
 description: Decide who owns each row, where handlers execute, and what the application can do without a network connection.
 ---
 
-Start with the write. If a note belongs to one device, saving it can finish as soon as SQLite commits. If teammates can edit the same note, one server needs to decide whether an edit is still valid. Putting a copy on a phone changes when the phone can read it. The server still decides when a shared edit is accepted.
+Start with PostgreSQL for the main application database. A team task goes through the server, which checks who can change it and commits the edit. A draft can stay in SQLite on the device that created it. An app can use either layout on its own or put different records in each.
 
 ## Run only on the server
 
@@ -28,7 +28,7 @@ A local query or mutation registered on this instance runs against its own `ctx.
 
 ## Give a browser live server results
 
-A shared dashboard can omit device storage entirely. A component calls a generated mutation, the service verifies the caller, and the handler writes to PostgreSQL. After commit, the service reevaluates affected subscriptions and sends their results to browsers. Results can include a computed total or a page of rows.
+A shared dashboard can run entirely on PostgreSQL. Its screens call named queries and mutations from the generated client over HTTP. The service verifies the caller and runs the handler against PostgreSQL. After commit, the service reevaluates affected subscriptions and sends their results to browsers. Results can include a computed total or a page of rows.
 
 An open tab may display its previous result while reconnecting. A fresh tab needs the service to get its first result. Optimistic feedback can show a pending edit immediately. Persistence through a restart requires the SQLite path below. [Follow an online write](/guides/db/quick-start).
 
@@ -50,4 +50,4 @@ An inert schema describes row shapes and exposes `schema.query` and `schema.muta
 
 When a handler runs in the managed service, keep email, payment calls, and other external effects in application code. A declared PostgreSQL mutation can retry a serialization conflict. An email sent inside a retried transaction could reach its recipient twice.
 
-Keep credentials and connection setup in the owning app. A remote caller imports generated function references, while a local caller can use its registered functions directly. See [local functions](/docs/db/sqlite#run-functions-against-this-instance) or [generated modules](/docs/db/code-generation).
+Register an imported module namespace with `functions: operations` on either adapter. Export `db.functions` from the device entrypoint or `client.functions` from the generated HTTP client. A screen calls the same typed query or mutation in either layout. Keep the PostgreSQL URL and database handle in server code. See [local functions](/docs/db/sqlite#run-functions-against-this-instance) or [generated modules](/docs/db/code-generation).

@@ -1,19 +1,19 @@
 ---
 title: '@hulla/db'
-description: 'Define typed tables for PostgreSQL or SQLite. Keep data on one device, serve it from a backend, or download selected rows for offline use.'
+description: 'Build live apps on PostgreSQL and add SQLite for data that belongs on the device.'
 ---
 
 import PackageDemoFrame from '@/components/site/PackageDemoFrame.astro'
 
-Where should a task live? A private draft can stay on the device that created it. A team task needs a server that decides who may read and change it. An app that works on a train can keep both in one SQLite file, with different rules for each table.
+Use PostgreSQL for the main application database. Web and mobile screens call named queries and mutations through the generated client. Add SQLite for private drafts, fully local apps, or shared records a feature needs offline.
 
 ## Choose where your data lives
 
 | What you're building                             | Where reads and writes happen                                                                                                  | Start here                                                          |
 | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| A shared dashboard that's used online            | The PostgreSQL service executes functions. Browsers subscribe to results in memory.                                            | [Build a live task list](/guides/db/quick-start)                    |
 | A personal notebook or desktop tool              | The device reads and writes its own SQLite tables, even on first launch offline.                                               | [Local SQLite](/docs/db/sqlite)                                     |
 | An API, job, or server-rendered app              | Server code calls PostgreSQL or a SQLite file directly. Your app owns the HTTP routes it needs.                                | [Server-only storage](/docs/db/mental-model#run-only-on-the-server) |
-| A shared dashboard that's used online            | The PostgreSQL service executes functions. Browsers subscribe to results in memory.                                            | [Build a live task list](/guides/db/quick-start)                    |
 | A field app with shared tasks and private drafts | The service owns shared tasks. Device SQLite stores authorized copies, drafts, and any edits explicitly queued for submission. | [Replicas and offline edits](/docs/db/replication)                  |
 
 All four start with an ordinary TypeScript declaration. Importing this file creates neither a connection nor any rows.
