@@ -34,10 +34,13 @@ mapper; the binding owns all loaded page subscriptions and combines their rows:
 
 ```tsx
 import { usePaginatedQuery } from '@hulla/db-react'
-import { pages } from './db/_generated/client/tasks'
+import { api } from './db/client'
 
 function Tasks() {
-  const tasks = usePaginatedQuery(pages, (cursor) => ({ limit: 20, cursor }))
+  const tasks = usePaginatedQuery(api.pages, (cursor) => ({
+    limit: 20,
+    cursor,
+  }))
   return (
     <>
       {tasks.data?.map((task) => (
@@ -83,12 +86,12 @@ Use the same helpers for declarations, generated callables and optimistic wrappe
 
 ```ts
 import type { Input, Output } from '@hulla/db'
-import { list, create } from './db/_generated/client/tasks'
+import { api } from './db/client'
 
-type ListInput = Input<typeof list>
-type Tasks = Output<typeof list>
-type CreateInput = Input<typeof create>
-type CreatedTask = Output<typeof create>
+type ListInput = Input<typeof api.list>
+type Tasks = Output<typeof api.list>
+type CreateInput = Input<typeof api.create>
+type CreatedTask = Output<typeof api.create>
 ```
 
 `Input` describes submitted values before schema transformations; no-input
@@ -111,10 +114,14 @@ database helper if needed to keep the two read paths aligned.
 'use client'
 import type { Output } from '@hulla/db'
 import { useQuery } from '@hulla/db-react'
-import { list } from './db/_generated/client/tasks'
+import { api } from './db/client'
 
-export function Tasks({ initialTasks }: { initialTasks: Output<typeof list> }) {
-  const tasks = useQuery(list, { initialData: initialTasks })
+export function Tasks({
+  initialTasks,
+}: {
+  initialTasks: Output<typeof api.list>
+}) {
+  const tasks = useQuery(api.list, { initialData: initialTasks })
   if (tasks.status === 'error') return <p>Could not load tasks.</p>
   if (!tasks.data) return <p>Loading…</p>
   return (

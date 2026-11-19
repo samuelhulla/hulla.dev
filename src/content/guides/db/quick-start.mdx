@@ -5,7 +5,7 @@ tutorial:
   outcome: A React task list that saves to PostgreSQL and updates in two browser tabs.
   prerequisites:
     - title: A React TypeScript Vite app.
-    - title: The @hulla/db SDK with bundled development tools on a supported native platform.
+    - title: The @hulla/db and @hulla/db-postgres packages on a supported native platform.
       href: /docs/db/installation#local-development-requirements
 ---
 
@@ -29,6 +29,9 @@ Keep the Vite entrypoints `src/main.tsx` and `src/App.tsx`. This guide lets `dev
 own local PostgreSQL, so leave `DATABASE_URL` unset. The package supplies the
 development runtime, compiler and database executable.
 
+The generated modules use explicit `.ts` imports. Keep
+`compilerOptions.allowImportingTsExtensions` enabled in `tsconfig.app.json`.
+
 > [!WARNING] Local demo, public functions
 > These declarations don't authenticate callers. Use a local development database with disposable data. Add [authentication](/docs/db/authentication) before using private data.
 
@@ -36,8 +39,8 @@ development runtime, compiler and database executable.
   <StepperItem id="define-the-table" data-toc-section data-toc-label="Define the table" class="scroll-mt-24">
     <StepperIndicator>1</StepperIndicator>
     <StepperContent>
-      <DocsStepperHeading for="define-the-table">Define the table and service</DocsStepperHeading>
-      <StepperDescription>Describe the rows and let dev manage the local database.</StepperDescription>
+      <DocsStepperHeading for="define-the-table">Define the table</DocsStepperHeading>
+      <StepperDescription>Declare the columns and their defaults.</StepperDescription>
     </StepperContent>
     <StepperPanel>
 
@@ -45,44 +48,15 @@ Create `db/schema.ts` at the project root. The table gets a generated `id`; new
 tasks default to `completed: false`:
 
 ```ts filename="db/schema.ts"
-import { defineSchema, defineTable, v } from '@hulla/db/schema'
+import { defineSchema, defineTable, v } from '@hulla/db'
 
-export default defineSchema({
+export const schema = defineSchema({
   tasks: defineTable({
     title: v.string(),
     completed: v.boolean().default(false),
   }),
 })
 ```
-
-Keep connection settings in `db.config.ts`, outside browser code. Allow the Vite
-app to connect to the development service:
-
-```ts filename="db.config.ts"
-import { defineConfig } from '@hulla/db/config'
-
-export default defineConfig({
-  database: {
-    server: {},
-    client: { url: 'http://localhost:3001', credentials: 'include' },
-  },
-  service: { origins: ['http://localhost:5173'] },
-})
-```
-
-Generate the schema-bound constructors before declaring your functions:
-
-<DocsPackageManagerCommand
-  commands={{
-    bun: 'bun --bun hulla-db generate',
-    npm: 'npx hulla-db generate',
-    pnpm: 'pnpm exec hulla-db generate',
-    yarn: 'yarn exec hulla-db generate',
-  }}
-/>
-
-The command prints `Generated database entrypoints.` and creates `db/_generated/`.
-It does not create database tables or start a server.
 
     </StepperPanel>
 
@@ -99,22 +73,29 @@ Create `db/tasks.ts`. The query returns rows; the mutation inserts one row in a
 transaction and returns it:
 
 ```ts filename="db/tasks.ts"
-import { query, mutation } from './_generated/functions'
+import { schema } from './schema'
 import { z } from 'zod'
 
-export const list = query((ctx) =>
+export const list = schema.query((ctx) =>
   ctx.db.select('tasks').orderBy('title').limit(100)
 )
 
-export const create = mutation({
+export const create = schema.mutation({
   input: z.object({ title: z.string().min(1) }),
   handler: (ctx, input) => ctx.db.insert('tasks', input),
 })
 ```
 
-Exporting these declarations makes them browser-callable. Generation discovers
-them beside the schema; you do not register routes or maintain another export file.
-The handler always receives `ctx` first and validated input second.
+Register that module once in the server entrypoint. The catalogue determines
+which queries and mutations the service exposes.
+
+```ts filename="db/server.ts"
+import { postgres } from '@hulla/db-postgres'
+import { schema } from './schema'
+import * as operations from './tasks'
+
+export const db = postgres({ schema, functions: operations })
+```
 
     </StepperPanel>
 
@@ -127,7 +108,20 @@ The handler always receives `ctx` first and validated input second.
     </StepperContent>
     <StepperPanel>
 
-From the app directory, start the database development server:
+Create `db.config.ts` at the project root to let the Vite origin reach the service.
+It points to the server entrypoint you just wrote.
+
+```ts filename="db.config.ts"
+import { defineConfig } from '@hulla/db/config'
+
+export default defineConfig({
+  schema: './db/server.ts',
+  database: { server: {} },
+  service: { origins: ['http://localhost:5173'] },
+})
+```
+
+From the app directory, start the database development server.
 
 <DocsPackageManagerCommand
   commands={{
@@ -153,29 +147,23 @@ leave the watcher waiting for corrected source. See [changing an existing schema
     <StepperIndicator>4</StepperIndicator>
     <StepperContent>
       <DocsStepperHeading for="connect-react">Mount the browser app</DocsStepperHeading>
-      <StepperDescription>Generated callables use the public connection settings automatically.</StepperDescription>
+      <StepperDescription>Connect the generated client to the service URL.</StepperDescription>
     </StepperContent>
     <StepperPanel>
 
-Replace `src/main.tsx` with the browser entry below. The generated runtime knows
-your function contracts and public service settings:
+Create `src/db.ts` and use the service URL printed by `dev`. The generated
+client exposes the registered functions over HTTP.
 
-```tsx filename="src/main.tsx"
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import App from './App'
+```ts filename="src/db.ts"
+import { createClient } from '../db/_generated/server/_client'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
-)
+export const client = createClient({ url: 'http://127.0.0.1:3001' })
+export const api = client.functions
 ```
 
-This file belongs in the browser. The URL points to the query service, not
-PostgreSQL; the private connection stays in `db.config.ts`. Importing the generated
-callables uses the public settings without opening a connection. For application teardown,
-see [connection ownership](/docs/db/runtime#connect-browser-functions).
+Keep your Vite `src/main.tsx`. It mounts the screen you will write in the next
+step. The browser imports `src/db.ts` to use the public service URL. The PostgreSQL
+connection stays in `db/server.ts`. See [connection ownership](/docs/db/runtime#connect-browser-functions).
 
     </StepperPanel>
 
@@ -192,11 +180,11 @@ Replace `src/App.tsx`:
 
 ```tsx filename="src/App.tsx"
 import { useMutation, useQuery } from '@hulla/db-react'
-import { create, list } from '../db/_generated/client/tasks'
+import { api } from './db'
 
 export default function App() {
-  const tasks = useQuery(list)
-  const add = useMutation(create)
+  const tasks = useQuery(api.list)
+  const add = useMutation(api.create)
   return (
     <main>
       <h1>Tasks</h1>

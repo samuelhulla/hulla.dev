@@ -86,20 +86,23 @@ export const listDrafts = schema.query(({ db }) =>
 )
 ```
 
-Pass a module loader when opening the instance to make those functions available locally. For the provisioned file above:
+Import the module as a namespace and register it when opening the provisioned file.
 
 ```ts filename="db/local.ts"
 import { sqlite } from '@hulla/db-sqlite'
 import { schema } from './schema'
+import * as operations from './drafts'
 
-export const db = sqlite({
+const db = sqlite({
   schema,
   filename: './drafts.sqlite',
-  functions: () => import('./drafts'),
+  functions: operations,
 })
 
-const drafts = await db.functions.listDrafts()
+export const api = db.functions
 ```
+
+Import `api` in a screen and pass `api.listDrafts` to your framework's query binding. The callable is available as soon as the instance is created. Its execution waits for storage to open.
 
 Local mutations execute in a transaction. Local query subscriptions observe committed writes through this instance, including replica updates. Writes made by another SQLite connection do not trigger those subscriptions.
 

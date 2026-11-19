@@ -5,33 +5,33 @@ description: Choose the adapter for each application and the storage its runtime
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-The adapter APIs in these guides target the **0.2 release line**. Install `@hulla/db` where you author a schema. Install the storage adapter in the application that opens the database. For example, a mobile app with offline tasks needs the SQLite adapter, while the service that supplies those tasks uses PostgreSQL.
-
-## SQLite on a device or server
-
-<DocsPackageManagerCommand
-  commands={{
-    bun: 'bun add @hulla/db@^0.2.0 @hulla/db-sqlite@^0.2.0',
-    npm: 'npm install @hulla/db@^0.2.0 @hulla/db-sqlite@^0.2.0',
-    pnpm: 'pnpm add @hulla/db@^0.2.0 @hulla/db-sqlite@^0.2.0',
-    yarn: 'yarn add @hulla/db@^0.2.0 @hulla/db-sqlite@^0.2.0',
-  }}
-/>
-
-Node and Bun can open a local file. Browser apps provide their own SQLite WASM runtime and persistent storage. Expo apps provide `expo-sqlite`. None of these needs a PostgreSQL server to save local rows. [Save and reopen your first draft](/docs/db/sqlite).
+The adapter APIs in these guides use version **0.3.0**. Install `@hulla/db` where you author a schema. Install the storage adapter in the application that opens the database. Start with PostgreSQL for your main database. Web and mobile apps can use the generated HTTP client on its own. Add the SQLite adapter to an app that owns local data or stores offline replicas.
 
 ## PostgreSQL on a server
 
 <DocsPackageManagerCommand
   commands={{
-    bun: 'bun add @hulla/db@^0.2.0 @hulla/db-postgres@^0.2.0',
-    npm: 'npm install @hulla/db@^0.2.0 @hulla/db-postgres@^0.2.0',
-    pnpm: 'pnpm add @hulla/db@^0.2.0 @hulla/db-postgres@^0.2.0',
-    yarn: 'yarn add @hulla/db@^0.2.0 @hulla/db-postgres@^0.2.0',
+    bun: 'bun add @hulla/db@0.3.0 @hulla/db-postgres@0.3.0',
+    npm: 'npm install @hulla/db@0.3.0 @hulla/db-postgres@0.3.0',
+    pnpm: 'pnpm add @hulla/db@0.3.0 @hulla/db-postgres@0.3.0',
+    yarn: 'yarn add @hulla/db@0.3.0 @hulla/db-postgres@0.3.0',
   }}
 />
 
 For a server route or job, `postgres({ schema, url })` opens existing storage. Use `postgres.initialize({ schema, url })` when provisioning a fresh database. If devices need shared rows, expose [authorized queries and mutations](/docs/db/replication) through the PostgreSQL service. Only the HTTP endpoint and public source declarations belong on the client.
+
+## SQLite on a device or server
+
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun add @hulla/db@0.3.0 @hulla/db-sqlite@0.3.0',
+    npm: 'npm install @hulla/db@0.3.0 @hulla/db-sqlite@0.3.0',
+    pnpm: 'pnpm add @hulla/db@0.3.0 @hulla/db-sqlite@0.3.0',
+    yarn: 'yarn add @hulla/db@0.3.0 @hulla/db-sqlite@0.3.0',
+  }}
+/>
+
+Node and Bun can open a local file. Browser apps provide their own SQLite WASM runtime and persistent storage. Expo apps provide `expo-sqlite`. None of these needs a PostgreSQL server to save local rows. [Save and reopen your first draft](/docs/db/sqlite).
 
 ## Local development requirements
 
@@ -45,10 +45,10 @@ The [live task list quickstart](/guides/db/quick-start) uses the config-based Po
 
 <DocsPackageManagerCommand
   commands={{
-    bun: 'bun add @hulla/db@^0.2.0 @hulla/db-react@^0.2.0 zod',
-    npm: 'npm install @hulla/db@^0.2.0 @hulla/db-react@^0.2.0 zod',
-    pnpm: 'pnpm add @hulla/db@^0.2.0 @hulla/db-react@^0.2.0 zod',
-    yarn: 'yarn add @hulla/db@^0.2.0 @hulla/db-react@^0.2.0 zod',
+    bun: 'bun add @hulla/db@0.3.0 @hulla/db-react@0.3.0 zod',
+    npm: 'npm install @hulla/db@0.3.0 @hulla/db-react@0.3.0 zod',
+    pnpm: 'pnpm add @hulla/db@0.3.0 @hulla/db-react@0.3.0 zod',
+    yarn: 'yarn add @hulla/db@0.3.0 @hulla/db-react@0.3.0 zod',
   }}
 />
 

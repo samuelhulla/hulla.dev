@@ -6,17 +6,17 @@ description: Declare browser-callable reads and atomic writes, with typed input 
 A query reads a consistent database snapshot. A mutation writes in one
 transaction. In the PostgreSQL service workflow shown here, both run on the service and the browser imports generated callables. With an adapter instance, declare functions on the schema and register them where they should execute. See [local execution](/docs/db/sqlite#run-functions-against-this-instance) and [replica queries](/docs/db/replication#decide-what-the-server-may-send).
 
-After [generation](/docs/db/code-generation), import the schema-bound constructors
-from `./_generated/functions`. The examples use the quickstart's `tasks` table.
+Import the schema to declare operations. Register the module in your server or
+device entrypoint. The examples use the quickstart's `tasks` table.
 
 ## Start with a read
 
 A handler alone is the shorthand for a declaration without options:
 
 ```ts filename="db/tasks.ts"
-import { query } from './_generated/functions'
+import { schema } from './schema'
 
-export const list = query((ctx) =>
+export const list = schema.query((ctx) =>
   ctx.db.select('tasks').orderBy('title').limit(100)
 )
 ```
@@ -31,10 +31,10 @@ Use an options object when a query accepts input. Both queries and mutations
 support the same declaration shape:
 
 ```ts filename="db/tasks.ts"
-import { query, mutation } from './_generated/functions'
+import { schema } from './schema'
 import { z } from 'zod'
 
-export const unfinished = query({
+export const unfinished = schema.query({
   input: z.object({ limit: z.number().int().min(1).max(100) }),
   handler: (ctx, input) =>
     ctx.db.select('tasks').where({ completed: false }).limit(input.limit),
@@ -42,7 +42,7 @@ export const unfinished = query({
 ```
 
 The handler receives `ctx` first and validated `input` second. The browser call is
-`unfinished({ limit: 20 })`; its input and result types come from the declaration.
+`api.unfinished({ limit: 20 })`; its input and result types come from the declaration.
 Zod is one Standard Schema validator, not a requirement of the database.
 
 Table fields use `v` to describe storage rules. Function validators describe the
@@ -52,7 +52,7 @@ values the handler accepts, including explicit transformations. See
 ## Write atomically
 
 ```ts filename="db/tasks.ts"
-export const create = mutation({
+export const create = schema.mutation({
   input: z.object({ title: z.string().min(1) }),
   handler: (ctx, input) => ctx.db.insert('tasks', input),
 })
@@ -69,16 +69,23 @@ handlers free of external effects and await their database operations.
 
 ## Add shared authorization with an extension
 
-Declarations are browser-callable. Protect them in the handler or a shared guard.
+The server exposes the declarations registered in its catalogue. Protect them in the handler or a shared guard.
 With [auth configured](/docs/db/authentication) to return an identity containing
 `id`, a guarded query constructor can prepare a user once:
 
 ```ts filename="db/guards.ts"
-import { query } from './_generated/functions'
+import { schema } from './schema'
 
-export const authenticatedQuery = query.extend((ctx) => {
-  if (!ctx.identity) throw new Error('Sign in required')
-  return { user: ctx.identity }
+export const authenticatedQuery = schema.query.extend(({ identity }) => {
+  if (
+    !identity ||
+    typeof identity !== 'object' ||
+    !('id' in identity) ||
+    typeof identity.id !== 'string'
+  ) {
+    throw new Error('Sign in required')
+  }
+  return { user: { id: identity.id } }
 })
 ```
 
@@ -108,7 +115,7 @@ An optional output schema checks the handler result before it leaves the
 transaction. An explicit schema transform can change the returned representation:
 
 ```ts filename="db/tasks.ts"
-export const createTitle = mutation({
+export const createTitle = schema.mutation({
   input: z.object({ title: z.string().min(1) }),
   output: z.string().transform((title) => title.toUpperCase()),
   handler: async (ctx, input) => (await ctx.db.insert('tasks', input)).title,
@@ -124,9 +131,10 @@ coercion added around your validator.
 If server routes and declarations need the same read, extract the database work:
 
 ```ts filename="db/task-data.ts"
-import type { ReadDatabase } from './_generated/types'
+import type { ReadDatabase } from '@hulla/db'
+import type { schema } from './schema'
 
-export const readTasks = (database: ReadDatabase) =>
+export const readTasks = (database: ReadDatabase<typeof schema>) =>
   database.select('tasks', ['id', 'title']).orderBy('title').limit(50)
 ```
 
