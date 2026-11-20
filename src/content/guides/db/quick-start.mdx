@@ -23,11 +23,9 @@ every open copy of the page receives the updated list without reloading.
 
 ## Prepare the project
 
-Start in a React TypeScript Vite app with Zod and the
-[database development tools](/docs/db/installation#local-development-requirements).
+Start in a React TypeScript Vite app. Install [`@hulla/db` and `@hulla/db-postgres`](/docs/db/installation#postgresql-on-a-server), then add [`@hulla/db-react` and Zod](/docs/db/installation#framework-bindings). Install [Bun and `@hulla/db-cli`](/docs/db/installation#local-development-requirements) for the development commands.
 Keep the Vite entrypoints `src/main.tsx` and `src/App.tsx`. This guide lets `dev`
-own local PostgreSQL, so leave `DATABASE_URL` unset. The package supplies the
-development runtime, compiler and database executable.
+own local PostgreSQL, so leave `DATABASE_URL` unset.
 
 The generated modules use explicit `.ts` imports. Keep
 `compilerOptions.allowImportingTsExtensions` enabled in `tsconfig.app.json`.
@@ -132,7 +130,7 @@ From the app directory, start the database development server.
   }}
 />
 
-`dev` starts bundled PostgreSQL, initializes the local schema, generates the function
+`dev` downloads and caches the managed PostgreSQL build on first use, initializes the local schema, generates the function
 bindings and starts the service at `http://127.0.0.1:3001`. Leave this terminal
 running and add `.hulla/` to your application's `.gitignore`; saved data lives there.
 

@@ -8,7 +8,7 @@ import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerComma
 A server-only SQLite app needs a persistent file on its application host. A local-only device app needs its platform’s SQLite storage. Neither requires a subscription service. The supplied HTTP service for shared live views and device replicas currently runs on PostgreSQL. See [architecture choices](/docs/db/mental-model).
 
 An application using that service has three parts: your app, the persistent
-`@hulla/db` service and PostgreSQL. Your framework deploys as usual; the service
+query service from `@hulla/db-postgres` and PostgreSQL. Your framework deploys as usual. The service
 maintains subscriptions and runs declared database functions.
 
 | Component                            | What its host needs                                                           |
@@ -35,8 +35,8 @@ support for the package's session settings.
 
 ## Generate during the build
 
-Install the matching SDK and native artifacts described in
-[installation](/docs/db/installation#local-development-requirements). Generate during the application build using the bundled runtime and compiler:
+Install [Bun and the matching `@hulla/db-cli`](/docs/db/installation#local-development-requirements)
+in the build environment before generating bindings.
 
 <DocsPackageManagerCommand
   commands={{
@@ -48,9 +48,9 @@ Install the matching SDK and native artifacts described in
 />
 
 Include the config, schema, generated artifacts and their runtime dependencies.
-Deploy the same schema and function artifacts to the app and service. Native
-files live under `node_modules/@hulla/db/native/<os>-<arch>/`; retaining only the
-JavaScript files is insufficient.
+Deploy the same schema and function artifacts to the app and service. Install
+`@hulla/db-postgres` for the deployment target with optional dependencies
+enabled. The platform dependency supplies the executables used at startup.
 
 Framework bundlers must externalize/copy the package and retain its executables.
 The [Next recipe](/docs/db/frameworks/next#keep-database-work-on-the-server) includes
@@ -60,11 +60,10 @@ are not included in this release.
 
 ## Initialize fresh storage
 
-Use a provisioning credential to initialize or verify storage. Node can run the
-prepared runtime; Bun is not required for serving:
+Use a provisioning credential and `@hulla/db-cli` to initialize or verify storage.
 
 ```sh
-node node_modules/@hulla/db/dist/cli.js init db.config.ts
+node node_modules/@hulla/db-cli/dist/cli.js init db.config.ts
 ```
 
 Initialization creates fresh storage or verifies an exact match. Use `migrate`
@@ -109,11 +108,11 @@ down migrations.
 Start the matching application and persistent service with normal runtime credentials:
 
 ```sh
-node node_modules/@hulla/db/dist/cli.js serve db.config.ts
+npx --no-install hulla-db-serve db.config.ts
 ```
 
-`serve` verifies the installed contract and does not regenerate, watch source or
-apply migrations. Terminate HTTPS at an ingress
+`hulla-db-serve` is installed by `@hulla/db-postgres` and runs on Node or Bun.
+The service verifies the installed contract at startup. Terminate HTTPS at an ingress
 that preserves streaming responses, allow the browser app's exact origin, and
 verify credentials through the existing auth provider.
 

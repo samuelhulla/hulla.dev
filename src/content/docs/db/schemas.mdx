@@ -182,7 +182,7 @@ do not insert database defaults or silently coerce values. Resolve a schema with
 
 SQLite verifies a matching schema on open and has no automatic migration support. The following commands apply to PostgreSQL.
 
-The [bundled development tooling](/docs/db/installation#local-development-requirements)
+The [database CLI](/docs/db/installation#local-development-requirements)
 applies supported schema changes automatically when `dev` owns PostgreSQL. For an
 external database, `migrate` applies the change and `migrate --check` previews it.
 Use matching SDK and native executables from that build.
