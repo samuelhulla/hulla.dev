@@ -46,7 +46,7 @@ In a long-running application, create one instance at startup. Calls wait for it
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | Node or Bun | Pass a persistent `filename` to `@hulla/db-sqlite`. The adapter selects the runtime's built-in SQLite driver.                   |
 | Browser     | Provide a dedicated SQLite WASM connection. Set up your WASM runtime and its storage, such as OPFS, in the context it requires. |
-| Expo        | Open a dedicated connection with `expo-sqlite` and wrap it with the Expo driver.                                                |
+| Expo        | Pass a persistent `filename` to `@hulla/db-sqlite/expo`.                                                |
 
 For a browser using the SQLite WASM OO1 API, the example assumes your app already initialized `sqlite3` in an OPFS-capable worker. The adapter does not install the WASM runtime.
 
@@ -60,17 +60,21 @@ const db = sqlite.initialize({
 })
 ```
 
-For Expo, install the platform's `expo-sqlite` package. Supply a secure `randomBytes` provider if your runtime lacks Web Crypto. Both adapters take ownership of the dedicated connection returned by `open`.
+Install `@hulla/db` and `@hulla/db-sqlite` as described in [installation](/docs/db/installation#sqlite-on-a-device-or-server). Use Expo to select compatible native modules:
+
+```sh
+npx expo install expo-sqlite expo-crypto
+```
+
+The Expo adapter opens a dedicated connection and uses Expo Crypto when Web Crypto is unavailable.
 
 ```ts filename="db/mobile.ts"
-import { sqlite, expoSQLiteDriver } from '@hulla/db-sqlite/expo'
-import * as SQLite from 'expo-sqlite'
+import { sqlite } from '@hulla/db-sqlite/expo'
 import { schema } from './schema'
 
 const db = sqlite.initialize({
   schema,
-  open: async () =>
-    expoSQLiteDriver(await SQLite.openDatabaseAsync('drafts.sqlite')),
+  filename: 'drafts.sqlite',
 })
 ```
 

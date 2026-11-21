@@ -9,6 +9,8 @@ Register your queries and mutations in `db/server.ts`, then generate the client.
 The generator reads the registered operation catalogue and produces the TypeScript
 imports the browser uses to call it. [Register a query and mutation](/guides/db/quick-start#declare-the-functions).
 
+Install [Bun and `@hulla/db-cli`](/docs/db/installation#local-development-requirements) in the build environment.
+
 <DocsPackageManagerCommand
   commands={{
     bun: 'bun --bun hulla-db generate db/server.ts',
@@ -53,9 +55,11 @@ origins or authentication, run `hulla-db dev db.config.ts` instead.
 
 Run generation during your build and deploy `db/_generated/server/` with your
 server code, runtime dependencies and native assets. Start the service with
-`hulla-db serve db/server.ts` or pass your service config. Provide the production
+`hulla-db-serve db/server.ts` or pass your service config. Provide the production
 PostgreSQL URL in the server environment. The service loads the prepared files
 and verifies existing storage before accepting calls.
+
+Run `hulla-db setup --ignore-file '<ignore-file-path>'` to add generated output to a gitignore-syntax file used by your tools.
 
 Keep authored modules outside the generated directory. The generator recognizes
 its own output by the ownership header and protects authored files.

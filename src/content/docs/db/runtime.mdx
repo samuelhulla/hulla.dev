@@ -17,10 +17,10 @@ This page configures the service created in [Build a live task list](/guides/db/
 | `init`     | Creates fresh storage or verifies an existing schema                       |
 | `dev`      | Watches source, migrates its owned local database and reloads the service  |
 | `migrate`  | Applies supported schema changes; `--check` previews without changing data |
-| `serve`    | Verifies storage and runs prepared artifacts without a watcher             |
+| `hulla-db-serve` | Verifies storage and runs prepared artifacts without a watcher             |
 | `studio`   | Opens the optional local schema and data workbench                         |
 
-With the [bundled development tooling](/docs/db/installation#local-development-requirements),
+With the [database CLI and Bun](/docs/db/installation#local-development-requirements),
 start local development from your app directory:
 
 <DocsPackageManagerCommand
@@ -39,8 +39,9 @@ or the listener. Your app's development server runs separately.
 
 ## Let local schema changes reload automatically
 
-With no `database.server.url` or `DATABASE_URL`, `dev` starts its bundled PostgreSQL,
-initializes storage, generates bindings and starts the service. Local data persists
+With no `database.server.url` or `DATABASE_URL`, `dev` downloads and verifies
+the managed PostgreSQL build on first use. It caches the archive, initializes
+local storage, generates bindings and starts the service. Local data persists
 in `.hulla/postgres`; add `.hulla/` to your application's `.gitignore`.
 
 Saving a supported schema change regenerates and validates the code, applies the
@@ -87,7 +88,7 @@ Development remembers the selected address across worker reloads. Use the printe
 
 ## Inspect the database in Studio
 
-Install the optional `@hulla/db-studio` package alongside the matching `@hulla/db` build, then start both tools together:
+Install the optional `@hulla/db-studio` package alongside the matching SDK and CLI versions, then start both tools together:
 
 ```sh
 hulla-db dev --studio

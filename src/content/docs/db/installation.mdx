@@ -5,18 +5,20 @@ description: Choose the adapter for each application and the storage its runtime
 
 import DocsPackageManagerCommand from '@/components/docs/DocsPackageManagerCommand.astro'
 
-The adapter APIs in these guides use version **0.3.0**. Install `@hulla/db` where you author a schema. Install the storage adapter in the application that opens the database. Start with PostgreSQL for your main database. Web and mobile apps can use the generated HTTP client on its own. Add the SQLite adapter to an app that owns local data or stores offline replicas.
+The adapter APIs in these guides use version **0.3.4**. Install `@hulla/db` where you author a schema. Install the storage adapter in the application that opens the database. Start with PostgreSQL for your main database. Web and mobile apps can use the generated HTTP client on its own. Add the SQLite adapter to an app that owns local data or stores offline replicas.
 
 ## PostgreSQL on a server
 
 <DocsPackageManagerCommand
   commands={{
-    bun: 'bun add @hulla/db@0.3.0 @hulla/db-postgres@0.3.0',
-    npm: 'npm install @hulla/db@0.3.0 @hulla/db-postgres@0.3.0',
-    pnpm: 'pnpm add @hulla/db@0.3.0 @hulla/db-postgres@0.3.0',
-    yarn: 'yarn add @hulla/db@0.3.0 @hulla/db-postgres@0.3.0',
+    bun: 'bun add @hulla/db@0.3.4 @hulla/db-postgres@0.3.4',
+    npm: 'npm install @hulla/db@0.3.4 @hulla/db-postgres@0.3.4',
+    pnpm: 'pnpm add @hulla/db@0.3.4 @hulla/db-postgres@0.3.4',
+    yarn: 'yarn add @hulla/db@0.3.4 @hulla/db-postgres@0.3.4',
   }}
 />
+
+Install for the deployment target with optional dependencies enabled so the package manager selects the matching native executables. The supported hosts are macOS arm64 and Linux x64 with glibc.
 
 For a server route or job, `postgres({ schema, url })` opens existing storage. Use `postgres.initialize({ schema, url })` when provisioning a fresh database. If devices need shared rows, expose [authorized queries and mutations](/docs/db/replication) through the PostgreSQL service. Only the HTTP endpoint and public source declarations belong on the client.
 
@@ -24,20 +26,31 @@ For a server route or job, `postgres({ schema, url })` opens existing storage. U
 
 <DocsPackageManagerCommand
   commands={{
-    bun: 'bun add @hulla/db@0.3.0 @hulla/db-sqlite@0.3.0',
-    npm: 'npm install @hulla/db@0.3.0 @hulla/db-sqlite@0.3.0',
-    pnpm: 'pnpm add @hulla/db@0.3.0 @hulla/db-sqlite@0.3.0',
-    yarn: 'yarn add @hulla/db@0.3.0 @hulla/db-sqlite@0.3.0',
+    bun: 'bun add @hulla/db@0.3.4 @hulla/db-sqlite@0.3.4',
+    npm: 'npm install @hulla/db@0.3.4 @hulla/db-sqlite@0.3.4',
+    pnpm: 'pnpm add @hulla/db@0.3.4 @hulla/db-sqlite@0.3.4',
+    yarn: 'yarn add @hulla/db@0.3.4 @hulla/db-sqlite@0.3.4',
   }}
 />
 
-Node and Bun can open a local file. Browser apps provide their own SQLite WASM runtime and persistent storage. Expo apps provide `expo-sqlite`. None of these needs a PostgreSQL server to save local rows. [Save and reopen your first draft](/docs/db/sqlite).
+Node and Bun can open a local file. Browser apps provide their own SQLite WASM runtime and persistent storage. Expo apps use `@hulla/db-sqlite/expo` with `expo-sqlite` and `expo-crypto`. None of these needs a PostgreSQL server to save local rows. [Save and reopen your first draft](/docs/db/sqlite).
 
 ## Local development requirements
 
-The `hulla-db` CLI ships with `@hulla/db`. The managed PostgreSQL workflow requires Node 22.18+ or Bun on a supported native host (macOS arm64 or Linux x64/glibc) with permission to launch subprocesses. The development runtime, compiler, and local PostgreSQL are bundled. The [deployment guide](/docs/db/deployment) covers production host requirements.
+Install Bun and `@hulla/db-cli` to generate bindings or run the development watcher. The CLI supplies its pinned TypeScript compiler.
 
-For an adapter entrypoint, run `hulla-db dev ./db/server.ts`. With both `url` and `DATABASE_URL` unset, dev provisions its own local PostgreSQL and keeps data under `.hulla/`. To use an existing development database, supply `url` or set `DATABASE_URL`. An explicit URL takes precedence. Provision or migrate external storage explicitly. Outside the dev launcher, the PostgreSQL adapter requires a connection URL.
+<DocsPackageManagerCommand
+  commands={{
+    bun: 'bun add -D @hulla/db-cli@0.3.4',
+    npm: 'npm install --save-dev @hulla/db-cli@0.3.4',
+    pnpm: 'pnpm add -D @hulla/db-cli@0.3.4',
+    yarn: 'yarn add -D @hulla/db-cli@0.3.4',
+  }}
+/>
+
+With both `url` and `DATABASE_URL` unset, `dev` downloads and verifies the managed PostgreSQL build on first use. SDK releases that pin the same build share its cached archive. Project data lives in `.hulla/`. The [deployment guide](/docs/db/deployment) covers production host requirements.
+
+For an adapter entrypoint, run `hulla-db dev ./db/server.ts`. To use an existing development database, supply `url` or set `DATABASE_URL`. An explicit URL takes precedence. Provision or migrate external storage explicitly. Outside the dev launcher, the PostgreSQL adapter requires a connection URL.
 
 ## Framework bindings
 
@@ -45,10 +58,10 @@ The [live task list quickstart](/guides/db/quick-start) uses the config-based Po
 
 <DocsPackageManagerCommand
   commands={{
-    bun: 'bun add @hulla/db@0.3.0 @hulla/db-react@0.3.0 zod',
-    npm: 'npm install @hulla/db@0.3.0 @hulla/db-react@0.3.0 zod',
-    pnpm: 'pnpm add @hulla/db@0.3.0 @hulla/db-react@0.3.0 zod',
-    yarn: 'yarn add @hulla/db@0.3.0 @hulla/db-react@0.3.0 zod',
+    bun: 'bun add @hulla/db@0.3.4 @hulla/db-react@0.3.4 zod',
+    npm: 'npm install @hulla/db@0.3.4 @hulla/db-react@0.3.4 zod',
+    pnpm: 'pnpm add @hulla/db@0.3.4 @hulla/db-react@0.3.4 zod',
+    yarn: 'yarn add @hulla/db@0.3.4 @hulla/db-react@0.3.4 zod',
   }}
 />
 
